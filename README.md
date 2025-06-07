@@ -8,6 +8,7 @@ This is an ongoing collection of quick scripts that I've needed at various point
 
 Each directory contains a specific tool with its own README explaining what it does and how to use it:
 
+- **bin/** - Links to frequently used tools for easy PATH management
 - **aws/** - AWS-related utilities
 - **bitwarden/** - Bitwarden CLI helpers  
 - **check-repos/** - Repository management and health checks
