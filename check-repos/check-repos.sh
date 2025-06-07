@@ -180,7 +180,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BASE_DIR="$(pwd)"
 log_debug "Scanning directories in: $BASE_DIR"
 
 processed_count=0
