@@ -1,0 +1,3 @@
+[submodule "ai-best-practices"]
+	path = ai-best-practices
+	url = git@github.com:Imagination-Guild-LLC/ai-coder-best-practices.git

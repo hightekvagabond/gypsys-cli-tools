@@ -1,0 +1,1 @@
+../aws/findinstance/findinstance.sh
