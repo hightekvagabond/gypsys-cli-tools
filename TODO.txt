@@ -1,0 +1,5 @@
+backup bashrc stuff here
+move secrets from hard drive to bitwarden
+move mountalls3 here
+set up syncthing so we can also back things like my brave sessions and devices screen settings
+my taskmanager isn't showing on extended screen anymore
