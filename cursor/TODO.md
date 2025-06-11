@@ -7,6 +7,17 @@
 - [ ] Add support for custom submodule configurations
 - [ ] Create installation script for setting up symlinks and permissions
 
+## Extension Development
+- [ ] **PRIORITY**: Investigate duplicate files issue in node_modules preventing VSIX packaging
+  - Files with same case insensitive paths in @types/sarif and @types/normalize-package-data
+  - Error: "The following files have the same case insensitive path, which isn't supported by the VSIX format"
+  - May need to update package.json excludes or clean up dependencies
+  - Check after running clean rebuild script to see if issue persists
+- [ ] Add extension development mode with hot reload
+- [ ] Create extension testing framework
+- [ ] Add extension configuration options
+- [ ] Implement extension update mechanism
+
 ## Medium Priority
 - [ ] Add support for custom Git hooks
 - [ ] Implement repository template support

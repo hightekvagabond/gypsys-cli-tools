@@ -4,13 +4,39 @@
 echo "cursor-git-setup.sh started at $(date)" >> /tmp/cursor-git-setup.log
 echo "Script path: $0" >> /tmp/cursor-git-setup.log
 echo "Current directory: $PWD" >> /tmp/cursor-git-setup.log
-echo "Environment variables:" >> /tmp/cursor-git-setup.log
-env | sort >> /tmp/cursor-git-setup.log
+
+# Function to send notification to Cursor
+send_cursor_notification() {
+    local title="$1"
+    local message="$2"
+    local type="${3:-info}"  # info, warning, error
+    
+    # Try to use zenity for system notifications if available
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --notification --text="$title: $message" 2>/dev/null &
+    fi
+    
+    # Also try notify-send
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "$title" "$message" 2>/dev/null &
+    fi
+    
+    # Log for debugging
+    echo "NOTIFICATION: $title - $message" >> /tmp/cursor-git-setup.log
+}
 
 # Configuration
 SUBMODULE_REPO_URL="git@github.com:Imagination-Guild-LLC/ai-coder-best-practices.git"
 SUBMODULE_NAME="ai-best-practices"
 GIT_HOSTS_CONFIG="github.com:hightekvagabond,Imagination-Guild-LLC"
+
+# Read submodules from extension configuration if available
+if [[ -n "$CURSOR_EXT_SUBMODULES" ]]; then
+    IFS=',' read -ra EXT_SUBMODULES <<< "$CURSOR_EXT_SUBMODULES"
+    log_debug "Extension configured submodules: ${EXT_SUBMODULES[*]}"
+else
+    EXT_SUBMODULES=("$SUBMODULE_NAME")
+fi
 
 # Debug levels: 0=quiet, 1=errors/warnings only, 2=info, 3=verbose/debug
 DEBUG_LEVEL=${DEBUG_LEVEL:-1}
@@ -56,8 +82,31 @@ show_status_message() {
     echo "╚════════════════════════════════════════════════════════════╝"
 }
 
-# Show status message immediately
-show_status_message
+# Send notification with git status
+send_git_status_notification() {
+    local git_info=""
+    
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        local branch=$(git branch --show-current)
+        local status=$(git status --porcelain | wc -l)
+        local unpushed=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+        
+        git_info="Branch: $branch"
+        if [[ "$status" != "0" ]]; then
+            git_info="$git_info, $status changes"
+        fi
+        if [[ "$unpushed" != "0" ]]; then
+            git_info="$git_info, $unpushed unpushed"
+        fi
+        
+        send_cursor_notification "Git Status" "$git_info"
+    else
+        send_cursor_notification "Git Status" "Not in a git repository"
+    fi
+}
+
+# Send initial status notification
+send_git_status_notification
 
 # Function to get the root of the git repository
 get_git_root() {
@@ -252,64 +301,97 @@ init_git_repo() {
     git push -u origin main
 }
 
-# Function to check and update ai-best-practices submodule
-check_ai_best_practices() {
+# Function to check and update submodules
+check_submodules() {
     local git_root=$(get_git_root)
     if [ -z "$git_root" ]; then
         log_error "Could not find git repository root"
         return 1
     fi
 
-    if [ ! -d "$git_root/$SUBMODULE_NAME" ]; then
-        log_info "Adding $SUBMODULE_NAME submodule..."
-        (cd "$git_root" && git submodule add "$SUBMODULE_REPO_URL" "$SUBMODULE_NAME")
-        (cd "$git_root" && git submodule update --init --recursive)
-    else
-        log_debug "Checking $SUBMODULE_NAME submodule status..."
-        (
-            cd "$git_root/$SUBMODULE_NAME" || exit 1
-            
-            # Try to fetch latest changes
-            if ! git fetch --quiet 2>/dev/null; then
-                log_warn "Submodule fetch failed (network/permission issue)"
-                return 1
+    local overall_success=0
+    
+    for submodule in "${EXT_SUBMODULES[@]}"; do
+        log_info "Checking submodule: $submodule"
+        
+        if [ ! -d "$git_root/$submodule" ]; then
+            # Determine the correct repo URL based on submodule name
+            local repo_url="$SUBMODULE_REPO_URL"
+            if [[ "$submodule" != "$SUBMODULE_NAME" ]]; then
+                # For other submodules, try to construct URL from the pattern
+                repo_url="git@github.com:Imagination-Guild-LLC/${submodule}.git"
+                log_debug "Using constructed URL for $submodule: $repo_url"
             fi
             
-            # Check if we have a remote tracking branch
-            if ! git rev-parse @{u} >/dev/null 2>&1; then
-                log_warn "Submodule has no upstream branch configured"
-                return 1
-            fi
-            
-            local=$(git rev-parse @)
-            remote=$(git rev-parse @{u})
-            base=$(git merge-base @ @{u} 2>/dev/null)
-            
-            if [[ -z "$base" ]]; then
-                log_warn "Cannot determine merge base"
-                return 1
-            fi
-            
-            if [[ "$local" == "$remote" ]]; then
-                log_ok "Submodule is up to date."
-            elif [[ "$local" == "$base" ]]; then
-                behind=$(git rev-list --count "$local..$remote" 2>/dev/null || echo "?")
-                log_info "Submodule is behind by $behind commit(s), updating..."
-                if git pull --quiet 2>/dev/null; then
-                    log_ok "Submodule updated successfully."
-                else
-                    log_error "Submodule update failed - may need manual intervention."
-                    return 1
-                fi
-            elif [[ "$remote" == "$base" ]]; then
-                ahead=$(git rev-list --count "$remote..$local" 2>/dev/null || echo "?")
-                log_warn "Submodule is ahead by $ahead commit(s)."
+            log_info "Adding $submodule submodule..."
+            if (cd "$git_root" && git submodule add "$repo_url" "$submodule" 2>/dev/null); then
+                (cd "$git_root" && git submodule update --init --recursive "$submodule")
+                log_ok "Submodule $submodule added successfully"
             else
-                log_warn "Submodule has diverged from origin - manual intervention required."
+                log_warn "Failed to add submodule $submodule (may already exist or network issue)"
+            fi
+        else
+            log_debug "Checking $submodule submodule status..."
+            if check_single_submodule "$git_root/$submodule" "$submodule"; then
+                log_ok "Submodule $submodule is healthy"
+            else
+                log_warn "Issues with submodule $submodule"
+                overall_success=1
+            fi
+        fi
+    done
+    
+    return $overall_success
+}
+
+# Function to check a single submodule
+check_single_submodule() {
+    local submodule_path="$1"
+    local submodule_name="$2"
+    
+    (
+        cd "$submodule_path" || exit 1
+        
+        # Try to fetch latest changes
+        if ! git fetch --quiet 2>/dev/null; then
+            log_warn "Submodule $submodule_name fetch failed (network/permission issue)"
+            return 1
+        fi
+        
+        # Check if we have a remote tracking branch
+        if ! git rev-parse @{u} >/dev/null 2>&1; then
+            log_warn "Submodule $submodule_name has no upstream branch configured"
+            return 1
+        fi
+        
+        local=$(git rev-parse @)
+        remote=$(git rev-parse @{u})
+        base=$(git merge-base @ @{u} 2>/dev/null)
+        
+        if [[ -z "$base" ]]; then
+            log_warn "Cannot determine merge base for $submodule_name"
+            return 1
+        fi
+        
+        if [[ "$local" == "$remote" ]]; then
+            log_debug "Submodule $submodule_name is up to date."
+        elif [[ "$local" == "$base" ]]; then
+            behind=$(git rev-list --count "$local..$remote" 2>/dev/null || echo "?")
+            log_info "Submodule $submodule_name is behind by $behind commit(s), updating..."
+            if git pull --quiet 2>/dev/null; then
+                log_ok "Submodule $submodule_name updated successfully."
+            else
+                log_error "Submodule $submodule_name update failed - may need manual intervention."
                 return 1
             fi
-        )
-    fi
+        elif [[ "$remote" == "$base" ]]; then
+            ahead=$(git rev-list --count "$remote..$local" 2>/dev/null || echo "?")
+            log_warn "Submodule $submodule_name is ahead by $ahead commit(s)."
+        else
+            log_warn "Submodule $submodule_name has diverged from origin - manual intervention required."
+            return 1
+        fi
+    )
 }
 
 # Main execution
@@ -326,9 +408,9 @@ else
         exit 1
     fi
     
-    # Check repository health
-    check_repo_health "$git_root"
+    # Check repository health (warnings only, don't fail)
+    check_repo_health "$git_root" || true
     
-    # Check and update ai-best-practices submodule
-    check_ai_best_practices
+    # Check and update submodules
+    check_submodules || log_warn "Failed to update one or more submodules"
 fi 

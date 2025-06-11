@@ -9,6 +9,12 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 node_modules/**
-!node_modules/vscode-test/**
-!node_modules/@types/**
-!node_modules/typescript/** 
+# Exclude parent directory files
+../**
+# Exclude build artifacts and logs  
+*.log
+*.tmp
+# Exclude development files
+.env*
+.DS_Store
+Thumbs.db 

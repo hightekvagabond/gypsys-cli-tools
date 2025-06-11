@@ -1,53 +1,85 @@
 #!/bin/bash
 
-# Debug output
-echo "install-cursor-extension.sh started at $(date)" >> /tmp/cursor-extension-install.log
-echo "Script path: $0" >> /tmp/cursor-extension-install.log
-echo "Current directory: $PWD" >> /tmp/cursor-extension-install.log
+# Cursor Extension Installation Script
+# This script properly installs the extension using VSIX packaging
+
+set -e
 
 # Configuration
-EXTENSION_ID="cursor-git-extension"
-CURSOR_EXTENSIONS_DIR="$HOME/.cursor/extensions"
+EXTENSION_NAME="cursor-git-extension"
+EXTENSION_DIR="./cursor-git-extension"
+VSIX_FILE="cursor-git-extension-0.0.7.vsix"
 
-# Function to display status message
-show_status_message() {
-    echo "╔════════════════════════════════════════════════════════════╗"
-    echo "║             Cursor Extension Installation Status            ║"
-    echo "╠════════════════════════════════════════════════════════════╣"
-    echo "║ Script started at: $(date)                                 ║"
-    echo "║ Current directory: $PWD                                    ║"
-    echo "║ Extension ID: $EXTENSION_ID                                ║"
-    echo "║ Extensions Directory: $CURSOR_EXTENSIONS_DIR               ║"
-    echo "╚════════════════════════════════════════════════════════════╝"
+# Function to display status
+show_status() {
+    echo "╔═══════════════════════════════════════════════════════════════╗"
+    echo "║               Cursor Extension Installation                    ║"
+    echo "╠═══════════════════════════════════════════════════════════════╣"
+    echo "║ Extension: $EXTENSION_NAME"
+    echo "║ Time: $(date)"
+    echo "║ Directory: $PWD"
+    echo "╚═══════════════════════════════════════════════════════════════╝"
+    echo
 }
 
-# Show status message
-show_status_message
+show_status
 
-# Create extensions directory if it doesn't exist
-mkdir -p "$CURSOR_EXTENSIONS_DIR"
-
-# Create the extension directory
-EXTENSION_DIR="$CURSOR_EXTENSIONS_DIR/$EXTENSION_ID"
-mkdir -p "$EXTENSION_DIR"
-
-# Copy our extension files
-echo "Installing extension..."
-cp -r cursor-git-extension/* "$EXTENSION_DIR/"
-
-# Install dependencies and build the extension
-echo "Building extension..."
-cd "$EXTENSION_DIR"
-npm install
-npm run compile
-
-# Verify installation
-if [ -d "$EXTENSION_DIR" ] && [ -f "$EXTENSION_DIR/out/extension.js" ]; then
-    echo "Extension installed successfully!"
-    echo "Please restart Cursor to activate the extension."
-else
-    echo "Error: Extension installation failed"
+# Check if extension directory exists
+if [ ! -d "$EXTENSION_DIR" ]; then
+    echo "❌ Error: Extension directory '$EXTENSION_DIR' not found!"
     exit 1
 fi
 
-echo "Installation complete!" 
+# Navigate to extension directory
+cd "$EXTENSION_DIR"
+
+echo "🔨 Building extension..."
+
+# Install dependencies
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing dependencies..."
+    npm install
+fi
+
+# Compile TypeScript
+echo "⚙️  Compiling TypeScript..."
+npm run compile
+
+# Package the extension
+echo "📦 Packaging extension..."
+npx vsce package --out "$VSIX_FILE"
+
+# Check if VSIX was created
+if [ ! -f "$VSIX_FILE" ]; then
+    echo "❌ Error: Failed to create VSIX package!"
+    exit 1
+fi
+
+echo "✅ Extension packaged successfully: $VSIX_FILE"
+echo
+echo "🎯 Installation Methods:"
+echo "----------------------------------------"
+echo "METHOD 1: Manual Installation (Recommended)"
+echo "1. Open Cursor IDE"
+echo "2. Press Ctrl+Shift+P (or Cmd+Shift+P on Mac)"
+echo "3. Type 'Extensions: Install from VSIX'"
+echo "4. Select this file: $(pwd)/$VSIX_FILE"
+echo
+echo "METHOD 2: Command Line (if cursor CLI works)"
+echo "cursor --install-extension $(pwd)/$VSIX_FILE"
+echo
+echo "METHOD 3: VS Code CLI (alternative)"
+echo "code --install-extension $(pwd)/$VSIX_FILE"
+echo
+echo "📋 After installation:"
+echo "- Restart Cursor IDE"
+echo "- Open a git repository"
+echo "- Check the status bar for git status"
+echo "- Use Ctrl+Shift+P -> 'Cursor Git' commands"
+echo
+echo "🔍 Troubleshooting:"
+echo "- Check Cursor's extension panel for the extension"
+echo "- Look for 'Cursor Git Extension' in installed extensions"
+echo "- Check the Output panel for any error messages"
+echo
+echo "Extension ready for installation!" 

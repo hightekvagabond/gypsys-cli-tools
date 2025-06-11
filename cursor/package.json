@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "description": "Cursor IDE Git Integration Tools - A set of scripts and extensions for managing Git repositories and AI best practices within Cursor IDE",
   "main": "cursor-git-setup.sh",
-  "scripts": {
+    "scripts": {
     "setup": "chmod +x *.sh && ./cursor-git-setup.sh",
+    "setup-node": "./setup-node-env.sh",
     "install-extension": "./install-cursor-extension.sh",
     "rebuild-extension": "./rebuild-extension.sh",
     "test-extension": "./test-extension.sh",
     "dev": "cd cursor-git-extension && npm run watch",
     "build-extension": "cd cursor-git-extension && npm run compile && npm run vscode:package",
-    "install": "npm install && cd cursor-git-extension && npm install",
-    "postinstall": "echo 'Setup complete! Run npm run setup to configure git integration.'"
+    "postinstall": "echo 'Setup complete! Run npm run setup-node to configure Node.js environment, then npm run setup for git integration.'"
   },
   "engines": {
     "node": ">=18.0.0",
