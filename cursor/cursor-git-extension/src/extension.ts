@@ -19,6 +19,16 @@ interface ExtensionConfig {
     autoRefreshInterval: number;
 }
 
+// Message collection for consolidated display
+interface CollectedMessage {
+    message: string;
+    type: MessageType;
+    timestamp: Date;
+}
+
+let collectedMessages: CollectedMessage[] = [];
+let messageCollectionMode = false;
+
 let outputChannel: vscode.OutputChannel;
 
 // Debug logging function
@@ -90,9 +100,8 @@ export function activate(context: vscode.ExtensionContext) {
             debugLog('Auto-refresh disabled');
         }
         
-        // Show a test notification to confirm extension is working
-        debugLog('Showing test notification...');
-        vscode.window.showInformationMessage('🚀 Cursor Git Extension activated successfully!');
+        // Extension activated successfully (will be shown in consolidated messages)
+        debugLog('Extension activated successfully!');
         
         debugLog('=== EXTENSION ACTIVATION COMPLETED SUCCESSFULLY ===');
         
@@ -127,6 +136,12 @@ function registerCommands(context: vscode.ExtensionContext) {
         testDisplayTypes();
     });
     context.subscriptions.push(testCommand);
+    
+    // Test consolidated messages command
+    let testConsolidatedCommand = vscode.commands.registerCommand('cursor-git-extension.testConsolidated', () => {
+        testConsolidatedMessages();
+    });
+    context.subscriptions.push(testConsolidatedCommand);
 }
 
 function getConfiguration(): ExtensionConfig {
@@ -203,7 +218,79 @@ function displayOutput(message: string, type: MessageType = 'INFO') {
     }
 }
 
-// Main message router
+// Collect messages instead of displaying them immediately
+function collectMessage(message: string, type: MessageType = 'INFO') {
+    collectedMessages.push({
+        message,
+        type,
+        timestamp: new Date()
+    });
+}
+
+// Show all collected messages in a consolidated popup
+function showConsolidatedMessages() {
+    if (collectedMessages.length === 0) {
+        return;
+    }
+
+    // Group messages by type
+    const messagesByType = collectedMessages.reduce((acc, msg) => {
+        if (!acc[msg.type]) {
+            acc[msg.type] = [];
+        }
+        acc[msg.type].push(msg);
+        return acc;
+    }, {} as Record<MessageType, CollectedMessage[]>);
+
+    // Build consolidated message
+    let consolidatedMessage = '🚀 **Cursor Git Extension - Execution Summary**\n\n';
+    
+    // Order types by importance: ERROR, WARN, OK, INFO, DEBUG
+    const typeOrder: MessageType[] = ['ERROR', 'WARN', 'OK', 'INFO', 'DEBUG'];
+    
+    for (const type of typeOrder) {
+        if (messagesByType[type] && messagesByType[type].length > 0) {
+            const icon = getTypeIcon(type);
+            consolidatedMessage += `${icon} **${type}** (${messagesByType[type].length} messages):\n`;
+            
+            for (const msg of messagesByType[type]) {
+                const timeStr = msg.timestamp.toLocaleTimeString();
+                consolidatedMessage += `  • [${timeStr}] ${msg.message}\n`;
+            }
+            consolidatedMessage += '\n';
+        }
+    }
+
+    // Determine overall message type (highest priority type present)
+    let overallType: MessageType = 'INFO';
+    if (messagesByType['ERROR'] && messagesByType['ERROR'].length > 0) {
+        overallType = 'ERROR';
+    } else if (messagesByType['WARN'] && messagesByType['WARN'].length > 0) {
+        overallType = 'WARN';
+    } else if (messagesByType['OK'] && messagesByType['OK'].length > 0) {
+        overallType = 'OK';
+    }
+
+    // Show consolidated popup
+    displayPopup(consolidatedMessage, overallType);
+    
+    // Clear collected messages
+    collectedMessages = [];
+    messageCollectionMode = false;
+}
+
+function getTypeIcon(type: MessageType): string {
+    switch (type) {
+        case 'ERROR': return '❌';
+        case 'WARN': return '⚠️';
+        case 'OK': return '✅';
+        case 'INFO': return 'ℹ️';
+        case 'DEBUG': return '🐛';
+        default: return 'ℹ️';
+    }
+}
+
+// Modified display message function
 function displayMessage(message: string, type: MessageType = 'INFO') {
     const config = getConfiguration();
     const displayType = config.displayMappings[type] || 'notification';
@@ -211,6 +298,13 @@ function displayMessage(message: string, type: MessageType = 'INFO') {
     // Always log to output channel for debugging
     displayOutput(message, type);
     
+    // If in collection mode, collect instead of display
+    if (messageCollectionMode) {
+        collectMessage(message, type);
+        return;
+    }
+    
+    // Otherwise use normal display logic
     switch (displayType) {
         case 'status':
             displayStatus(message);
@@ -308,6 +402,11 @@ function runGitSetupScript() {
         return;
     }
     
+    // Enable message collection mode
+    debugLog('Enabling message collection mode');
+    messageCollectionMode = true;
+    collectedMessages = []; // Clear any existing messages
+    
     debugLog('Script exists, executing...');
     displayMessage('Running git setup script...', 'INFO');
     
@@ -328,6 +427,8 @@ function runGitSetupScript() {
                 debugLog(`Script stderr: ${stderr}`);
                 displayMessage(`Script stderr: ${stderr}`, 'DEBUG');
             }
+            // Show consolidated messages even on error
+            showConsolidatedMessages();
             return;
         }
         
@@ -343,6 +444,10 @@ function runGitSetupScript() {
         // Update status after script runs
         debugLog('Script completed, updating git status...');
         updateGitStatus();
+        
+        // Show all collected messages in consolidated popup
+        debugLog('Showing consolidated messages...');
+        showConsolidatedMessages();
     });
 }
 
@@ -403,6 +508,25 @@ function testDisplayTypes() {
     setTimeout(() => displayMessage('This is an ERROR message', 'ERROR'), 2000);
     setTimeout(() => displayMessage('This is a DEBUG message', 'DEBUG'), 3000);
     setTimeout(() => displayMessage('This is an OK message', 'OK'), 4000);
+}
+
+function testConsolidatedMessages() {
+    // Enable message collection mode
+    messageCollectionMode = true;
+    collectedMessages = [];
+    
+    // Add various test messages
+    displayMessage('Testing consolidated message display', 'INFO');
+    displayMessage('Successfully loaded configuration', 'OK');
+    displayMessage('Git repository detected', 'OK');
+    displayMessage('Warning: Some files are uncommitted', 'WARN');
+    displayMessage('Debug: Checking submodule status', 'DEBUG');
+    displayMessage('All checks completed successfully', 'OK');
+    
+    // Show consolidated popup
+    setTimeout(() => {
+        showConsolidatedMessages();
+    }, 500);
 }
 
 export function deactivate() {

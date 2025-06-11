@@ -44,6 +44,11 @@
 				"command": "cursor-git-extension.test",
 				"title": "Test Display Types",
 				"category": "Cursor Git"
+			},
+			{
+				"command": "cursor-git-extension.testConsolidated",
+				"title": "Test Consolidated Messages",
+				"category": "Cursor Git"
 			}
 		],
 		"configuration": {
@@ -174,6 +179,9 @@
 				},
 				{
 					"command": "cursor-git-extension.test"
+				},
+				{
+					"command": "cursor-git-extension.testConsolidated"
 				}
 			]
 		}

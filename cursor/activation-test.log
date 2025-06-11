@@ -109,3 +109,122 @@
 [2025-06-11T05:01:43.838Z] Found 148 git changes
 [2025-06-11T05:01:43.859Z] Current branch: main
 [2025-06-11T05:01:43.859Z] Displaying status: main (148 changes)
+[2025-06-11T05:05:35.220Z] === EXTENSION ACTIVATION STARTED ===
+[2025-06-11T05:05:35.220Z] Cursor Git Extension is now active!
+[2025-06-11T05:05:35.220Z] Creating output channel...
+[2025-06-11T05:05:35.220Z] Output channel created successfully
+[2025-06-11T05:05:35.220Z] Creating status bar item...
+[2025-06-11T05:05:35.221Z] Status bar item created successfully
+[2025-06-11T05:05:35.221Z] Registering commands...
+[2025-06-11T05:05:35.221Z] Commands registered successfully
+[2025-06-11T05:05:35.221Z] Updating initial git status...
+[2025-06-11T05:05:35.221Z] updateGitStatus() called
+[2025-06-11T05:05:35.221Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:05:35.228Z] Initial git status update completed
+[2025-06-11T05:05:35.228Z] Configuration loaded - showOnStartup: true
+[2025-06-11T05:05:35.228Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:05:35.229Z] Scheduling git setup script to run in 1 second...
+[2025-06-11T05:05:35.229Z] Auto-refresh disabled
+[2025-06-11T05:05:35.229Z] Showing test notification...
+[2025-06-11T05:05:35.229Z] === EXTENSION ACTIVATION COMPLETED SUCCESSFULLY ===
+[2025-06-11T05:05:35.233Z] In git repository, getting status...
+[2025-06-11T05:05:35.255Z] Found 2 git changes
+[2025-06-11T05:05:35.267Z] Current branch: main
+[2025-06-11T05:05:35.267Z] Displaying status: main (2 changes)
+[2025-06-11T05:05:36.860Z] Running git setup script now...
+[2025-06-11T05:05:36.861Z] runGitSetupScript() called
+[2025-06-11T05:05:36.861Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:05:36.861Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:05:36.861Z] Script exists, executing...
+[2025-06-11T05:05:36.867Z] Environment variables: CURSOR_EXT_SUBMODULES=ai-best-practices, DEBUG_LEVEL=2
+[2025-06-11T05:05:45.910Z] === EXTENSION ACTIVATION STARTED ===
+[2025-06-11T05:05:45.911Z] Cursor Git Extension is now active!
+[2025-06-11T05:05:45.911Z] Creating output channel...
+[2025-06-11T05:05:45.911Z] Output channel created successfully
+[2025-06-11T05:05:45.911Z] Creating status bar item...
+[2025-06-11T05:05:45.911Z] Status bar item created successfully
+[2025-06-11T05:05:45.911Z] Registering commands...
+[2025-06-11T05:05:45.912Z] Commands registered successfully
+[2025-06-11T05:05:45.912Z] Updating initial git status...
+[2025-06-11T05:05:45.912Z] updateGitStatus() called
+[2025-06-11T05:05:45.912Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:05:45.923Z] Initial git status update completed
+[2025-06-11T05:05:45.923Z] Configuration loaded - showOnStartup: true
+[2025-06-11T05:05:45.923Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:05:45.923Z] Scheduling git setup script to run in 1 second...
+[2025-06-11T05:05:45.923Z] Auto-refresh disabled
+[2025-06-11T05:05:45.924Z] Showing test notification...
+[2025-06-11T05:05:45.924Z] === EXTENSION ACTIVATION COMPLETED SUCCESSFULLY ===
+[2025-06-11T05:05:45.956Z] In git repository, getting status...
+[2025-06-11T05:05:46.021Z] Found 2 git changes
+[2025-06-11T05:05:47.476Z] Current branch: main
+[2025-06-11T05:05:47.476Z] Displaying status: main (2 changes)
+[2025-06-11T05:05:47.491Z] Running git setup script now...
+[2025-06-11T05:05:47.492Z] runGitSetupScript() called
+[2025-06-11T05:05:47.492Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:05:47.492Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:05:47.492Z] Script exists, executing...
+[2025-06-11T05:05:47.506Z] Environment variables: CURSOR_EXT_SUBMODULES=ai-best-practices, DEBUG_LEVEL=2
+[2025-06-11T05:05:50.490Z] Script executed successfully, parsing output...
+[2025-06-11T05:05:50.490Z] Script stdout: [WARN] Repository has UNCOMMITTED CHANGES - CRITICAL DATA LOSS RISK!
+[WARN] Repository has 2 unpushed commit(s) - DATA LOSS RISK if computer fails!
+[INFO] Checking submodule: ai-best-practices
+[WARN] Submodule ai-best-practices is ahead by 1 commit(s).
+[OK] Submodule ai-best-practices is healthy
+
+[2025-06-11T05:05:50.491Z] Script stderr: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh: line 36: log_debug: command not found
+
+[2025-06-11T05:05:50.496Z] Script completed, updating git status...
+[2025-06-11T05:05:50.497Z] updateGitStatus() called
+[2025-06-11T05:05:50.497Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:05:50.533Z] In git repository, getting status...
+[2025-06-11T05:05:50.567Z] Found 2 git changes
+[2025-06-11T05:05:50.589Z] Current branch: main
+[2025-06-11T05:05:50.589Z] Displaying status: main (2 changes)
+[2025-06-11T05:20:22.497Z] === EXTENSION ACTIVATION STARTED ===
+[2025-06-11T05:20:22.497Z] Cursor Git Extension is now active!
+[2025-06-11T05:20:22.498Z] Creating output channel...
+[2025-06-11T05:20:22.498Z] Output channel created successfully
+[2025-06-11T05:20:22.498Z] Creating status bar item...
+[2025-06-11T05:20:22.498Z] Status bar item created successfully
+[2025-06-11T05:20:22.498Z] Registering commands...
+[2025-06-11T05:20:22.498Z] Commands registered successfully
+[2025-06-11T05:20:22.498Z] Updating initial git status...
+[2025-06-11T05:20:22.498Z] updateGitStatus() called
+[2025-06-11T05:20:22.499Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:20:22.508Z] Initial git status update completed
+[2025-06-11T05:20:22.509Z] Configuration loaded - showOnStartup: true
+[2025-06-11T05:20:22.509Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:20:22.509Z] Scheduling git setup script to run in 1 second...
+[2025-06-11T05:20:22.509Z] Auto-refresh disabled
+[2025-06-11T05:20:22.509Z] Extension activated successfully!
+[2025-06-11T05:20:22.509Z] === EXTENSION ACTIVATION COMPLETED SUCCESSFULLY ===
+[2025-06-11T05:20:22.513Z] In git repository, getting status...
+[2025-06-11T05:20:22.544Z] Found 6 git changes
+[2025-06-11T05:20:22.557Z] Current branch: main
+[2025-06-11T05:20:22.557Z] Displaying status: main (6 changes)
+[2025-06-11T05:20:24.408Z] Running git setup script now...
+[2025-06-11T05:20:24.408Z] runGitSetupScript() called
+[2025-06-11T05:20:24.409Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:20:24.409Z] Script path: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh
+[2025-06-11T05:20:24.409Z] Enabling message collection mode
+[2025-06-11T05:20:24.409Z] Script exists, executing...
+[2025-06-11T05:20:24.417Z] Environment variables: CURSOR_EXT_SUBMODULES=ai-best-practices, DEBUG_LEVEL=2
+[2025-06-11T05:20:27.061Z] Script executed successfully, parsing output...
+[2025-06-11T05:20:27.062Z] Script stdout: [WARN] Repository has UNCOMMITTED CHANGES - CRITICAL DATA LOSS RISK!
+[WARN] Repository has untracked files - potential DATA LOSS RISK!
+[WARN] Repository has 3 unpushed commit(s) - DATA LOSS RISK if computer fails!
+[INFO] Checking submodule: ai-best-practices
+[WARN] Submodule ai-best-practices is ahead by 1 commit(s).
+[OK] Submodule ai-best-practices is healthy
+
+[2025-06-11T05:20:27.062Z] Script stderr: /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-setup.sh: line 36: log_debug: command not found
+
+[2025-06-11T05:20:27.062Z] Script completed, updating git status...
+[2025-06-11T05:20:27.062Z] updateGitStatus() called
+[2025-06-11T05:20:27.063Z] Workspace root: /home/gypsy/dev/gypsys-cli-tools/cursor
+[2025-06-11T05:20:27.077Z] Showing consolidated messages...
+[2025-06-11T05:20:27.081Z] In git repository, getting status...
+[2025-06-11T05:20:27.143Z] Found 6 git changes
+[2025-06-11T05:20:27.163Z] Current branch: main
+[2025-06-11T05:20:27.163Z] Displaying status: main (6 changes)
