@@ -10,7 +10,8 @@ This directory contains tools for managing Git repositories and AI best practice
 │   └── check-repos.sh      # Repository audit script
 ├── cursor/
 │   ├── cursor-git-setup.sh # Git initialization and health check script
-│   └── settings.json       # Cursor IDE settings
+│   ├── settings.json       # Cursor IDE settings
+│   └── cursor-git-extension/ # Custom VSCode/Cursor extension
 └── README.md
 ```
 
@@ -42,12 +43,45 @@ A comprehensive audit script that:
 - Manages submodules
 - Provides detailed reporting
 
+### cursor-git-extension (Custom Extension)
+A custom VSCode/Cursor extension that:
+- Shows Git status and submodule health in a notification and status bar
+- Can be installed manually using the VSIX file
+
 ## Usage
 
 The tools are designed to run automatically with Cursor IDE. No manual intervention is required unless:
 1. A new repository needs to be initialized
 2. Repository health issues are detected
 3. Submodule updates require manual intervention
+
+## Installing the Custom Extension
+
+1. **Build the VSIX (if not already built):**
+   ```bash
+   cd ~/dev/gypsys-cli-tools/cursor/cursor-git-extension
+   npm install
+   npm run compile
+   npx vsce package
+   ```
+   This will create a file like `cursor-git-extension-0.0.1.vsix`.
+
+2. **Install the extension using the CLI:**
+   ```bash
+   code --install-extension /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-extension/cursor-git-extension-0.0.1.vsix
+   ```
+   Or, if using Cursor and it supports the CLI:
+   ```bash
+   cursor --install-extension /home/gypsy/dev/gypsys-cli-tools/cursor/cursor-git-extension/cursor-git-extension-0.0.1.vsix
+   ```
+
+3. **Alternatively, install using the GUI:**
+   - Open Cursor/VSCode
+   - Press `Ctrl+Shift+P` and select `Extensions: Install from VSIX...`
+   - Select the `.vsix` file
+
+4. **Restart Cursor/VSCode**
+   - After installation, restart the IDE to activate the extension.
 
 ## Configuration
 

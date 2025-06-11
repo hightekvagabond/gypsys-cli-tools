@@ -1,0 +1,21 @@
+{
+  "typescript.preferences.useAliasesForRenames": false,
+  "eslint.workingDirectories": ["cursor-git-extension"],
+  "typescript.preferences.noSemicolons": "off",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/package-lock.json": false
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.git": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "npm.enableScriptExplorer": true,
+  "terminal.integrated.env.linux": {
+    "NODE_ENV": "development"
+  }
+} 

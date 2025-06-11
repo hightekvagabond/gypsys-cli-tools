@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Debug output to verify script execution
+echo "cursor-git-setup.sh started at $(date)" >> /tmp/cursor-git-setup.log
+echo "Script path: $0" >> /tmp/cursor-git-setup.log
+echo "Current directory: $PWD" >> /tmp/cursor-git-setup.log
+echo "Environment variables:" >> /tmp/cursor-git-setup.log
+env | sort >> /tmp/cursor-git-setup.log
+
 # Configuration
 SUBMODULE_REPO_URL="git@github.com:Imagination-Guild-LLC/ai-coder-best-practices.git"
 SUBMODULE_NAME="ai-best-practices"
@@ -7,6 +14,50 @@ GIT_HOSTS_CONFIG="github.com:hightekvagabond,Imagination-Guild-LLC"
 
 # Debug levels: 0=quiet, 1=errors/warnings only, 2=info, 3=verbose/debug
 DEBUG_LEVEL=${DEBUG_LEVEL:-1}
+
+# Function to display status message
+show_status_message() {
+    echo "╔════════════════════════════════════════════════════════════╗"
+    echo "║                 Cursor Git Setup Status                     ║"
+    echo "╠════════════════════════════════════════════════════════════╣"
+    echo "║ Script started at: $(date)                                 ║"
+    echo "║ Current directory: $PWD                                    ║"
+    
+    # Get git status
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        local branch=$(git branch --show-current)
+        local status=$(git status --porcelain)
+        local unpushed=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+        
+        echo "║ Git Status:                                              ║"
+        echo "║   • Branch: $branch                                     ║"
+        if [[ -n "$status" ]]; then
+            echo "║   • Has uncommitted changes                            ║"
+        fi
+        if [[ "$unpushed" != "0" ]]; then
+            echo "║   • Has $unpushed unpushed commit(s)                   ║"
+        fi
+    else
+        echo "║ Not in a git repository                                ║"
+    fi
+    
+    # Check submodule status
+    if [[ -d "$SUBMODULE_NAME" ]]; then
+        local submodule_status=$(git submodule status "$SUBMODULE_NAME" 2>/dev/null)
+        if [[ $? -eq 0 ]]; then
+            echo "║ Submodule Status:                                      ║"
+            echo "║   • $SUBMODULE_NAME is present                        ║"
+            if [[ "$submodule_status" =~ ^\+ ]]; then
+                echo "║   • Submodule has uncommitted changes                ║"
+            fi
+        fi
+    fi
+    
+    echo "╚════════════════════════════════════════════════════════════╝"
+}
+
+# Show status message immediately
+show_status_message
 
 # Function to get the root of the git repository
 get_git_root() {
