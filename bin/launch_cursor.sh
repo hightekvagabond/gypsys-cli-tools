@@ -495,9 +495,41 @@ EXAMPLES:
 
 SETUP:
     1. Install dependencies: sudo apt install wmctrl xdotool jq
-    2. Open Cursor in different KDE workspaces for your projects
-    3. Run '$0 --init' to generate the mapping
-    4. Use '$0' to restore missing Cursor sessions across all workspaces
+    2. If using Cursor AppImage, create symlink for auto-updates:
+       ln -sf ~/bin/Cursor-*.AppImage ~/bin/cursor
+    3. Open Cursor in different KDE workspaces for your projects
+    4. Run '$0 --init' to generate the mapping
+    5. Use '$0' to restore missing Cursor sessions across all workspaces
+
+AUTOMATIC STARTUP (Optional):
+    To automatically restore Cursor sessions on login, create a KDE autostart entry:
+    
+    1. Create the autostart directory:
+       mkdir -p ~/.config/autostart
+    
+    2. Create the desktop file (replace /full/path/to/launch_cursor.sh with actual path):
+       cat > ~/.config/autostart/cursor-session-restore.desktop << 'EOL'
+[Desktop Entry]
+Type=Application
+Name=Cursor Session Restore
+Comment=Restore Cursor IDE sessions for all configured workspaces
+Exec=bash -c "sleep 10 && /full/path/to/launch_cursor.sh"
+Icon=cursor
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Categories=Development;
+EOL
+    
+    3. Make it executable:
+       chmod +x ~/.config/autostart/cursor-session-restore.desktop
+    
+    4. Test before reboot:
+       bash -c "sleep 10 && /full/path/to/launch_cursor.sh"
+    
+    Note: The 10-second delay ensures KDE workspaces are fully loaded before
+    attempting to restore Cursor sessions.
 
 BEHAVIOR:
     - Default mode checks all configured workspaces
@@ -511,6 +543,9 @@ DEPENDENCIES:
     - KDE Plasma desktop environment
     - wmctrl, xdotool, jq packages
     - Cursor IDE installed at: $CURSOR_BIN
+    
+    Note: If using Cursor AppImage, create a symlink to handle auto-updates:
+    ln -sf ~/bin/Cursor-*.AppImage ~/bin/cursor
 
 For more information, see the comments in this script.
 EOF
