@@ -241,17 +241,57 @@ check_workspace_has_cursor() {
 }
 
 # =============================================================================
+# FUNCTION: wait_for_cursor_window
+# =============================================================================
+# PURPOSE: Wait for Cursor window to appear in a specific workspace
+# PARAMETERS: $1 = workspace name to wait for, $2 = timeout in seconds (default 15)
+# RETURNS: 0 if window appears, 1 if timeout
+# =============================================================================
+wait_for_cursor_window() {
+    local workspace_name="$1"
+    local timeout="${2:-15}"
+    local elapsed=0
+    
+    echo "    ⏳ Waiting for Cursor window to appear in workspace '$workspace_name'..."
+    
+    while [[ $elapsed -lt $timeout ]]; do
+        if check_workspace_has_cursor "$workspace_name"; then
+            echo "    ✅ Cursor window detected in workspace '$workspace_name' (after ${elapsed}s)"
+            return 0
+        fi
+        
+        sleep 1
+        elapsed=$((elapsed + 1))
+        
+        # Show progress every 3 seconds
+        if [[ $((elapsed % 3)) -eq 0 ]]; then
+            echo "    ⏳ Still waiting... (${elapsed}s / ${timeout}s)"
+        fi
+    done
+    
+    echo "    ⚠️  Timeout: Cursor window did not appear in workspace '$workspace_name' after ${timeout}s"
+    echo "    💡 This may be normal if Cursor is taking longer than usual to start"
+    return 1
+}
+
+# =============================================================================
 # FUNCTION: launch_missing_sessions
 # =============================================================================
 # PURPOSE: Launch Cursor for any configured workspaces that don't have Cursor open
 # LOGIC:
-#   1. Reads config file to get all configured workspaces
-#   2. For each workspace, checks if it has a Cursor window
-#   3. If not, launches Cursor for that workspace's project
-# DEPENDENCIES: jq, cursor binary
+#   1. Saves current workspace for later restoration
+#   2. Reads config file to get all configured workspaces
+#   3. For each workspace, checks if it has a Cursor window
+#   4. If not, switches to that workspace and launches Cursor for that workspace's project
+#   5. Returns to the original workspace when done
+# DEPENDENCIES: jq, cursor binary, wmctrl for workspace switching
 # =============================================================================
 launch_missing_sessions() {
     echo "🔄 Checking configured workspaces for missing Cursor sessions..."
+    
+    # Remember the current workspace to return to it later
+    local original_workspace=$(get_current_workspace)
+    local original_workspace_num=$(wmctrl -d | grep '\*' | awk '{print $1}')
     
     # Read all configured workspaces from config
     local configured_workspaces=$(jq -r 'keys[]' "$CONFIG" 2>/dev/null)
@@ -284,12 +324,35 @@ launch_missing_sessions() {
             
             # Launch Cursor for this workspace's project
             if [[ -n "$project_path" && -d "$project_path" ]]; then
-                "$CURSOR_BIN" $ARGS "$project_path" &
-                launched_count=$((launched_count + 1))
-                echo "  ✅ Launched Cursor for $project_path"
+                # Get the workspace number for switching
+                local workspace_num=$(wmctrl -d | grep -F "$workspace" | awk '{print $1}')
                 
-                # Brief pause to avoid overwhelming the system
-                sleep 1
+                if [[ -n "$workspace_num" ]]; then
+                    # Switch to the target workspace
+                    wmctrl -s "$workspace_num"
+                    
+                    # Brief pause to ensure workspace switch completes
+                    sleep 0.5
+                    
+                    # Launch Cursor in the target workspace
+                    "$CURSOR_BIN" $ARGS "$project_path" &
+                    echo "  🚀 Launching Cursor for $project_path in workspace $workspace"
+                    
+                    # Wait for Cursor window to actually appear in the workspace
+                    if wait_for_cursor_window "$workspace"; then
+                        launched_count=$((launched_count + 1))
+                        echo "  ✅ Successfully launched Cursor in workspace $workspace"
+                    else
+                        echo "  ⚠️  Cursor may not have opened properly in workspace $workspace"
+                        # Still count it as launched since we tried
+                        launched_count=$((launched_count + 1))
+                    fi
+                    
+                    # Brief pause to avoid overwhelming the system
+                    sleep 1
+                else
+                    echo "  ⚠️  Could not find workspace number for: $workspace"
+                fi
             else
                 echo "  ⚠️  Project path not found or invalid: $project_path"
             fi
@@ -306,7 +369,13 @@ launch_missing_sessions() {
     if [[ $launched_count -eq 0 ]]; then
         echo "🎉 All configured workspaces already have Cursor sessions!"
     else
-        echo "💡 Tip: Wait a moment for all Cursor windows to fully load"
+        echo "💡 All Cursor windows should now be open in their correct workspaces"
+    fi
+    
+    # Return to the original workspace
+    if [[ -n "$original_workspace_num" ]]; then
+        wmctrl -s "$original_workspace_num"
+        echo "🔄 Returned to original workspace: $original_workspace"
     fi
 }
 
@@ -507,13 +576,13 @@ AUTOMATIC STARTUP (Optional):
     1. Create the autostart directory:
        mkdir -p ~/.config/autostart
     
-    2. Create the desktop file (replace /full/path/to/launch_cursor.sh with actual path):
+    2. Create the desktop file (example path shown, adjust to your actual script location):
        cat > ~/.config/autostart/cursor-session-restore.desktop << 'EOL'
 [Desktop Entry]
 Type=Application
 Name=Cursor Session Restore
 Comment=Restore Cursor IDE sessions for all configured workspaces
-Exec=bash -c "sleep 10 && /full/path/to/launch_cursor.sh"
+Exec=bash -c "sleep 10 && /home/gypsy/dev/gypsys-cli-tools/bin/launch_cursor.sh"
 Icon=cursor
 Terminal=false
 Hidden=false
@@ -526,16 +595,19 @@ EOL
        chmod +x ~/.config/autostart/cursor-session-restore.desktop
     
     4. Test before reboot:
-       bash -c "sleep 10 && /full/path/to/launch_cursor.sh"
+       bash -c "sleep 10 && /home/gypsy/dev/gypsys-cli-tools/bin/launch_cursor.sh"
     
     Note: The 10-second delay ensures KDE workspaces are fully loaded before
-    attempting to restore Cursor sessions.
+    attempting to restore Cursor sessions. The script will switch to each workspace
+    to launch Cursor instances, wait for them to open, then return to your original workspace.
 
 BEHAVIOR:
     - Default mode checks all configured workspaces
-    - Launches Cursor for any workspace that doesn't currently have it open
+    - For each workspace missing Cursor, switches to that workspace and launches Cursor there
+    - Waits for Cursor to actually open in the target workspace before continuing
     - Skips workspaces that already have Cursor running
-    - This provides session restoration functionality
+    - Returns to the original workspace when done
+    - This provides session restoration functionality with proper workspace placement
 
 CONFIG FILE: $CONFIG
 
