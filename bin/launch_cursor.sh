@@ -197,6 +197,120 @@ find_project_directory() {
 }
 
 # =============================================================================
+# FUNCTION: check_workspace_has_cursor
+# =============================================================================
+# PURPOSE: Check if a specific workspace currently has a Cursor window open
+# PARAMETERS: $1 = workspace name to check
+# RETURNS: 0 if workspace has Cursor window, 1 if not
+# =============================================================================
+check_workspace_has_cursor() {
+    local workspace_name="$1"
+    
+    # Get all Cursor windows and their workspaces
+    local cursor_windows=$(wmctrl -l | grep -i cursor)
+    
+    if [[ -z "$cursor_windows" ]]; then
+        return 1  # No Cursor windows at all
+    fi
+    
+    # Check each Cursor window
+    while read -r line; do
+        if [[ -z "$line" ]]; then
+            continue
+        fi
+        
+        # Parse wmctrl -l output: windowid desktop pid hostname title
+        local desktop_id=$(echo "$line" | awk '{print $2}')
+        
+        # Skip invalid entries
+        if [[ -z "$desktop_id" ]]; then
+            continue
+        fi
+        
+        # Get desktop name
+        local desktop_name=$(wmctrl -d | awk -v desk="$desktop_id" '$1 == desk {print $NF}')
+        
+        # Check if this workspace matches what we're looking for
+        if [[ "$desktop_name" == "$workspace_name" ]]; then
+            return 0  # Found Cursor window in this workspace
+        fi
+        
+    done <<< "$cursor_windows"
+    
+    return 1  # No Cursor window found in this workspace
+}
+
+# =============================================================================
+# FUNCTION: launch_missing_sessions
+# =============================================================================
+# PURPOSE: Launch Cursor for any configured workspaces that don't have Cursor open
+# LOGIC:
+#   1. Reads config file to get all configured workspaces
+#   2. For each workspace, checks if it has a Cursor window
+#   3. If not, launches Cursor for that workspace's project
+# DEPENDENCIES: jq, cursor binary
+# =============================================================================
+launch_missing_sessions() {
+    echo "🔄 Checking configured workspaces for missing Cursor sessions..."
+    
+    # Read all configured workspaces from config
+    local configured_workspaces=$(jq -r 'keys[]' "$CONFIG" 2>/dev/null)
+    
+    if [[ -z "$configured_workspaces" ]]; then
+        echo "⚠️  No workspaces configured in $CONFIG"
+        return 1
+    fi
+    
+    local launched_count=0
+    local total_count=0
+    
+    echo "📋 Configured workspaces:"
+    
+    while read -r workspace; do
+        if [[ -z "$workspace" ]]; then
+            continue
+        fi
+        
+        total_count=$((total_count + 1))
+        local project_path=$(jq -r --arg ws "$workspace" '.[$ws]' "$CONFIG")
+        
+        echo "🖥️  [$workspace] → $project_path"
+        
+        # Check if this workspace already has a Cursor window
+        if check_workspace_has_cursor "$workspace"; then
+            echo "  ✅ Already has Cursor window open"
+        else
+            echo "  🚀 No Cursor window found, launching..."
+            
+            # Launch Cursor for this workspace's project
+            if [[ -n "$project_path" && -d "$project_path" ]]; then
+                "$CURSOR_BIN" $ARGS "$project_path" &
+                launched_count=$((launched_count + 1))
+                echo "  ✅ Launched Cursor for $project_path"
+                
+                # Brief pause to avoid overwhelming the system
+                sleep 1
+            else
+                echo "  ⚠️  Project path not found or invalid: $project_path"
+            fi
+        fi
+        
+    done <<< "$configured_workspaces"
+    
+    echo ""
+    echo "📊 Session restoration complete:"
+    echo "  • Total configured workspaces: $total_count"
+    echo "  • New sessions launched: $launched_count"
+    echo "  • Already running: $((total_count - launched_count))"
+    
+    if [[ $launched_count -eq 0 ]]; then
+        echo "🎉 All configured workspaces already have Cursor sessions!"
+    else
+        echo "💡 Tip: Wait a moment for all Cursor windows to fully load"
+    fi
+}
+
+# =============================================================================
 # FUNCTION: open_cursor_for_workspace
 # =============================================================================
 # PURPOSE: Opens Cursor IDE for the current workspace's associated project
@@ -365,7 +479,7 @@ show_help() {
 🚀 CURSOR WORKSPACE LAUNCHER
 
 USAGE:
-    $0                    # Launch Cursor for current workspace
+    $0                    # Restore Cursor sessions for all configured workspaces
     $0 --init             # Generate workspace-to-project mapping
     $0 --help             # Show this help message
 
@@ -376,14 +490,20 @@ EXAMPLES:
     # Enable debug mode for troubleshooting
     DEBUG=1 $0 --init
     
-    # Launch Cursor for current workspace
+    # Restore missing Cursor sessions (launch Cursor for workspaces that don't have it)
     $0
 
 SETUP:
     1. Install dependencies: sudo apt install wmctrl xdotool jq
-    2. Open Cursor in different KDE activities/workspaces for your projects
+    2. Open Cursor in different KDE workspaces for your projects
     3. Run '$0 --init' to generate the mapping
-    4. Use '$0' to launch Cursor for current workspace
+    4. Use '$0' to restore missing Cursor sessions across all workspaces
+
+BEHAVIOR:
+    - Default mode checks all configured workspaces
+    - Launches Cursor for any workspace that doesn't currently have it open
+    - Skips workspaces that already have Cursor running
+    - This provides session restoration functionality
 
 CONFIG FILE: $CONFIG
 
@@ -448,7 +568,7 @@ case "${1:-}" in
         show_help
         ;;
     "")
-        # Default: Launch Cursor for current workspace
+        # Default: Launch missing Cursor sessions for all configured workspaces
         if ! check_dependencies; then
             exit 1
         fi
@@ -462,7 +582,7 @@ case "${1:-}" in
             exit 0
         fi
         
-        open_cursor_for_workspace
+        launch_missing_sessions
         ;;
     *)
         echo "❌ Unknown option: $1"
