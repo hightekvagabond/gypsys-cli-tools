@@ -164,6 +164,12 @@ find_project_directory() {
                         # Try case-insensitive match with workspace part
                         local workspace_match=$(find "$base_dir" -maxdepth 1 -type d -iname "*$part*" 2>/dev/null | head -n1)
                         if [[ -n "$workspace_match" && -d "$workspace_match" ]]; then
+                            # First check if the original project name exists as subdirectory
+                            if [[ -d "$workspace_match/$project_name" ]]; then
+                                project_dir="$workspace_match/$project_name"
+                                break 2  # Break out of both loops
+                            fi
+                            # If not, use the workspace directory as fallback
                             project_dir="$workspace_match"
                             break 2  # Break out of both loops
                         fi
