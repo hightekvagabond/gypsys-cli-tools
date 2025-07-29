@@ -36,7 +36,8 @@
 
 set -euo pipefail
 
-REQUIRED_FLAGS="i915.enable_psr=0 i915.disable_power_well=0"
+REQUIRED_FLAGS="i915.enable_psr=0 i915.enable_dc=0 i915.enable_fbc=0 i915.disable_power_well=0"
+
 GRUB_FILE="/etc/default/grub"
 
 echo ">>> Ensuring required i915 flags are set in $GRUB_FILE"
