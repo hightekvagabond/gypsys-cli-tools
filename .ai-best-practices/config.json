@@ -1,0 +1,13 @@
+{
+  "project": {
+    "name": "gypsys-cli-tools",
+    "type": "cli",
+    "description": ""
+  },
+  "app": {
+    "type": "cli"
+  },
+  "ai_best_practices": {
+    "devcontainer_managed": true
+  }
+}
