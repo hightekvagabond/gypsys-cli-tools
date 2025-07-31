@@ -2,12 +2,15 @@
   "project": {
     "name": "gypsys-cli-tools",
     "type": "cli",
-    "description": ""
+    "description": "",
+    "structure": "single"
   },
-  "app": {
-    "type": "cli"
+  "app_v1": {
+    "type": "cli",
+    "_comment": "Original app configuration preserved for user reference"
   },
   "ai_best_practices": {
-    "devcontainer_managed": true
+    "devcontainer_managed": true,
+    "schema_version": "2.0"
   }
 }
