@@ -1,0 +1,1 @@
+ai-best-practices/project-types/cli/templates/activate.sh.default
