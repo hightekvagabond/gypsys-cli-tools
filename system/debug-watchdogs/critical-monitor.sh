@@ -29,7 +29,8 @@ LOG_TAG="critical-monitor"
 
 # Thresholds
 TEMP_WARNING=75     # °C - Start warning
-TEMP_CRITICAL=85    # °C - Critical action needed
+TEMP_CRITICAL=80    # °C - Critical action needed (lowered from 85°C)
+TEMP_EMERGENCY=95   # °C - Emergency action (kill processes)
 USB_RESET_WARNING=10    # USB resets per boot (warning)
 USB_RESET_CRITICAL=20   # USB resets per boot (critical)
 MEMORY_WARNING=90   # % memory usage warning
@@ -100,6 +101,106 @@ record_alert() {
     date +%s > "$state_file"
 }
 
+# Check if a process is a critical system process that shouldn't be killed
+is_system_critical_process() {
+    local pid="$1"
+    local cmd="$2"
+    
+    # Critical system processes that should never be killed
+    case "$cmd" in
+        */kernel*|*kthreadd*|*ksoftirqd*|*migration*|*rcu_*|*watchdog*)
+            return 0  # Is critical
+            ;;
+        *systemd*|*init*|*/sbin/init*|*dbus*|*NetworkManager*)
+            return 0  # Is critical
+            ;;
+        *Xorg*|*kwin*|*plasmashell*|*gdm*|*lightdm*)
+            return 0  # Is critical (display/window manager)
+            ;;
+    esac
+    
+    # Check if it's a kernel thread (usually in brackets)
+    if [[ "$cmd" =~ ^\[.*\]$ ]]; then
+        return 0  # Is critical kernel thread
+    fi
+    
+    # Check if PID is very low (likely system process)
+    if [[ $pid -lt 100 ]]; then
+        return 0  # Is critical (low PID system process)
+    fi
+    
+    return 1  # Not critical, can be killed
+}
+
+# Emergency thermal protection - kill offending applications or shutdown if system-level
+emergency_thermal_protection() {
+    local temp="$1"
+    
+    log "EMERGENCY: Initiating thermal protection at ${temp}°C"
+    
+    # Get top 5 CPU consuming processes for analysis
+    local top_processes
+    top_processes=$(ps -eo pid,pcpu,cmd --sort=-pcpu --no-headers | head -5)
+    
+    local killed_any=false
+    
+    # Try to kill top CPU consumers that aren't system critical
+    while IFS= read -r line; do
+        local pid pcpu cmd
+        read -r pid pcpu cmd <<< "$line"
+        
+        if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+            # Skip if CPU usage is too low to be the problem
+            local cpu_int
+            cpu_int=$(echo "$pcpu" | cut -d. -f1)
+            if [[ $cpu_int -lt 20 ]]; then
+                continue
+            fi
+            
+            if is_system_critical_process "$pid" "$cmd"; then
+                log "EMERGENCY: Skipping critical system process: PID $pid ($cmd)"
+                continue
+            fi
+            
+            log "EMERGENCY: Killing high CPU process: PID $pid (${pcpu}% CPU) - $cmd"
+            send_alert "critical" "EMERGENCY: Killing process '$cmd' (${pcpu}% CPU) at ${temp}°C to prevent system freeze"
+            
+            # Kill process gracefully first, then force if needed
+            kill -TERM "$pid" 2>/dev/null || true
+            sleep 1
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -KILL "$pid" 2>/dev/null || true
+                log "Force killed process PID: $pid"
+            fi
+            
+            killed_any=true
+            
+            # Wait a moment between kills
+            sleep 2
+        fi
+    done <<< "$top_processes"
+    
+    # If we couldn't kill any user processes, or if system processes are the problem,
+    # initiate clean shutdown to prevent hardware damage
+    if [[ "$killed_any" != "true" ]]; then
+        log "EMERGENCY: No killable user processes found - system-level thermal issue detected"
+        log "EMERGENCY: Initiating clean shutdown to prevent hardware damage"
+        send_alert "critical" "EMERGENCY: System-level thermal crisis at ${temp}°C - Initiating clean shutdown to prevent hardware damage"
+        
+        # Give user a few seconds to see the alert
+        sleep 5
+        
+        # Initiate clean shutdown
+        log "EMERGENCY: Executing clean shutdown now"
+        /sbin/shutdown -h +1 "EMERGENCY: Thermal protection shutdown - CPU at ${temp}°C" 2>/dev/null || \
+        systemctl poweroff 2>/dev/null || \
+        /sbin/poweroff 2>/dev/null || true
+    fi
+    
+    log "EMERGENCY: Thermal protection complete"
+    return 0
+}
+
 # Get top CPU consuming processes
 get_top_cpu_processes() {
     # Get top 5 CPU consuming processes with details
@@ -130,7 +231,25 @@ check_thermal() {
     local cpu_load
     cpu_load=$(uptime | grep -oE 'load average: [0-9]+\.[0-9]+' | awk '{print $3}')
     
-    if [[ $temp_int -ge $TEMP_CRITICAL ]]; then
+    # EMERGENCY ACTION - Kill processes to prevent lockup
+    if [[ $temp_int -ge $TEMP_EMERGENCY ]]; then
+        if should_alert "thermal_emergency" 1; then
+            local top_processes
+            top_processes=$(get_top_cpu_processes)
+            send_alert "critical" "EMERGENCY: CPU temperature ${max_temp}°C exceeds emergency threshold (${TEMP_EMERGENCY}°C) - TAKING EMERGENCY ACTION. Load: ${cpu_load:-unknown}. Top CPU processes: $top_processes"
+            record_alert "thermal_emergency"
+        fi
+        log "EMERGENCY: CPU temperature ${max_temp}°C (emergency threshold: ${TEMP_EMERGENCY}°C)"
+        log "CPU Load: ${cpu_load:-unknown}"
+        log "Top CPU consuming processes:"
+        get_top_cpu_processes | while read -r process_line; do
+            log "$process_line"
+        done
+        
+        # Take emergency action
+        emergency_thermal_protection "$max_temp"
+        return 1
+    elif [[ $temp_int -ge $TEMP_CRITICAL ]]; then
         if should_alert "thermal_critical" 5; then
             local top_processes
             top_processes=$(get_top_cpu_processes)
@@ -273,7 +392,7 @@ OPTIONS:
     --test-memory       Test memory monitoring only
 
 MONITORS:
-    • Thermal: CPU temperature spikes (>75°C warning, >85°C critical)
+    • Thermal: CPU temperature spikes (>75°C warning, >80°C critical, >95°C emergency)
     • USB Storage: Reset patterns that indicate freeze risk
     • Memory: Usage levels that can lead to OOM kills
 
@@ -282,6 +401,8 @@ ALERTS:
     • Syslog entries for system logging
     • Automatic cooldown periods to prevent spam
     • Emergency fixes for known critical issues
+    • Emergency process termination at 95°C+ to prevent system freeze
+    • Clean shutdown if system-level thermal crisis detected
 
 OPERATION:
     This script is designed to run continuously via systemd service:
