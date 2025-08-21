@@ -1,0 +1,17 @@
+[Unit]
+Description=Critical System Monitor Timer - Runs every 2 minutes
+Documentation=man:systemd.timer(5)
+Requires=critical-monitor.service
+
+[Timer]
+# Run every 2 minutes
+OnCalendar=*:0/2
+# Run 30 seconds after boot
+OnBootSec=30sec
+# If we miss a run, catch up
+Persistent=false
+# Spread the load a bit
+RandomizedDelaySec=10sec
+
+[Install]
+WantedBy=timers.target

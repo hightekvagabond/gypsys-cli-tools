@@ -1,0 +1,360 @@
+#!/bin/bash
+#
+#  critical-monitor.sh – Real-time critical system monitoring
+#
+#  DEVELOPER NOTES
+#  ---------------
+#  Lightweight monitoring for fast-developing critical issues:
+#  - Thermal spikes (can cause instant freezes)
+#  - USB storage resets (can cause system hangs)
+#  - Memory pressure (OOM kills)
+#  
+#  Designed to run every 1-2 minutes via systemd service.
+#  Focuses ONLY on conditions that can cause immediate system failure.
+#
+#  ARCHITECTURE
+#  ------------
+#  - Minimal resource usage
+#  - Fast execution (< 5 seconds)
+#  - Immediate alerts for critical conditions
+#  - Automatic fixes for known issues
+#  - State tracking to prevent spam alerts
+
+set -euo pipefail
+
+# Script configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STATE_DIR="/var/tmp/critical-monitor-state"
+LOG_TAG="critical-monitor"
+
+# Thresholds
+TEMP_WARNING=75     # °C - Start warning
+TEMP_CRITICAL=85    # °C - Critical action needed
+USB_RESET_WARNING=10    # USB resets per boot (warning)
+USB_RESET_CRITICAL=20   # USB resets per boot (critical)
+MEMORY_WARNING=90   # % memory usage warning
+MEMORY_CRITICAL=95  # % memory usage critical
+
+# Create state directory
+mkdir -p "$STATE_DIR"
+
+# Logging function
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [critical-monitor] $*" | logger -t "$LOG_TAG" || true
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [critical-monitor] $*"
+}
+
+# Error function
+error() {
+    log "ERROR: $*" >&2
+}
+
+# Alert function
+send_alert() {
+    local level="$1"
+    local message="$2"
+    
+    log "ALERT ($level): $message"
+    
+    # Send desktop notification
+    notify-send -u "$level" "Critical Monitor: $message" 2>/dev/null || true
+    
+    # Log to syslog with appropriate priority
+    case $level in
+        critical)
+            logger -p user.crit -t "$LOG_TAG" "CRITICAL: $message" || true
+            ;;
+        normal)
+            logger -p user.notice -t "$LOG_TAG" "WARNING: $message" || true
+            ;;
+    esac
+}
+
+# Check if we should send an alert (cooldown logic)
+should_alert() {
+    local alert_type="$1"
+    local cooldown_minutes="$2"
+    local state_file="$STATE_DIR/last_${alert_type}_alert"
+    
+    if [[ ! -f "$state_file" ]]; then
+        return 0  # First time, send alert
+    fi
+    
+    local last_alert
+    last_alert=$(cat "$state_file" 2>/dev/null || echo "0")
+    local now
+    now=$(date +%s)
+    local cooldown_seconds=$((cooldown_minutes * 60))
+    
+    if [[ $((now - last_alert)) -gt $cooldown_seconds ]]; then
+        return 0  # Cooldown expired, send alert
+    fi
+    
+    return 1  # Still in cooldown
+}
+
+# Record that we sent an alert
+record_alert() {
+    local alert_type="$1"
+    local state_file="$STATE_DIR/last_${alert_type}_alert"
+    date +%s > "$state_file"
+}
+
+# Get top CPU consuming processes
+get_top_cpu_processes() {
+    # Get top 5 CPU consuming processes with details
+    ps -eo pid,ppid,cmd,pcpu,pmem --sort=-pcpu --no-headers | head -5 | while read -r line; do
+        echo "    $line"
+    done
+}
+
+# Check thermal conditions
+check_thermal() {
+    if ! command -v sensors >/dev/null 2>&1; then
+        return 0  # No sensors available
+    fi
+    
+    local max_temp
+    # Extract actual temperatures (first value after colon), not thresholds
+    max_temp=$(sensors 2>/dev/null | grep -E "Core|Package" | awk '{print $3}' | grep -oE "\+[0-9]+\.[0-9]+" | sed 's/+//' | sort -n | tail -1)
+    
+    if [[ -z "$max_temp" ]]; then
+        return 0  # No temperature readings
+    fi
+    
+    # Use integer comparison to avoid bc dependency
+    local temp_int
+    temp_int=$(echo "$max_temp" | cut -d. -f1)
+    
+    # Get current CPU load for context
+    local cpu_load
+    cpu_load=$(uptime | grep -oE 'load average: [0-9]+\.[0-9]+' | awk '{print $3}')
+    
+    if [[ $temp_int -ge $TEMP_CRITICAL ]]; then
+        if should_alert "thermal_critical" 5; then
+            local top_processes
+            top_processes=$(get_top_cpu_processes)
+            send_alert "critical" "CPU temperature ${max_temp}°C exceeds critical threshold (${TEMP_CRITICAL}°C) - FREEZE RISK. Load: ${cpu_load:-unknown}. Top CPU processes: $top_processes"
+            record_alert "thermal_critical"
+        fi
+        log "CRITICAL: CPU temperature ${max_temp}°C (threshold: ${TEMP_CRITICAL}°C)"
+        log "CPU Load: ${cpu_load:-unknown}"
+        log "Top CPU consuming processes:"
+        get_top_cpu_processes | while read -r process_line; do
+            log "$process_line"
+        done
+        return 1
+    elif [[ $temp_int -ge $TEMP_WARNING ]]; then
+        if should_alert "thermal_warning" 10; then
+            local top_processes
+            top_processes=$(get_top_cpu_processes | head -3)
+            send_alert "normal" "CPU temperature ${max_temp}°C elevated (threshold: ${TEMP_WARNING}°C). Load: ${cpu_load:-unknown}. Top processes: $top_processes"
+            record_alert "thermal_warning"
+        fi
+        log "WARNING: CPU temperature ${max_temp}°C (threshold: ${TEMP_WARNING}°C)"
+        log "CPU Load: ${cpu_load:-unknown}"
+        log "Top CPU consuming processes:"
+        get_top_cpu_processes | while read -r process_line; do
+            log "$process_line"
+        done
+        return 1
+    fi
+    
+    return 0
+}
+
+# Check USB storage device issues
+check_usb_storage() {
+    local reset_count
+    reset_count=$(dmesg 2>/dev/null | grep -cE 'uas_eh.*reset|USB device.*reset' 2>/dev/null || echo "0")
+    reset_count=${reset_count//[^0-9]/}
+    reset_count=${reset_count:-0}
+    
+    if [[ $reset_count -ge $USB_RESET_CRITICAL ]]; then
+        if should_alert "usb_critical" 15; then
+            send_alert "critical" "$reset_count USB storage resets detected - HIGH FREEZE RISK"
+            record_alert "usb_critical"
+            
+            # Try to apply USB fixes immediately
+            local fix_script="$SCRIPT_DIR/debug-fix-all.sh"
+            if [[ -x "$fix_script" ]]; then
+                log "Attempting emergency USB storage fixes..."
+                "$fix_script" --usb-fix >/dev/null 2>&1 || log "USB fix failed"
+            fi
+        fi
+        log "CRITICAL: $reset_count USB storage resets (threshold: $USB_RESET_CRITICAL)"
+        return 1
+    elif [[ $reset_count -ge $USB_RESET_WARNING ]]; then
+        if should_alert "usb_warning" 30; then
+            send_alert "normal" "$reset_count USB storage resets detected (freeze risk)"
+            record_alert "usb_warning"
+        fi
+        log "WARNING: $reset_count USB storage resets (threshold: $USB_RESET_WARNING)"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Get top memory consuming processes
+get_top_memory_processes() {
+    # Get top 5 memory consuming processes with details
+    ps -eo pid,ppid,cmd,pcpu,pmem --sort=-pmem --no-headers | head -5 | while read -r line; do
+        echo "    $line"
+    done
+}
+
+# Check memory pressure
+check_memory() {
+    local memory_info
+    memory_info=$(free | grep '^Mem:')
+    local total used available
+    total=$(echo "$memory_info" | awk '{print $2}')
+    used=$(echo "$memory_info" | awk '{print $3}')
+    available=$(echo "$memory_info" | awk '{print $7}')
+    
+    if [[ $total -eq 0 ]]; then
+        return 0  # Avoid division by zero
+    fi
+    
+    local usage_percent
+    usage_percent=$(( (used * 100) / total ))
+    
+    if [[ $usage_percent -ge $MEMORY_CRITICAL ]]; then
+        if should_alert "memory_critical" 5; then
+            local top_processes
+            top_processes=$(get_top_memory_processes)
+            send_alert "critical" "Memory usage ${usage_percent}% exceeds critical threshold (${MEMORY_CRITICAL}%) - OOM RISK. Top memory processes: $top_processes"
+            record_alert "memory_critical"
+        fi
+        log "CRITICAL: Memory usage ${usage_percent}% (threshold: ${MEMORY_CRITICAL}%)"
+        log "Available memory: $((available / 1024 / 1024))GB"
+        log "Top memory consuming processes:"
+        get_top_memory_processes | while read -r process_line; do
+            log "$process_line"
+        done
+        return 1
+    elif [[ $usage_percent -ge $MEMORY_WARNING ]]; then
+        if should_alert "memory_warning" 15; then
+            local top_processes
+            top_processes=$(get_top_memory_processes | head -3)
+            send_alert "normal" "Memory usage ${usage_percent}% elevated (threshold: ${MEMORY_WARNING}%). Top processes: $top_processes"
+            record_alert "memory_warning"
+        fi
+        log "WARNING: Memory usage ${usage_percent}% (threshold: ${MEMORY_WARNING}%)"
+        log "Available memory: $((available / 1024 / 1024))GB"
+        log "Top memory consuming processes:"
+        get_top_memory_processes | while read -r process_line; do
+            log "$process_line"
+        done
+        return 1
+    fi
+    
+    return 0
+}
+
+# Show help
+show_help() {
+    cat << 'EOF'
+critical-monitor.sh - Real-time critical system monitoring
+
+DESCRIPTION:
+    Lightweight monitoring for fast-developing critical issues that can
+    cause immediate system freezes or crashes. Designed to run every 1-2
+    minutes via systemd service.
+
+USAGE:
+    ./critical-monitor.sh [OPTIONS]
+
+OPTIONS:
+    --help, -h          Show this help message
+    --test-thermal      Test thermal monitoring only
+    --test-usb          Test USB storage monitoring only  
+    --test-memory       Test memory monitoring only
+
+MONITORS:
+    • Thermal: CPU temperature spikes (>75°C warning, >85°C critical)
+    • USB Storage: Reset patterns that indicate freeze risk
+    • Memory: Usage levels that can lead to OOM kills
+
+ALERTS:
+    • Desktop notifications for immediate user awareness
+    • Syslog entries for system logging
+    • Automatic cooldown periods to prevent spam
+    • Emergency fixes for known critical issues
+
+OPERATION:
+    This script is designed to run continuously via systemd service:
+    
+        systemctl start critical-monitor.service
+        systemctl enable critical-monitor.service
+    
+    Check logs with:
+        journalctl -t critical-monitor -f
+
+EOF
+}
+
+# Main function
+main() {
+    local test_mode=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            --test-thermal)
+                test_mode="thermal"
+                shift
+                ;;
+            --test-usb)
+                test_mode="usb"
+                shift
+                ;;
+            --test-memory)
+                test_mode="memory"
+                shift
+                ;;
+            *)
+                error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    local issues_found=0
+    
+    # Run checks based on mode
+    case $test_mode in
+        thermal)
+            check_thermal || issues_found=1
+            ;;
+        usb)
+            check_usb_storage || issues_found=1
+            ;;
+        memory)
+            check_memory || issues_found=1
+            ;;
+        *)
+            # Normal operation - check everything
+            check_thermal || issues_found=1
+            check_usb_storage || issues_found=1
+            check_memory || issues_found=1
+            ;;
+    esac
+    
+    if [[ $issues_found -eq 0 ]]; then
+        log "All critical systems normal"
+    fi
+    
+    exit 0
+}
+
+# Only run main if not being sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
