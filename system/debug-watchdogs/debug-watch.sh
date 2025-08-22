@@ -209,7 +209,50 @@ check_hardware_errors() {
     if command -v sensors >/dev/null 2>&1; then
         local max_temp
         max_temp=$(sensors 2>/dev/null | grep -E "Core|Package" | grep -oE "\+[0-9]+\.[0-9]+°C" | sed 's/+//;s/°C//' | sort -n | tail -1)
-        if [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 85" | bc -l 2>/dev/null || echo 0) )); then
+        if [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 95" | bc -l 2>/dev/null || echo 0) )); then
+            log "EMERGENCY: CPU temperature ${max_temp}°C - TAKING IMMEDIATE ACTION"
+            notify-send -u critical "THERMAL EMERGENCY" "CPU at ${max_temp}°C - Taking emergency action!" 2>/dev/null || true
+            
+            # Take immediate emergency action - kill high CPU processes
+            log "EMERGENCY: Analyzing top CPU processes for termination"
+            local top_processes
+            top_processes=$(ps -eo pid,pcpu,cmd --sort=-pcpu --no-headers | head -5)
+            local killed_any=0
+            
+            while IFS= read -r line; do
+                local pid pcpu cmd
+                read -r pid pcpu cmd <<< "$line"
+                if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+                    local cpu_int=$(echo "$pcpu" | cut -d. -f1)
+                    if [[ $cpu_int -lt 20 ]]; then continue; fi
+                    
+                    # Skip critical system processes
+                    if [[ "$cmd" =~ (systemd|kthreadd|ksoftirqd|kernel|kworker|init) ]]; then
+                        log "EMERGENCY: Skipping critical system process: PID $pid ($cmd)"
+                        continue
+                    fi
+                    
+                    log "EMERGENCY: Killing high CPU process: PID $pid (${pcpu}% CPU) - $cmd"
+                    kill -TERM "$pid" 2>/dev/null || true
+                    sleep 1
+                    if kill -0 "$pid" 2>/dev/null; then
+                        kill -KILL "$pid" 2>/dev/null || true
+                        log "EMERGENCY: Force killed process PID: $pid"
+                    fi
+                    killed_any=1
+                    sleep 2
+                fi
+            done <<< "$top_processes"
+            
+            if [[ $killed_any -eq 0 ]]; then
+                log "EMERGENCY: No killable user processes - system-level thermal crisis"
+                log "EMERGENCY: Initiating clean shutdown to prevent hardware damage"
+                notify-send -u critical "THERMAL CRISIS" "System shutdown in 2 minutes - CPU at ${max_temp}°C" 2>/dev/null || true
+                /sbin/shutdown -h +2 "EMERGENCY: Thermal protection shutdown - CPU at ${max_temp}°C" 2>/dev/null || true
+            fi
+            
+            issues=1
+        elif [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 85" | bc -l 2>/dev/null || echo 0) )); then
             log "CRITICAL: CPU temperature ${max_temp}°C exceeds safe threshold (freeze risk)"
             issues=1
         elif [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 75" | bc -l 2>/dev/null || echo 0) )); then

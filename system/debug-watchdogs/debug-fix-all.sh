@@ -66,6 +66,7 @@ OPTIONS:
     --service-fix         Restart failed system services
     --cleanup             Clean up old logs and temporary files
     --usb-fix             Fix USB storage device issues (freeze prevention)
+    --network-restore     Manually restore network adapters disabled by critical-monitor
     --quiet               Minimal output (suitable for cron/automation)
     --help, -h            Show this help message
 
@@ -508,6 +509,63 @@ fix_usb_storage() {
     log "USB storage fix completed"
 }
 
+# Manually restore network adapters that were disabled by critical-monitor
+restore_network_adapters() {
+    log "Restoring network adapters disabled by critical-monitor..."
+    
+    if ! command -v nmcli >/dev/null 2>&1; then
+        log "NetworkManager not available, skipping network adapter restore"
+        return 0
+    fi
+    
+    # Check for marker files indicating disabled adapters
+    local marker_files
+    marker_files=$(ls /tmp/network_disabled_* 2>/dev/null || echo "")
+    
+    if [[ -n "$marker_files" ]]; then
+        local count=0
+        for marker_file in $marker_files; do
+            if [[ -f "$marker_file" ]]; then
+                local adapter
+                adapter=$(basename "$marker_file" | sed 's/network_disabled_//')
+                
+                if [[ -n "$adapter" && "$adapter" =~ ^enx[a-f0-9]{12}$ ]]; then
+                    log "Restoring network adapter: $adapter"
+                    
+                    # Re-enable autoconnect for all connections on this device
+                    nmcli connection show | grep "$adapter" | awk '{print $1}' | while read -r conn_name; do
+                        if [[ -n "$conn_name" ]]; then
+                            nmcli connection modify "$conn_name" connection.autoconnect yes 2>/dev/null || true
+                        fi
+                    done
+                    
+                    # Try to connect
+                    nmcli device connect "$adapter" 2>/dev/null || true
+                    
+                    # Remove marker file
+                    rm -f "$marker_file" 2>/dev/null || true
+                    
+                    log "Network adapter $adapter restored"
+                    ((count++))
+                fi
+            fi
+        done
+        
+        if [[ $count -gt 0 ]]; then
+            log "Network adapter restore completed: $count adapters restored"
+            # Desktop notification
+            if command -v notify-send >/dev/null 2>&1; then
+                notify-send -u normal -t 5000 "🔌 Network Adapters Restored" \
+                    "Manually restored $count network adapter(s) that were disabled for thermal protection." 2>/dev/null || true
+            fi
+        fi
+    else
+        log "No disabled network adapters found (no marker files in /tmp/)"
+    fi
+    
+    return 0
+}
+
 # Comprehensive data collection
 collect_all_diagnostics() {
     log "Collecting comprehensive diagnostic data..."
@@ -607,6 +665,10 @@ main() {
                 do_usb_fix=1
                 shift
                 ;;
+            --network-restore)
+                do_network_restore=1
+                shift
+                ;;
             --quiet)
                 QUIET=1
                 shift
@@ -661,6 +723,10 @@ main() {
     if [[ $do_usb_fix -eq 1 ]]; then
         check_root_if_needed "usb-fix" || exit 1
         fix_usb_storage
+    fi
+    
+    if [[ $do_network_restore -eq 1 ]]; then
+        restore_network_adapters
     fi
 
     log "Debug fix-all script completed"

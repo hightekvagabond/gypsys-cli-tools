@@ -27,10 +27,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="/var/tmp/critical-monitor-state"
 LOG_TAG="critical-monitor"
 
-# Thresholds
-TEMP_WARNING=75     # °C - Start warning
-TEMP_CRITICAL=80    # °C - Critical action needed (lowered from 85°C)
-TEMP_EMERGENCY=95   # °C - Emergency action (kill processes)
+# Thresholds (lowered based on 100°C crisis events)
+TEMP_WARNING=70     # °C - Start warning (lowered from 75°C)
+TEMP_CRITICAL=75    # °C - Critical action needed (lowered from 80°C) 
+TEMP_EMERGENCY=90   # °C - Emergency action (lowered from 95°C)
 USB_RESET_WARNING=10    # USB resets per boot (warning)
 USB_RESET_CRITICAL=20   # USB resets per boot (critical)
 MEMORY_WARNING=90   # % memory usage warning
@@ -215,9 +215,19 @@ check_thermal() {
         return 0  # No sensors available
     fi
     
-    local max_temp
-    # Extract actual temperatures (first value after colon), not thresholds
-    max_temp=$(sensors 2>/dev/null | grep -E "Core|Package" | awk '{print $3}' | grep -oE "\+[0-9]+\.[0-9]+" | sed 's/+//' | sort -n | tail -1)
+    local max_temp package_temp
+    # Get package temperature (most critical for thermal throttling)
+    package_temp=$(sensors 2>/dev/null | grep "Package id 0:" | awk '{print $4}' | grep -oE "\+[0-9]+\.[0-9]+" | sed 's/+//' 2>/dev/null)
+    # Get maximum core temperature as backup
+    local core_temp
+    core_temp=$(sensors 2>/dev/null | grep -E "Core [0-9]:" | awk '{print $3}' | grep -oE "\+[0-9]+\.[0-9]+" | sed 's/+//' | sort -n | tail -1 2>/dev/null)
+    
+    # Use package temp if available, otherwise use max core temp
+    if [[ -n "$package_temp" ]]; then
+        max_temp="$package_temp"
+    else
+        max_temp="$core_temp"
+    fi
     
     if [[ -z "$max_temp" ]]; then
         return 0  # No temperature readings
@@ -289,6 +299,18 @@ check_usb_storage() {
     reset_count=${reset_count//[^0-9]/}
     reset_count=${reset_count:-0}
     
+    # Check for docking station ethernet failures (like enx00e04c68039a)
+    local dock_failures
+    dock_failures=$(journalctl -b --no-pager 2>/dev/null | grep -c "ip-config-unavailable.*enx" || echo "0")
+    dock_failures=${dock_failures//[^0-9]/}
+    dock_failures=${dock_failures:-0}
+    
+    # Check for USB disconnect events (docking station instability)
+    local usb_disconnects
+    usb_disconnects=$(journalctl -b --no-pager 2>/dev/null | grep -c "USB disconnect, device number" || echo "0") 
+    usb_disconnects=${usb_disconnects//[^0-9]/}
+    usb_disconnects=${usb_disconnects:-0}
+    
     if [[ $reset_count -ge $USB_RESET_CRITICAL ]]; then
         if should_alert "usb_critical" 15; then
             send_alert "critical" "$reset_count USB storage resets detected - HIGH FREEZE RISK"
@@ -302,6 +324,56 @@ check_usb_storage() {
             fi
         fi
         log "CRITICAL: $reset_count USB storage resets (threshold: $USB_RESET_CRITICAL)"
+        return 1
+    elif [[ $dock_failures -gt 20 ]]; then
+        if should_alert "dock_critical" 5; then
+            # Try to disable the failing network adapter to prevent thermal overload
+            local failed_adapter
+            failed_adapter=$(journalctl -b --no-pager 2>/dev/null | grep "ip-config-unavailable.*enx" | tail -1 | grep -oE 'enx[a-f0-9]{12}' | head -1)
+            
+            if [[ -n "$failed_adapter" ]]; then
+                log "EMERGENCY: Disabling failing network adapter: $failed_adapter"
+                if command -v nmcli >/dev/null 2>&1; then
+                    # Disconnect the adapter and disable autoconnect temporarily
+                    nmcli device disconnect "$failed_adapter" 2>/dev/null || true
+                    
+                    # Disable autoconnect for all connections on this device (ephemeral - resets at reboot)
+                    nmcli connection show | grep "$failed_adapter" | awk '{print $1}' | while read -r conn_name; do
+                        if [[ -n "$conn_name" ]]; then
+                            nmcli connection modify "$conn_name" connection.autoconnect no 2>/dev/null || true
+                        fi
+                    done
+                    
+                    # Create a temporary marker file that expires
+                    local marker_file="/tmp/network_disabled_${failed_adapter}"
+                    echo "$(date): Disabled due to ${dock_failures} DHCP failures" > "$marker_file" 2>/dev/null || true
+                    
+                    log "Network adapter $failed_adapter temporarily disabled (autoconnect off until reboot)"
+                    
+                    # Send both system alert and desktop notification
+                    send_alert "critical" "🚨 NETWORK ADAPTER TEMPORARILY DISABLED: '$failed_adapter' (${dock_failures} DHCP failures) - preventing thermal overload. Will auto-restore at reboot."
+                    
+                    # Desktop notification for immediate user awareness
+                    if command -v notify-send >/dev/null 2>&1; then
+                        notify-send -u critical -t 10000 "🚨 Network Adapter Temporarily Disabled" \
+                            "Disabled '$failed_adapter' due to ${dock_failures} DHCP failures.\nPreventing thermal overload.\nWill auto-restore at reboot." 2>/dev/null || true
+                    fi
+                else
+                    send_alert "critical" "Docking station ethernet failures: ${dock_failures} - REMOVE DOCK TO PREVENT THERMAL OVERLOAD (nmcli not available)"
+                fi
+            else
+                send_alert "critical" "Docking station ethernet failures: ${dock_failures} - REMOVE DOCK TO PREVENT THERMAL OVERLOAD"
+            fi
+            record_alert "dock_critical"
+        fi
+        log "CRITICAL: Docking station ethernet failures: ${dock_failures} (thermal risk)"
+        return 1
+    elif [[ $usb_disconnects -gt 50 ]]; then
+        if should_alert "usb_unstable" 10; then
+            send_alert "normal" "USB instability: ${usb_disconnects} disconnects (check docking station)"
+            record_alert "usb_unstable"
+        fi
+        log "WARNING: USB instability: ${usb_disconnects} disconnects"
         return 1
     elif [[ $reset_count -ge $USB_RESET_WARNING ]]; then
         if should_alert "usb_warning" 30; then
@@ -392,7 +464,7 @@ OPTIONS:
     --test-memory       Test memory monitoring only
 
 MONITORS:
-    • Thermal: CPU temperature spikes (>75°C warning, >80°C critical, >95°C emergency)
+    • Thermal: CPU temperature spikes (>70°C warning, >75°C critical, >90°C emergency)
     • USB Storage: Reset patterns that indicate freeze risk
     • Memory: Usage levels that can lead to OOM kills
 

@@ -367,6 +367,16 @@ main() {
         send_alert "normal" "Warning: $errors i915 errors detected (threshold: $WARN_THRESHOLD)"
     fi
     
+    # Emergency thermal check (redundant protection)
+    if command -v sensors >/dev/null 2>&1; then
+        local max_temp
+        max_temp=$(sensors 2>/dev/null | grep -E "Core|Package" | grep -oE "\+[0-9]+\.[0-9]+°C" | sed 's/+//;s/°C//' | sort -n | tail -1)
+        if [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 95" | bc -l 2>/dev/null || echo 0) )); then
+            log "EMERGENCY: Thermal crisis detected during i915 check - ${max_temp}°C"
+            notify-send -u critical "THERMAL EMERGENCY" "i915-watch detected ${max_temp}°C - Check system immediately!" 2>/dev/null || true
+        fi
+    fi
+    
     exit 0
 }
 
