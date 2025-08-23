@@ -28,9 +28,9 @@ STATE_DIR="/var/tmp/critical-monitor-state"
 LOG_TAG="critical-monitor"
 
 # Thresholds (lowered based on 100°C crisis events)
-TEMP_WARNING=65     # °C - Start warning (lowered for hardware issues)
-TEMP_CRITICAL=70    # °C - Critical action needed (lowered for hardware issues) 
-TEMP_EMERGENCY=80   # °C - Emergency action (lowered for hardware thermal failure)
+TEMP_WARNING=85     # °C - Start warning (CPU package temp - normal under load is ~75-80°C)
+TEMP_CRITICAL=90    # °C - Critical action needed (approaching thermal throttling)
+TEMP_EMERGENCY=95   # °C - Emergency action (thermal throttling zone - immediate danger)
 USB_RESET_WARNING=10    # USB resets per boot (warning)
 USB_RESET_CRITICAL=20   # USB resets per boot (critical)
 MEMORY_WARNING=90   # % memory usage warning
@@ -247,47 +247,108 @@ emergency_thermal_protection() {
     
     log "EMERGENCY: Initiating thermal protection at ${temp}°C"
     
-    # Get top 5 CPU consuming processes for analysis
+    # SMART TARGETING: Find the single highest CPU non-system process
+    local target_pid target_pcpu target_cmd target_process_age
+    local found_target=false
+    
+    # Get top 10 CPU consuming processes for analysis
     local top_processes
-    top_processes=$(ps -eo pid,pcpu,cmd --sort=-pcpu --no-headers | head -5)
+    top_processes=$(ps -eo pid,pcpu,cmd --sort=-pcpu --no-headers | head -10)
     
-    local killed_any=false
+    log "EMERGENCY: Analyzing top CPU processes to find target:"
     
-    # Try to kill top CPU consumers that aren't system critical
+    # Find the first (highest CPU) non-system, non-grace-period process
     while IFS= read -r line; do
         local pid pcpu cmd
         read -r pid pcpu cmd <<< "$line"
         
         if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
-            # Skip if CPU usage is too low to be the problem
             local cpu_int
             cpu_int=$(echo "$pcpu" | cut -d. -f1)
-            if [[ $cpu_int -lt 20 ]]; then
+            
+            log "EMERGENCY: Evaluating PID $pid (${pcpu}% CPU) - $cmd"
+            
+            # Skip if CPU usage is too low to be worth targeting (only kill if >10% CPU)
+            if [[ $cpu_int -lt 10 ]]; then
+                log "EMERGENCY: CPU too low (${pcpu}%) - not worth targeting"
                 continue
             fi
             
+            # Skip system critical processes
             if is_system_critical_process "$pid" "$cmd"; then
                 log "EMERGENCY: Skipping critical system process: PID $pid ($cmd)"
                 continue
             fi
             
-            log "EMERGENCY: Killing high CPU process: PID $pid (${pcpu}% CPU) - $cmd"
-            send_alert "critical" "EMERGENCY: Killing process '$cmd' (${pcpu}% CPU) at ${temp}°C to prevent system freeze"
-            
-            # Kill process gracefully first, then force if needed
-            kill -TERM "$pid" 2>/dev/null || true
-            sleep 1
-            if kill -0 "$pid" 2>/dev/null; then
-                kill -KILL "$pid" 2>/dev/null || true
-                log "Force killed process PID: $pid"
+            # CHECK GRACE PERIOD: Give processes 60 seconds after boot to settle
+            local uptime_seconds
+            uptime_seconds=$(awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 3600)
+            if [[ $uptime_seconds -lt 60 ]]; then
+                log "EMERGENCY: System just booted (${uptime_seconds}s) - giving process grace period: PID $pid ($cmd)"
+                continue
             fi
             
-            killed_any=true
+            # CHECK PROCESS AGE: Give new processes 60 seconds to settle
+            local process_age
+            if [[ -f "/proc/$pid/stat" ]]; then
+                local start_time
+                start_time=$(awk '{print $22}' "/proc/$pid/stat" 2>/dev/null || echo 0)
+                local boot_time
+                boot_time=$(awk '/btime/ {print $2}' /proc/stat 2>/dev/null || echo 0)
+                local current_time
+                current_time=$(date +%s)
+                process_age=$((current_time - boot_time - start_time/100))
+                
+                if [[ $process_age -lt 60 ]]; then
+                    log "EMERGENCY: Process too new (${process_age}s) - giving startup grace period: PID $pid ($cmd)"
+                    continue
+                fi
+            fi
             
-            # Wait a moment between kills
-            sleep 2
+            # FOUND OUR TARGET - the highest CPU non-system process
+            target_pid="$pid"
+            target_pcpu="$pcpu"
+            target_cmd="$cmd"
+            target_process_age="$process_age"
+            found_target=true
+            log "EMERGENCY: TARGET IDENTIFIED - PID $pid (${pcpu}% CPU, age: ${process_age:-unknown}s) - $cmd"
+            break
         fi
     done <<< "$top_processes"
+    
+    local killed_any=false
+    
+    # Kill only the single target process (if found)
+    if [[ "$found_target" == "true" ]]; then
+        log "EMERGENCY: Killing target process: PID $target_pid (${target_pcpu}% CPU, age: ${target_process_age:-unknown}s) - $target_cmd"
+        
+        # Enhanced desktop notification with more details
+        local app_name
+        app_name=$(basename "$target_cmd" | cut -d' ' -f1)
+        send_alert "critical" "🚨 EMERGENCY THERMAL PROTECTION: Killed TOP CPU process '$app_name' (${target_pcpu}% CPU) at ${temp}°C to prevent system freeze"
+        
+        # Additional desktop notification with wall message for all users
+        if command -v notify-send >/dev/null 2>&1; then
+            DISPLAY=:0 notify-send -u critical -t 15000 "🚨 Critical Monitor: Process Killed" \
+                "Application: $app_name\nCPU Usage: ${target_pcpu}%\nTemperature: ${temp}°C\nReason: Emergency thermal protection (TOP CPU offender)\nProcess age: ${target_process_age:-unknown}s" 2>/dev/null &
+        fi
+        
+        # Wall message to all logged-in users
+        echo "🚨 EMERGENCY: Critical-monitor killed TOP CPU offender '$app_name' (${target_pcpu}% CPU) due to thermal emergency at ${temp}°C" | wall 2>/dev/null || true
+        
+        # Kill process gracefully first, then force if needed
+        kill -TERM "$target_pid" 2>/dev/null || true
+        sleep 2
+        if kill -0 "$target_pid" 2>/dev/null; then
+            kill -KILL "$target_pid" 2>/dev/null || true
+            log "Force killed target process PID: $target_pid"
+        fi
+        
+        killed_any=true
+        log "EMERGENCY: Successfully terminated target process - thermal protection complete"
+    else
+        log "EMERGENCY: No suitable target process found (all high-CPU processes are system critical or in grace period)"
+    fi
     
     # If we couldn't kill any user processes, or if system processes are the problem,
     # initiate clean shutdown to prevent hardware damage
