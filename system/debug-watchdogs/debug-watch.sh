@@ -51,6 +51,124 @@ NETWORK_FIX_COOLDOWN=1  # Wait 1 hour before trying network fix again
 SERVICE_FIX_COOLDOWN=2  # Wait 2 hours before trying service fix again
 CLEANUP_COOLDOWN=24     # Wait 24 hours before running cleanup again
 
+# Comprehensive pre-shutdown diagnostic dump for future investigation
+create_emergency_diagnostic_dump() {
+    local temp="$1"
+    local source_script="${2:-debug-watch}"
+    local dump_file="/var/log/emergency-thermal-dump-${source_script}-$(date +%Y%m%d-%H%M%S).log"
+    
+    log "EMERGENCY: Creating diagnostic dump at $dump_file"
+    
+    {
+        echo "=== EMERGENCY THERMAL DIAGNOSTIC DUMP ==="
+        echo "Source: $source_script"
+        echo "Timestamp: $(date)"
+        echo "Trigger Temperature: ${temp}°C"
+        echo "Emergency Threshold: 80°C"
+        echo ""
+        
+        echo "=== CURRENT TEMPERATURE READINGS ==="
+        sensors 2>/dev/null || echo "sensors command failed"
+        echo ""
+        
+        echo "=== CPU FREQUENCY AND THROTTLING ==="
+        cat /proc/cpuinfo | grep "cpu MHz" | head -6 2>/dev/null || echo "CPU freq check failed"
+        echo ""
+        if [[ -f /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor ]]; then
+            echo "CPU Governor: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo 'unknown')"
+        fi
+        echo ""
+        
+        echo "=== TOP CPU PROCESSES (DETAILED) ==="
+        ps aux --sort=-%cpu --no-headers | head -15 2>/dev/null || echo "Process list failed"
+        echo ""
+        
+        echo "=== TOP MEMORY PROCESSES ==="
+        ps aux --sort=-%mem --no-headers | head -10 2>/dev/null || echo "Memory process list failed"
+        echo ""
+        
+        echo "=== SYSTEM LOAD ==="
+        uptime 2>/dev/null || echo "uptime failed"
+        echo ""
+        
+        echo "=== MEMORY USAGE ==="
+        free -h 2>/dev/null || echo "free command failed"
+        echo ""
+        
+        echo "=== DISK USAGE ==="
+        df -h 2>/dev/null || echo "df command failed"
+        echo ""
+        
+        echo "=== RECENT THERMAL EVENTS (Last 3 hours) ==="
+        journalctl --since "3 hours ago" --no-pager 2>/dev/null | grep -E "(thermal|temperature|100.*°C|95.*°C|90.*°C|80.*°C|emergency|critical-monitor|debug-watch)" | tail -25 || echo "Journal thermal check failed"
+        echo ""
+        
+        echo "=== RECENT HARDWARE ERRORS (Last 3 hours) ==="
+        journalctl -k --since "3 hours ago" --no-pager 2>/dev/null | grep -E "(error|fail|critical|thermal|USB.*disconnect|PCIe|NVMe)" | tail -20 || echo "Hardware error check failed"
+        echo ""
+        
+        echo "=== USB RESETS AND HARDWARE ISSUES ==="
+        journalctl -b --no-pager 2>/dev/null | grep -E "(USB.*reset|uas_eh|PCIe.*error|nvme.*error)" | tail -15 || echo "USB/Hardware reset check failed"
+        echo ""
+        
+        echo "=== SYSTEMD FAILED SERVICES ==="
+        systemctl --failed --no-pager 2>/dev/null || echo "Failed services check failed"
+        echo ""
+        
+        echo "=== NETWORK STATUS ==="
+        ip link show 2>/dev/null | grep -E "(state|mtu)" || echo "Network status check failed"
+        nmcli device status 2>/dev/null || echo "nmcli device status failed"
+        echo ""
+        
+        echo "=== DMESG RECENT ERRORS ==="
+        dmesg -T --level=err,crit,alert,emerg 2>/dev/null | tail -15 || echo "dmesg check failed"
+        echo ""
+        
+        echo "=== LSCPU OUTPUT ==="
+        lscpu 2>/dev/null | grep -E "(Model name|CPU MHz|Thread|Core|Socket)" || echo "lscpu failed"
+        echo ""
+        
+        echo "=== ACPI THERMAL INFO ==="
+        if [[ -d /sys/class/thermal ]]; then
+            for zone in /sys/class/thermal/thermal_zone*; do
+                if [[ -f "$zone/type" && -f "$zone/temp" ]]; then
+                    local zone_type=$(cat "$zone/type" 2>/dev/null || echo "unknown")
+                    local zone_temp=$(cat "$zone/temp" 2>/dev/null || echo "unknown")
+                    if [[ "$zone_temp" != "unknown" && "$zone_temp" =~ ^[0-9]+$ ]]; then
+                        zone_temp=$((zone_temp / 1000))°C
+                    fi
+                    echo "Thermal Zone: $zone_type = $zone_temp"
+                fi
+            done
+        else
+            echo "No thermal zones found"
+        fi
+        echo ""
+        
+        echo "=== RECENT REBOOT COUNT ==="
+        local boot_count=$(journalctl --list-boots --no-pager 2>/dev/null | wc -l || echo "unknown")
+        echo "Boot sessions in journal: $boot_count"
+        echo ""
+        
+        echo "=== SUMMARY ==="
+        echo "This diagnostic dump was created automatically by $source_script"
+        echo "before emergency thermal shutdown at ${temp}°C (threshold: 80°C)"
+        echo "Use this information to investigate the root cause of thermal issues."
+        echo "Check /var/log/emergency-thermal-dump-*.log for all dumps."
+        echo ""
+        echo "=== END DIAGNOSTIC DUMP ==="
+        
+    } > "$dump_file" 2>&1
+    
+    # Make sure the file is readable
+    chmod 644 "$dump_file" 2>/dev/null || true
+    
+    log "EMERGENCY: Diagnostic dump completed: $dump_file"
+    
+    # Also log a summary to syslog for easy reference
+    log "DIAGNOSTIC SUMMARY: Source=$source_script, Temp=${temp}°C, CPU Load=$(uptime | grep -oE 'load average: [0-9]+\.[0-9]+' | awk '{print $3}' || echo 'unknown'), Top Process=$(ps aux --sort=-%cpu --no-headers | head -1 | awk '{print $11}' || echo 'unknown')"
+}
+
 # Logging function
 log() {
     echo "[debug-watch] $*"
@@ -209,7 +327,7 @@ check_hardware_errors() {
     if command -v sensors >/dev/null 2>&1; then
         local max_temp
         max_temp=$(sensors 2>/dev/null | grep -E "Core|Package" | grep -oE "\+[0-9]+\.[0-9]+°C" | sed 's/+//;s/°C//' | sort -n | tail -1)
-        if [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 95" | bc -l 2>/dev/null || echo 0) )); then
+        if [[ -n "$max_temp" ]] && (( $(echo "$max_temp > 80" | bc -l 2>/dev/null || echo 0) )); then
             log "EMERGENCY: CPU temperature ${max_temp}°C - TAKING IMMEDIATE ACTION"
             notify-send -u critical "THERMAL EMERGENCY" "CPU at ${max_temp}°C - Taking emergency action!" 2>/dev/null || true
             
@@ -247,7 +365,11 @@ check_hardware_errors() {
             if [[ $killed_any -eq 0 ]]; then
                 log "EMERGENCY: No killable user processes - system-level thermal crisis"
                 log "EMERGENCY: Initiating clean shutdown to prevent hardware damage"
-                notify-send -u critical "THERMAL CRISIS" "System shutdown in 2 minutes - CPU at ${max_temp}°C" 2>/dev/null || true
+                
+                # Create diagnostic dump before shutdown
+                create_emergency_diagnostic_dump "$max_temp" "debug-watch"
+                
+                notify-send -u critical "THERMAL CRISIS" "System shutdown in 2 minutes - CPU at ${max_temp}°C. Diagnostic dump created." 2>/dev/null || true
                 /sbin/shutdown -h +2 "EMERGENCY: Thermal protection shutdown - CPU at ${max_temp}°C" 2>/dev/null || true
             fi
             

@@ -725,7 +725,7 @@ main() {
         fix_usb_storage
     fi
     
-    if [[ $do_network_restore -eq 1 ]]; then
+    if [[ ${do_network_restore:-0} -eq 1 ]]; then
         restore_network_adapters
     fi
 
