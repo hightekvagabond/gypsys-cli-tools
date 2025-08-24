@@ -107,6 +107,7 @@ check_service_failures() {
 }
 
 check_hardware_errors() {
+    local error_count=0
     local recent_errors
     
     # Check for hardware errors in recent logs

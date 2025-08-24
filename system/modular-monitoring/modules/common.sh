@@ -6,13 +6,20 @@ set -euo pipefail
 # Load configuration
 MODULAR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_DIR="$MODULAR_DIR/config"
+FRAMEWORK_DIR="$MODULAR_DIR/framework"
 STATE_DIR="/var/tmp/modular-monitor-state"
 LOG_DIR="$MODULAR_DIR/logs"
 
 # Ensure directories exist
 mkdir -p "$STATE_DIR" "$LOG_DIR"
 
-# Load configuration
+# Load configuration files in order (framework config first, then module-specific)
+if [[ -f "$FRAMEWORK_DIR/monitor-config.sh" ]]; then
+    MONITOR_ROOT="$MODULAR_DIR"
+    source "$FRAMEWORK_DIR/monitor-config.sh"
+fi
+
+# Legacy config support
 if [[ -f "$CONFIG_DIR/thresholds.conf" ]]; then
     source "$CONFIG_DIR/thresholds.conf"
 fi
@@ -182,7 +189,21 @@ validate_module() {
     return 0
 }
 
+# System utilities
+get_uptime_seconds() {
+    awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 3600
+}
+
+# Framework initialization  
+init_framework() {
+    local module_name="$1"
+    MODULE_NAME="$module_name"
+    LOG_TAG="$module_name"
+    mkdir -p "$STATE_DIR/$module_name"
+    log "Framework initialized for module: $module_name"
+}
+
 # Export functions for modules
 export -f log error send_alert should_alert record_alert
 export -f get_top_cpu_processes get_top_memory_processes is_system_critical_process
-export -f get_cpu_package_temp validate_module
+export -f get_cpu_package_temp get_uptime_seconds init_framework validate_module

@@ -1,0 +1,11 @@
+[Unit]
+Description=Modular System Monitor Timer
+Requires=modular-monitor.service
+
+[Timer]
+OnCalendar=*:0/2
+Persistent=true
+RandomizedDelaySec=10sec
+
+[Install]
+WantedBy=timers.target

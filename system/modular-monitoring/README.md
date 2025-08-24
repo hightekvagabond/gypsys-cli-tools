@@ -6,6 +6,17 @@ A comprehensive, lightweight monitoring and freeze prevention system designed fo
 
 Prevent system freezes that require hard reboots by monitoring and automatically fixing the specific causes that standard monitoring tools miss.
 
+## ✅ **PROJECT STATUS - PROBLEM SOLVED**
+
+**August 23, 2025**: Using the enhanced USB analysis feature in `status.sh`, we successfully isolated the root cause of all system freezes and hardware issues to **a faulty external USB hub**. The data was conclusive:
+
+- **Before hub removal**: 10+ USB resets per hour, critical alerts, system instability
+- **After hub removal**: 0 USB issues, complete system stability
+
+**Lesson learned**: Sometimes the most sophisticated monitoring system's greatest value is proving that a $20 piece of hardware was the culprit all along.
+
+**Future Development**: We probably won't move forward with the rest of the future-scoped features of this project unless we start having problems again in the future and it turns out to not be something we can isolate with the current monitoring capabilities.
+
 ## 🚀 **Quick Start**
 
 ```bash
@@ -30,17 +41,17 @@ modular-monitoring/
 │   ├── thermal-monitor.sh  # CPU/GPU temperature monitoring
 │   ├── usb-monitor.sh      # USB device reset detection
 │   ├── memory-monitor.sh   # RAM pressure monitoring
-│   ├── gpu-monitor.sh      # i915 driver monitoring
-│   ├── network-monitor.sh  # Network adapter management
-│   └── system-monitor.sh   # System stability monitoring
-├── framework/              # Common functions and configuration
-│   ├── monitor-framework.sh # Shared logging, alerting, state management
+│   ├── i915-monitor.sh     # Intel i915 driver monitoring
+│   ├── system-monitor.sh   # System stability monitoring
+│   └── common.sh           # Shared functions and framework
+├── framework/              # Configuration management
 │   └── monitor-config.sh   # Centralized configuration
 ├── systemd/                # Service definitions
 │   ├── modular-monitor.service
 │   └── modular-monitor.timer
 └── config/                 # Runtime configuration
-    └── modules.conf        # Module enable/disable settings
+    ├── modules.conf        # Module enable/disable settings
+    └── thresholds.conf     # Legacy threshold configuration
 ```
 
 ## 🛡️ **Current Features**
@@ -50,7 +61,7 @@ modular-monitoring/
 - **🔌 USB Monitoring**: Detects USB reset loops that cause system hangs  
 - **🧠 Memory Monitoring**: RAM/swap pressure detection
 - **🎮 GPU Monitoring**: Intel i915 driver stability monitoring
-- **🌐 Network Monitoring**: Docking station failure management
+- **🌐 Network Monitoring**: *Future - Docking station failure management*
 - **🔧 System Monitoring**: Hardware errors and stability checks
 
 ### **Emergency Protection**
@@ -94,12 +105,14 @@ ls -la logs/emergency-diagnostic-dump-*.log
 ## 🔧 **Troubleshooting**
 
 ```bash
-# Validate installation
-sudo ./install.sh --validate
+# Test modules individually via orchestrator
+./orchestrator.sh --test thermal-monitor
+./orchestrator.sh --test usb-monitor
+./orchestrator.sh --test i915-monitor
 
-# Test modules individually
-./modules/thermal-monitor.sh --test
-./modules/usb-monitor.sh --check
+# Check service status
+systemctl status modular-monitor.timer
+systemctl status modular-monitor.service
 
 # Debug mode
 sudo systemctl edit modular-monitor.service
@@ -108,7 +121,10 @@ sudo systemctl edit modular-monitor.service
 
 ## 📋 **Roadmap**
 
-### **Phase 1: Enhanced Intelligence**
+### **Phase 1: Enhanced Intelligence & Missing Features**
+- [ ] Install script validation (`./install.sh --validate`)
+- [ ] Individual module testing (`./modules/MODULE.sh --test`, `--check`)
+- [ ] Network monitoring module for docking station failures
 - [ ] Machine learning pattern recognition for freeze prediction
 - [ ] Application behavior learning and anomaly detection  
 - [ ] Thermal correlation analysis across hardware components
@@ -131,6 +147,12 @@ sudo systemctl edit modular-monitor.service
 - [ ] Cloud backup integration for diagnostics
 - [ ] Hardware-specific optimization presets
 - [ ] Energy consumption monitoring and optimization
+
+### **Phase 5: Machine-Specific Optimizations**
+- [ ] Review NOTES/ folder for hardware-specific insights and improvements
+  - Intel GPU offloading documentation for hybrid systems
+  - Predator Ethernet (Killer E2500) issues and blacklisting approach
+- [ ] Integrate machine-specific fixes into automated monitoring modules
 
 ## 🏗️ **Architecture Philosophy**
 
