@@ -20,6 +20,7 @@ MODULES=(
     "memory-monitor"
     "i915-monitor"
     "system-monitor"
+    "kernel-monitor"
 )
 
 show_help() {

@@ -71,9 +71,17 @@ get_usb_device_details() {
     # Get recent USB issues with device details
     echo "Recent USB issues ($time_period):"
     
+    # Handle "boot" parameter specially
+    local journal_cmd
+    if [[ "$time_period" == "boot" ]]; then
+        journal_cmd="journalctl -k -b 0 --no-pager 2>/dev/null"
+    else
+        journal_cmd="journalctl -k --since \"$time_period\" --no-pager 2>/dev/null"
+    fi
+    
     # USB disconnects with device info
     local disconnects
-    disconnects=$(journalctl -k --since "$time_period" --no-pager 2>/dev/null | grep "USB disconnect" | tail -5)
+    disconnects=$(eval "$journal_cmd" | grep "USB disconnect" | tail -5)
     if [[ -n "$disconnects" ]]; then
         echo "  USB Disconnects:"
         echo "$disconnects" | while read -r line; do
@@ -86,7 +94,7 @@ get_usb_device_details() {
     
     # USB resets with device info
     local resets
-    resets=$(journalctl -k --since "$time_period" --no-pager 2>/dev/null | grep "usb.*reset" | tail -3)
+    resets=$(eval "$journal_cmd" | grep "usb.*reset" | tail -3)
     if [[ -n "$resets" ]]; then
         echo "  USB Resets:"
         echo "$resets" | while read -r line; do
@@ -98,7 +106,7 @@ get_usb_device_details() {
     
     # Device descriptor errors
     local descriptor_errors
-    descriptor_errors=$(journalctl -k --since "$time_period" --no-pager 2>/dev/null | grep "device descriptor read" | tail -3)
+    descriptor_errors=$(eval "$journal_cmd" | grep "device descriptor read" | tail -3)
     if [[ -n "$descriptor_errors" ]]; then
         echo "  Device Descriptor Errors:"
         echo "$descriptor_errors" | while read -r line; do

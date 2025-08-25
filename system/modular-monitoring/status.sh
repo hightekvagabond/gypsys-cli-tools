@@ -387,6 +387,167 @@ analyze_process_kills() {
     fi
 }
 
+analyze_pre_shutdown_hour() {
+    echo -e "${BLUE}🕐 PRE-SHUTDOWN HOUR ANALYSIS${NC}"
+    echo "========================================================"
+    
+    # Find the last shutdown/boot time
+    local current_boot_time
+    local previous_shutdown_time
+    
+    # Get current boot time
+    current_boot_time=$(journalctl -b 0 --no-pager -q --output=short-iso | head -1 | awk '{print $1}' 2>/dev/null || echo "")
+    
+    if [[ -z "$current_boot_time" ]]; then
+        echo -e "${RED}❌ Unable to determine current boot time${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Current boot started: ${NC}$current_boot_time"
+    
+    # Find the last log entry before current boot (previous shutdown)
+    local previous_logs
+    previous_logs=$(journalctl -b -1 --no-pager -q --output=short-iso 2>/dev/null | tail -1 || echo "")
+    
+    if [[ -z "$previous_logs" ]]; then
+        echo -e "${RED}❌ Unable to access previous boot logs${NC}"
+        echo -e "${YELLOW}Try running with sudo for full log access${NC}"
+        return 1
+    fi
+    
+    # Extract the timestamp of the last log before shutdown
+    previous_shutdown_time=$(echo "$previous_logs" | awk '{print $1}' || echo "")
+    
+    if [[ -z "$previous_shutdown_time" ]]; then
+        echo -e "${RED}❌ Unable to determine previous shutdown time${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Previous shutdown around: ${NC}$previous_shutdown_time"
+    
+    # Calculate one hour before the shutdown
+    local one_hour_before
+    if command -v date >/dev/null 2>&1; then
+        # Convert ISO timestamp to epoch, subtract 3600 seconds (1 hour), convert back
+        local shutdown_epoch
+        shutdown_epoch=$(date -d "$previous_shutdown_time" +%s 2>/dev/null || echo "")
+        
+        if [[ -n "$shutdown_epoch" ]]; then
+            local hour_before_epoch=$((shutdown_epoch - 3600))
+            one_hour_before=$(date -d "@$hour_before_epoch" --iso-8601=seconds 2>/dev/null || echo "")
+        fi
+    fi
+    
+    if [[ -z "$one_hour_before" ]]; then
+        echo -e "${RED}❌ Unable to calculate time window${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Analyzing period: ${NC}$one_hour_before ${BLUE}to${NC} $previous_shutdown_time"
+    echo
+    
+    # Run analysis on that time window using existing functions
+    analyze_time_period "$one_hour_before" "$previous_shutdown_time"
+}
+
+analyze_time_period() {
+    local start_time="$1"
+    local end_time="$2"
+    
+    echo -e "${BLUE}📊 ACTIVITY ANALYSIS FOR TIME PERIOD:${NC}"
+    
+    # Get logs for the specific time period
+    local period_logs
+    period_logs=$(journalctl --since "$start_time" --until "$end_time" --no-pager 2>/dev/null || echo "")
+    
+    if [[ -z "$period_logs" ]]; then
+        echo -e "${YELLOW}  ⚠️  No logs found for this time period${NC}"
+        return
+    fi
+    
+    # Monitor alerts during this period
+    local monitor_alerts
+    monitor_alerts=$(echo "$period_logs" | grep -i "modular-monitor.*ALERT" || echo "")
+    
+    if [[ -n "$monitor_alerts" ]]; then
+        echo -e "${RED}🚨 MONITOR ALERTS DURING PERIOD:${NC}"
+        echo "$monitor_alerts" | while read -r alert; do
+            local timestamp=$(echo "$alert" | awk '{print $1, $2, $3}')
+            local alert_type=$(echo "$alert" | sed -n 's/.*ALERT\[\([^]]*\)\].*/\1/p')
+            local message=$(echo "$alert" | sed 's/^.*ALERT\[[^]]*\]://')
+            echo -e "${RED}  [$timestamp] [$alert_type]${NC}$message"
+        done
+        echo
+    fi
+    
+    # Check for hardware errors
+    local hw_errors
+    hw_errors=$(echo "$period_logs" | grep -c -i "hardware error\|machine check\|mce:" 2>/dev/null || echo "0")
+    [[ -z "$hw_errors" || ! "$hw_errors" =~ ^[0-9]+$ ]] && hw_errors=0
+    
+    if [[ $hw_errors -gt 0 ]]; then
+        echo -e "${YELLOW}⚠️  Hardware errors detected: $hw_errors${NC}"
+    fi
+    
+    # Check for thermal events
+    local thermal_events
+    thermal_events=$(echo "$period_logs" | grep -c -i "thermal\|temperature\|overheating" 2>/dev/null || echo "0")
+    [[ -z "$thermal_events" || ! "$thermal_events" =~ ^[0-9]+$ ]] && thermal_events=0
+    
+    if [[ $thermal_events -gt 0 ]]; then
+        echo -e "${YELLOW}🌡️  Thermal events detected: $thermal_events${NC}"
+    fi
+    
+    # Check for USB issues
+    local usb_issues
+    usb_issues=$(echo "$period_logs" | grep -c -i "usb.*reset\|usb disconnect\|device descriptor" 2>/dev/null || echo "0")
+    [[ -z "$usb_issues" || ! "$usb_issues" =~ ^[0-9]+$ ]] && usb_issues=0
+    
+    if [[ $usb_issues -gt 0 ]]; then
+        echo -e "${YELLOW}🔌 USB issues detected: $usb_issues${NC}"
+        
+        # Show recent USB issues
+        echo "$period_logs" | grep -i "usb.*reset\|usb disconnect\|device descriptor" | tail -5 | while read -r line; do
+            local timestamp=$(echo "$line" | awk '{print $1, $2, $3}')
+            local usb_event=$(echo "$line" | sed 's/.*kernel: //')
+            echo -e "${YELLOW}    [$timestamp] $usb_event${NC}"
+        done
+        echo
+    fi
+    
+    # Check for i915 GPU errors
+    local i915_errors
+    i915_errors=$(echo "$period_logs" | grep -c -i "i915.*error\|workqueue.*i915" 2>/dev/null || echo "0")
+    [[ -z "$i915_errors" || ! "$i915_errors" =~ ^[0-9]+$ ]] && i915_errors=0
+    
+    if [[ $i915_errors -gt 0 ]]; then
+        echo -e "${YELLOW}🎮 i915 GPU errors detected: $i915_errors${NC}"
+    fi
+    
+    # Check for memory issues
+    local memory_issues
+    memory_issues=$(echo "$period_logs" | grep -c -i "out of memory\|oom-killer\|memory pressure" 2>/dev/null || echo "0")
+    [[ -z "$memory_issues" || ! "$memory_issues" =~ ^[0-9]+$ ]] && memory_issues=0
+    
+    if [[ $memory_issues -gt 0 ]]; then
+        echo -e "${YELLOW}🧠 Memory issues detected: $memory_issues${NC}"
+    fi
+    
+    # Summary
+    local total_issues=$((hw_errors + thermal_events + usb_issues + i915_errors + memory_issues))
+    
+    if [[ $total_issues -eq 0 ]] && [[ -z "$monitor_alerts" ]]; then
+        echo -e "${GREEN}✅ No significant issues detected during this period${NC}"
+    else
+        echo -e "${YELLOW}📊 Summary: $total_issues hardware/system issues detected${NC}"
+        if [[ -n "$monitor_alerts" ]]; then
+            local alert_count
+            alert_count=$(echo "$monitor_alerts" | wc -l 2>/dev/null || echo "0")
+            echo -e "${YELLOW}📊 Monitor alerts: $alert_count${NC}"
+        fi
+    fi
+}
+
 show_usb_analysis() {
     local since_time="$1"
     local time_filter="${since_time:-1 hour ago}"
@@ -434,6 +595,8 @@ OPTIONS:
                         Formats: "1 hour ago", "30 minutes ago", "2025-08-23 18:25:00"
                         Use this to set a baseline after configuration changes
     --usb-details       Show detailed USB device analysis (requires sudo)
+    --pre-shutdown      Analyze the hour before the previous shutdown/boot
+                        Useful for identifying what led to system issues
 
 EXAMPLES:
     ./status.sh                           # Full status report
@@ -441,6 +604,7 @@ EXAMPLES:
     ./status.sh --since "18:25:00"        # Only show activity since 6:25 PM today
     ./status.sh --since "2025-08-23 18:25:00"  # Full timestamp
     sudo ./status.sh --usb-details        # Detailed USB port/device analysis
+    ./status.sh --pre-shutdown            # Analyze hour before previous shutdown
 
 INCIDENT ANALYSIS:
     - Automatically detects recent boots (< 10 minutes)
@@ -482,6 +646,11 @@ main() {
                 usb_details_only=true
                 shift
                 ;;
+            --pre-shutdown)
+                # New flag for pre-shutdown analysis
+                analyze_pre_shutdown_hour
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 echo "Use --help for usage information"
@@ -501,10 +670,26 @@ main() {
             exit 1
         fi
         
+        # Determine appropriate time period based on uptime
+        local analysis_period
+        local uptime_seconds
+        uptime_seconds=$(awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 7200)
+        
+        if [[ $uptime_seconds -lt 7200 ]]; then
+            # Less than 2 hours uptime - analyze since boot
+            analysis_period="boot"
+            echo "Analyzing USB activity since boot ($(($uptime_seconds / 60)) minutes ago)..."
+        else
+            # More than 2 hours uptime - use specified time or default to 2 hours
+            analysis_period="${since_time:-2 hours ago}"
+            echo "Analyzing USB activity since: $analysis_period"
+        fi
+        echo
+        
         # Source USB monitoring functions
         if [[ -f "$SCRIPT_DIR/modules/usb-monitor.sh" ]]; then
             source "$SCRIPT_DIR/modules/usb-monitor.sh"
-            get_usb_device_details "${since_time:-2 hours ago}"
+            get_usb_device_details "$analysis_period"
         else
             echo "USB monitoring module not found"
             exit 1
@@ -545,6 +730,7 @@ main() {
         echo "  Monitor logs (filtered): journalctl -t modular-monitor --since '$since_time' -f"
     fi
     echo "  USB analysis: sudo ./status.sh --usb-details"
+    echo "  Pre-shutdown: ./status.sh --pre-shutdown"
     echo "  Test i915:    $SCRIPT_DIR/orchestrator.sh --test i915-monitor"
     echo "  Test system:  $SCRIPT_DIR/orchestrator.sh --test system-monitor"
     echo "  Run manual:   $SCRIPT_DIR/orchestrator.sh"
