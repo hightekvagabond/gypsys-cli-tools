@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash __SCRIPT_DIR__/orchestrator.sh
+ExecStart=/bin/bash __SCRIPT_DIR__/monitor.sh
 User=root
 Group=root
 WorkingDirectory=__SCRIPT_DIR__

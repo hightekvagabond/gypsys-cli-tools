@@ -1,179 +1,220 @@
 # Modular System Monitoring Suite
 
-A comprehensive, lightweight monitoring and freeze prevention system designed for Linux laptops with hardware-specific quirks.
+A comprehensive, modular monitoring and autofix system for Linux systems with hardware-specific optimizations and intelligent problem detection.
 
 ## 🎯 **Mission**
 
-Prevent system freezes that require hard reboots by monitoring and automatically fixing the specific causes that standard monitoring tools miss.
-
-## ✅ **PROJECT STATUS - PROBLEM SOLVED**
-
-**August 23, 2025**: Using the enhanced USB analysis feature in `status.sh`, we successfully isolated the root cause of all system freezes and hardware issues to **a faulty external USB hub**. The data was conclusive:
-
-- **Before hub removal**: 10+ USB resets per hour, critical alerts, system instability
-- **After hub removal**: 0 USB issues, complete system stability
-
-**Lesson learned**: Sometimes the most sophisticated monitoring system's greatest value is proving that a $20 piece of hardware was the culprit all along.
-
-**Future Development**: We probably won't move forward with the rest of the future-scoped features of this project unless we start having problems again in the future and it turns out to not be something we can isolate with the current monitoring capabilities.
+Prevent system freezes, hardware issues, and performance problems through intelligent monitoring with automated fixes - designed to be your system's intelligent assistant that knows your hardware and keeps things running smoothly.
 
 ## 🚀 **Quick Start**
 
 ```bash
 # Install the complete monitoring system
-sudo ./install.sh
+sudo ./setup.sh
 
-# Check system status
+# Check overall system status
 ./status.sh
 
-# View real-time monitoring
+# List available modules
+./monitor.sh --list
+
+# View real-time monitoring logs
 journalctl -t modular-monitor -f
 ```
 
-## 📁 **Structure**
+## 📁 **Architecture Overview**
 
 ```
 modular-monitoring/
-├── install.sh              # Main installer script
-├── status.sh               # System status checker  
-├── README.md               # This file
-├── modules/                # Individual monitoring modules
-│   ├── thermal-monitor.sh  # CPU/GPU temperature monitoring
-│   ├── usb-monitor.sh      # USB device reset detection
-│   ├── memory-monitor.sh   # RAM pressure monitoring
-│   ├── i915-monitor.sh     # Intel i915 driver monitoring
-│   ├── system-monitor.sh   # System stability monitoring
-│   └── common.sh           # Shared functions and framework
-├── framework/              # Configuration management
-│   └── monitor-config.sh   # Centralized configuration
-├── systemd/                # Service definitions
-│   ├── modular-monitor.service
-│   └── modular-monitor.timer
-└── config/                 # Runtime configuration
-    ├── modules.conf        # Module enable/disable settings
-    └── thresholds.conf     # Legacy threshold configuration
+├── setup.sh                   # System installer & reconfiguration
+├── monitor.sh                 # Central module coordinator  
+├── status.sh                  # System-wide status reporter
+├── README.md                  # This file
+├── FUTURE_SCOPE.md           # Roadmap and AI integration plans
+├── config/                    # Configuration management
+│   ├── SYSTEM.conf           # Global system configuration
+│   ├── README.md             # Configuration system guide
+│   └── *.enabled            # Symlinks to enable modules
+├── modules/                   # Modular monitoring components
+│   ├── MODULE_BEST_PRACTICES.md  # Development guide
+│   ├── common.sh             # Shared framework functions
+│   └── */                    # Individual modules (see below)
+└── systemd/                   # Service definitions
+    ├── modular-monitor.service
+    └── modular-monitor.timer
 ```
 
-## 🛡️ **Current Features**
+## 🔍 **Discovering Modules**
 
-### **Real-time Monitoring (Systemd Service)**
-- **🌡️ Thermal Protection**: Smart CPU temperature monitoring with surgical process targeting
-- **🔌 USB Monitoring**: Detects USB reset loops that cause system hangs  
-- **🧠 Memory Monitoring**: RAM/swap pressure detection
-- **🎮 GPU Monitoring**: Intel i915 driver stability monitoring
-- **🌐 Network Monitoring**: *Future - Docking station failure management*
-- **🔧 System Monitoring**: Hardware errors and stability checks
-
-### **Emergency Protection**
-- **Surgical Process Targeting**: Kills only the top CPU offender, not multiple processes
-- **Grace Periods**: 60s boot + 60s startup protection for new processes  
-- **Sustained Monitoring**: Prevents killing legitimate short CPU spikes
-- **Emergency Shutdown**: Clean shutdown if no killable processes during thermal crisis
-
-### **Smart Intelligence**
-- **Hardware-Specific**: Optimized for Acer Predator and similar laptops
-- **Predictive**: Detects patterns that lead to freezes before they happen
-- **Learning**: Adapts to normal vs abnormal process behavior
-- **Context-Aware**: Considers system state, uptime, and process age
-
-## ⚙️ **Configuration**
-
-Edit `framework/monitor-config.sh` to customize:
-- Temperature thresholds (default: 85°C/90°C/95°C)
-- Monitoring intervals  
-- Alert preferences
-- Emergency action settings
-- Module enable/disable
-
-## 📊 **Monitoring**
+The system is designed to be completely modular. To see what monitoring capabilities are available:
 
 ```bash
-# Check overall status
+# List all enabled modules
+./monitor.sh --list
+
+# Browse available modules
+ls modules/*/README.md
+
+# Check what modules are available but not enabled
+ls modules/ | grep -v common.sh | grep -v MODULE_BEST_PRACTICES.md
+```
+
+Each module in the `modules/` directory has its own README.md explaining its purpose, configuration options, and usage.
+
+## ⚙️ **Configuration System**
+
+### **Hierarchical Configuration**
+1. **System-wide**: `config/SYSTEM.conf` - Global defaults and orchestrator settings
+2. **Module defaults**: `modules/MODULE_NAME/config.conf` - Module-specific settings  
+3. **Module overrides**: `config/MODULE_NAME.conf` - User customizations
+
+### **Module Management**
+```bash
+# Enable a module (create symlink)
+cd config/
+ln -sf ../modules/MODULE_NAME/config.conf MODULE_NAME.enabled
+
+# Disable a module (remove symlink)
+rm MODULE_NAME.enabled
+
+# List enabled modules
+./monitor.sh --list
+```
+
+See `config/README.md` for detailed configuration documentation.
+
+## 📊 **Usage Patterns**
+
+### **System-Wide Operations**
+```bash
+# Quick system overview
 ./status.sh
 
-# View real-time logs
-journalctl -t modular-monitor -f
+# Status for specific time range
+./status.sh "2 hours ago" "1 hour ago"
 
-# Check specific module logs
-journalctl -t thermal-monitor -f
-journalctl -t usb-monitor -f
-
-# View diagnostic dumps
-ls -la logs/emergency-diagnostic-dump-*.log
+# Complete historical analysis
+./status.sh --all
 ```
 
-## 🔧 **Troubleshooting**
-
+### **Module-Specific Operations**
 ```bash
-# Test modules individually via orchestrator
-./orchestrator.sh --test thermal-monitor
-./orchestrator.sh --test usb-monitor
-./orchestrator.sh --test i915-monitor
+# Each module supports standard arguments:
+./modules/MODULE_NAME/monitor.sh --help
+./modules/MODULE_NAME/monitor.sh --status
+./modules/MODULE_NAME/monitor.sh --no-auto-fix
+./modules/MODULE_NAME/monitor.sh --start-time "1 hour ago"
 
+# Module status (simplified wrapper)
+./modules/MODULE_NAME/status.sh [start_time] [end_time]
+```
+
+### **Monitor Management**
+```bash
+# List all enabled modules with status
+./monitor.sh --list
+
+# Run monitor once manually
+./monitor.sh
+
+# Test monitor with verbose output
+./monitor.sh --debug
+```
+
+## 🔧 **Key Features**
+
+### **True Modularity**
+- **Independent modules**: Each module is completely self-contained
+- **Dynamic discovery**: System automatically finds and uses available modules
+- **Flexible enabling**: Enable/disable modules without code changes
+- **Standardized interface**: All modules follow the same command patterns
+
+### **Intelligent Configuration**
+- **No hardcoded values**: All timeouts, limits, and thresholds are configurable
+- **Override system**: Easily customize any module's behavior
+- **Time range flexibility**: Analyze any time period with natural language
+- **Hierarchical settings**: System → Module → User override precedence
+
+### **Smart Automation**
+- **Context-aware fixes**: Automated fixes consider system state
+- **Cooldown management**: Prevent excessive fix attempts
+- **Graduated responses**: Try gentle fixes before aggressive ones
+- **User transparency**: Clear notifications of automatic actions
+
+## 🔍 **Monitoring & Debugging**
+
+### **Real-time Monitoring**
+```bash
+# Watch all monitoring activity
+journalctl -t modular-monitor -f
+
+# Filter by specific modules (discovered dynamically)
+journalctl -t modular-monitor -f | grep MODULE_NAME
+```
+
+### **Service Management**
+```bash
 # Check service status
 systemctl status modular-monitor.timer
 systemctl status modular-monitor.service
 
-# Debug mode
-sudo systemctl edit modular-monitor.service
-# Add: Environment="DEBUG_MODE=true"
+# Restart monitoring
+sudo systemctl restart modular-monitor.timer
+
+# View service logs
+journalctl -u modular-monitor.service --no-pager
 ```
 
-## 📋 **Roadmap**
+## 📋 **Development & Customization**
 
-### **Phase 1: Enhanced Intelligence & Missing Features**
-- [ ] Install script validation (`./install.sh --validate`)
-- [ ] Individual module testing (`./modules/MODULE.sh --test`, `--check`)
-- [ ] Network monitoring module for docking station failures
-- [ ] Machine learning pattern recognition for freeze prediction
-- [ ] Application behavior learning and anomaly detection  
-- [ ] Thermal correlation analysis across hardware components
-- [ ] Graduated response levels before emergency actions
+### **Adding New Modules**
+1. Read `modules/MODULE_BEST_PRACTICES.md` for complete guidelines
+2. Create module directory: `modules/new_module/`
+3. Implement required files: `monitor.sh`, `config.conf`, `status.sh`, `README.md`
+4. Add autofix scripts in `autofix/` subdirectory
+5. Enable module: `ln -sf ../modules/new_module/config.conf config/new_module.enabled`
 
-### **Phase 2: Hardware Expansion**  
-- [ ] NVIDIA GPU monitoring beyond i915
-- [ ] Battery health and thermal monitoring
-- [ ] SMART disk health monitoring with predictive failure detection
-- [ ] Dynamic fan curve optimization
+### **Module Standards**
+- **Standardized interface**: All modules support `--help`, `--status`, `--no-auto-fix`, `--start-time`, `--end-time`
+- **Configuration integration**: Use `common.sh` framework and config hierarchy
+- **Documentation**: Each module includes its own README.md
+- **Self-contained**: Modules should not depend on specific other modules
 
-### **Phase 3: User Experience**
-- [ ] Optional lightweight web dashboard
-- [ ] Mobile push notifications for critical alerts
-- [ ] Automatic maintenance scheduling during idle periods
-- [ ] Performance profiling and optimization suggestions
+## 🌟 **Design Philosophy**
 
-### **Phase 4: Advanced Features**
-- [ ] Multi-machine monitoring for home networks
-- [ ] Cloud backup integration for diagnostics
-- [ ] Hardware-specific optimization presets
-- [ ] Energy consumption monitoring and optimization
+### **Modularity First**
+- **No hardcoded module lists**: System discovers modules dynamically
+- **Plugin architecture**: Add/remove capabilities without touching core code
+- **Standard interfaces**: Consistent command patterns across all modules
+- **Independent operation**: Each module can function standalone
 
-### **Phase 5: Machine-Specific Optimizations**
-- [ ] Review NOTES/ folder for hardware-specific insights and improvements
-  - Intel GPU offloading documentation for hybrid systems
-  - Predator Ethernet (Killer E2500) issues and blacklisting approach
-- [ ] Integrate machine-specific fixes into automated monitoring modules
+### **Configuration Flexibility**
+- **Everything configurable**: No hardcoded values anywhere in the system
+- **User override capability**: Easy customization without editing source
+- **Profile support**: Different configurations for different use cases
+- **Documentation embedded**: Configuration files are self-documenting
 
-## 🏗️ **Architecture Philosophy**
+### **Intelligent Operation**
+- **Context awareness**: System understands hardware and usage patterns
+- **Predictive capabilities**: Identify problems before they cause issues
+- **Adaptive behavior**: Learn from system patterns and user preferences
+- **Transparent automation**: Users always know what the system is doing
 
-### **Unified Service Model**
-- Single systemd service handles all monitoring
-- Modular design allows easy addition/removal of monitors
-- Centralized logging and state management
-- No cron job complexity or timing issues
+## 🚀 **Future Development**
 
-### **Emergency Response Hierarchy**
-1. **Monitor**: Continuous observation of system metrics
-2. **Alert**: User notification when thresholds approached  
-3. **Intervene**: Automatic fixes for known issues
-4. **Protect**: Emergency actions to prevent system damage
-5. **Document**: Comprehensive diagnostic dumps for analysis
+See `FUTURE_SCOPE.md` for detailed roadmap including:
+- **AI Integration**: Local and cloud AI assistants for intelligent analysis
+- **Advanced Analytics**: Predictive maintenance and trend analysis  
+- **Enhanced Interfaces**: Web dashboard and mobile monitoring
+- **Ecosystem Integration**: Third-party service integrations
 
-### **Hardware-First Design**
-- Built specifically for Linux laptop freeze prevention
-- Targets actual hardware issues (i915 bugs, USB reset loops)
-- Optimized for poor thermal design (gaming laptops)
-- Handles manufacturer-specific quirks and driver problems
+The modular architecture ensures that new capabilities can be added without disrupting existing functionality.
+
+## 🎯 **Success Philosophy**
+
+This system is designed on the principle that **intelligent monitoring should fade into the background** - preventing problems before they occur, fixing issues automatically when possible, and providing clear, actionable information when human intervention is needed.
+
+The modular design ensures the system can grow and adapt to new hardware, new problems, and new monitoring needs without requiring architectural changes.
 
 ## 📜 **License**
 
@@ -181,4 +222,4 @@ Open source - use, modify, and distribute freely. Designed for educational and p
 
 ---
 
-**Built for stability, designed for laptops, optimized for real-world hardware problems.**
+**Built for reliability, designed for modularity, optimized for extensibility.**

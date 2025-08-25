@@ -1,12 +1,26 @@
 #!/bin/bash
-# Modular Monitor Status Checker (with recovered functionality)
+# Modular Monitor Status Checker - Restructured Version
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/modules/common.sh"
 
-# Check if running as root for optimal monitoring tests
+# Load system configuration
+if [[ -f "$SCRIPT_DIR/config/SYSTEM.conf" ]]; then
+    source "$SCRIPT_DIR/config/SYSTEM.conf"
+fi
+
+# Set defaults if not loaded from config
+MODULES_DIR="${MODULES_DIR:-modules}"
+ENABLED_MODULES_DIR="${ENABLED_MODULES_DIR:-config}"
+MODULE_OVERRIDES_DIR="${MODULE_OVERRIDES_DIR:-config}"
+DEFAULT_STATUS_TIMESPAN="${DEFAULT_STATUS_TIMESPAN:-1 hour ago}"
+DEFAULT_STATUS_END_TIME="${DEFAULT_STATUS_END_TIME:-now}"
+
+# Source common functions
+source "$SCRIPT_DIR/$MODULES_DIR/common.sh"
+
+# Check if running as root for optimal monitoring tests [[memory:7056066]]
 check_sudo_recommendation() {
     if [[ $EUID -ne 0 ]] && [[ "${SKIP_SUDO_CHECK:-}" != "true" ]]; then
         echo -e "${YELLOW}⚠️  Notice: Running as non-root user${NC}"
@@ -25,9 +39,37 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 print_header() {
-    echo -e "${BLUE}🛡️  MODULAR MONITOR STATUS${NC}"
-    echo -e "${BLUE}   (including recovered i915 & system monitoring)${NC}"
+    echo -e "${BLUE}🛡️  MODULAR MONITOR STATUS (Restructured)${NC}"
+    echo -e "${BLUE}   New modular architecture with individual module configs${NC}"
     echo "========================================================"
+}
+
+get_enabled_modules() {
+    local enabled_modules=()
+    
+    # Look for .enabled symlinks in config directory
+    if [[ -d "$SCRIPT_DIR/$ENABLED_MODULES_DIR" ]]; then
+        for enabled_file in "$SCRIPT_DIR/$ENABLED_MODULES_DIR"/*.enabled; do
+            if [[ -L "$enabled_file" && -f "$enabled_file" ]]; then
+                local module_name
+                module_name=$(basename "$enabled_file" .enabled)
+                enabled_modules+=("$module_name")
+            fi
+        done
+    fi
+    
+    # If no enabled modules found, fall back to all available modules
+    if [[ ${#enabled_modules[@]} -eq 0 ]]; then
+        for module_dir in "$SCRIPT_DIR/$MODULES_DIR"/*/; do
+            if [[ -d "$module_dir" && -f "$module_dir/monitor.sh" ]]; then
+                local module_name
+                module_name=$(basename "$module_dir")
+                enabled_modules+=("$module_name")
+            fi
+        done
+    fi
+    
+    printf '%s\n' "${enabled_modules[@]}"
 }
 
 check_systemd_status() {
@@ -58,25 +100,38 @@ check_systemd_status() {
     # Recent activity (use since_time if provided)
     local last_run
     local time_filter="${since_time:-1 hour ago}"
-    last_run=$(journalctl -t modular-monitor --since "$time_filter" --no-pager | tail -1 | awk '{print $1, $2, $3}' || echo "No activity since $time_filter")
+    last_run=$(journalctl -t modular-monitor --since "$time_filter" --no-pager 2>/dev/null | tail -1 | awk '{print $1, $2, $3}' || echo "No activity since $time_filter")
     echo -e "${BLUE}  📊 Last activity: $last_run${NC}"
 }
 
 test_modules() {
     echo -e "\n${BLUE}MODULE TESTS:${NC}"
     
-    local modules=("thermal-monitor" "usb-monitor" "memory-monitor" "i915-monitor" "system-monitor")
+    mapfile -t enabled_modules < <(get_enabled_modules)
     local missing=0
     local working=0
     local errors=0
+    local skipped=0
     
-    for module in "${modules[@]}"; do
-        if [[ -f "$SCRIPT_DIR/modules/${module}.sh" ]]; then
+    for module in "${enabled_modules[@]}"; do
+        local module_dir="$SCRIPT_DIR/$MODULES_DIR/$module"
+        local exists_script="$module_dir/exists.sh"
+        
+        # Check if hardware exists first
+        if [[ -f "$exists_script" && -x "$exists_script" ]]; then
+            if ! "$exists_script" >/dev/null 2>&1; then
+                echo -e "${YELLOW}  ⏭️  $module: SKIP (enabled but required hardware not detected)${NC}"
+                skipped=$((skipped + 1))
+                continue
+            fi
+        fi
+        
+        if [[ -f "$module_dir/monitor.sh" && -x "$module_dir/monitor.sh" ]]; then
             # Run the module test and capture both exit code and output
             local test_output
             local exit_code
             set +e  # Temporarily disable exit on error
-            test_output=$(bash "$SCRIPT_DIR/orchestrator.sh" --test "$module" 2>&1)
+            test_output=$(bash "$SCRIPT_DIR/monitor.sh" --test "$module" 2>&1)
             exit_code=$?
             set -e  # Re-enable exit on error
             
@@ -96,9 +151,24 @@ test_modules() {
                 echo -e "${YELLOW}  ⚠️  $module: UNKNOWN (check manually)${NC}"
             fi
         else
-            echo -e "${RED}  ❌ $module: MISSING${NC}"
+            echo -e "${RED}  ❌ $module: MISSING or NOT EXECUTABLE${NC}"
             missing=$((missing + 1))
         fi
+    done
+    
+    echo ""
+    echo -e "${BLUE}MODULE CONFIGURATION:${NC}"
+    for module in "${enabled_modules[@]}"; do
+        local config_info="  📋 $module:"
+        
+        # Check for override config
+        if [[ -f "$SCRIPT_DIR/$MODULE_OVERRIDES_DIR/${module}.conf" ]]; then
+            config_info="$config_info has override config"
+        else
+            config_info="$config_info using defaults"
+        fi
+        
+        echo -e "${BLUE}$config_info${NC}"
     done
     
     if [[ $missing -eq 0 && $errors -eq 0 ]]; then
@@ -110,8 +180,31 @@ test_modules() {
     fi
 }
 
+show_individual_module_status() {
+    local since_time="$1"
+    local end_time="$2"
+    
+    echo -e "\n${BLUE}INDIVIDUAL MODULE STATUS:${NC}"
+    
+    mapfile -t enabled_modules < <(get_enabled_modules)
+    
+    for module in "${enabled_modules[@]}"; do
+        local status_script="$SCRIPT_DIR/$MODULES_DIR/$module/status.sh"
+        if [[ -f "$status_script" && -x "$status_script" ]]; then
+            echo -e "\n${BLUE}--- $module Module ---${NC}"
+            if bash "$status_script" "$since_time" "$end_time" 2>/dev/null; then
+                echo -e "${GREEN}✅ $module status completed${NC}"
+            else
+                echo -e "${YELLOW}⚠️  $module status had issues (check manually)${NC}"
+            fi
+        else
+            echo -e "\n${YELLOW}⚠️  $module: No status script available${NC}"
+        fi
+    done
+}
+
 show_current_readings() {
-    echo -e "\n${BLUE}CURRENT READINGS:${NC}"
+    echo -e "\n${BLUE}CURRENT SYSTEM READINGS:${NC}"
     
     # Temperature
     local temp
@@ -145,15 +238,6 @@ show_current_readings() {
         fi
     fi
     
-    # i915 Status
-    local i915_errors
-    i915_errors=$(journalctl --since "1 hour ago" --no-pager 2>/dev/null | grep -c -E "i915.*ERROR|workqueue: i915" || echo "0")
-    if [[ $i915_errors -eq 0 ]]; then
-        echo -e "${GREEN}  🎮 i915 GPU: No recent errors${NC}"
-    else
-        echo -e "${YELLOW}  🎮 i915 GPU: $i915_errors errors in last hour${NC}"
-    fi
-    
     # System Load
     local load_avg
     load_avg=$(uptime | awk -F'load average:' '{print $2}' | awk -F',' '{print $1}' | sed 's/^ *//')
@@ -166,464 +250,435 @@ show_current_readings() {
 }
 
 show_recent_alerts() {
-    echo -e "\n${BLUE}RECENT ALERTS (last hour):${NC}"
+    local since_time="$1"
+    echo -e "\n${BLUE}RECENT ALERTS (since $since_time):${NC}"
     
     local alerts
-    alerts=$(journalctl -t modular-monitor --since "1 hour ago" --no-pager | grep -i "alert\|critical\|warning\|emergency" | tail -5 || echo "")
+    alerts=$(journalctl -t modular-monitor --since "$since_time" --no-pager 2>/dev/null | grep -i "alert\|critical\|warning\|emergency" | tail -5 || echo "")
     
     if [[ -n "$alerts" ]]; then
         echo "$alerts" | while IFS= read -r line; do
             echo -e "${YELLOW}  ⚠️  $line${NC}"
         done
     else
-        echo -e "${GREEN}  ✅ No alerts in the last hour${NC}"
-    fi
-}
-
-show_recovered_features() {
-    echo -e "\n${BLUE}RECOVERED FEATURES STATUS:${NC}"
-    
-    # i915 Module
-    if [[ -f "$SCRIPT_DIR/modules/i915-monitor.sh" ]]; then
-        echo -e "${GREEN}  ✅ i915 GPU monitoring: RECOVERED${NC}"
-    else
-        echo -e "${RED}  ❌ i915 GPU monitoring: MISSING${NC}"
-    fi
-    
-    # System Module
-    if [[ -f "$SCRIPT_DIR/modules/system-monitor.sh" ]]; then
-        echo -e "${GREEN}  ✅ Comprehensive system monitoring: RECOVERED${NC}"
-    else
-        echo -e "${RED}  ❌ Comprehensive system monitoring: MISSING${NC}"
-    fi
-    
-    # Check if we have all original functionality
-    local original_modules=("thermal-monitor" "usb-monitor" "memory-monitor" "i915-monitor" "system-monitor")
-    local missing_count=0
-    for module in "${original_modules[@]}"; do
-        if [[ ! -f "$SCRIPT_DIR/modules/${module}.sh" ]]; then
-            missing_count=$((missing_count + 1))
-        fi
-    done
-    
-    if [[ $missing_count -eq 0 ]]; then
-        echo -e "${GREEN}  🎉 ALL original functionality restored and modularized${NC}"
-    else
-        echo -e "${YELLOW}  ⚠️  $missing_count modules still missing${NC}"
-    fi
-}
-
-check_incident_analysis() {
-    echo -e "\n${BLUE}🔍 INCIDENT ANALYSIS:${NC}"
-    
-    # Check if this is a recent boot (less than 10 minutes)
-    local uptime_seconds
-    uptime_seconds=$(awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 3600)
-    
-    if [[ $uptime_seconds -lt 600 ]]; then
-        echo -e "${YELLOW}  ⚠️  Recent boot detected (uptime: $((uptime_seconds / 60)) minutes)${NC}"
-        analyze_pre_shutdown_events
-    else
-        echo -e "${GREEN}  ✅ No recent incidents detected (uptime: $((uptime_seconds / 60)) minutes)${NC}"
-    fi
-}
-
-analyze_pre_shutdown_events() {
-    echo -e "\n${BLUE}📊 PRE-SHUTDOWN ANALYSIS:${NC}"
-    
-    # Get the previous boot's logs
-    local previous_boot_logs
-    previous_boot_logs=$(journalctl -b -1 --no-pager 2>/dev/null | tail -100 || echo "")
-    
-    if [[ -z "$previous_boot_logs" ]]; then
-        echo -e "${YELLOW}  ⚠️  Unable to access previous boot logs${NC}"
-        return
-    fi
-    
-    # Check for emergency shutdown by monitor
-    local emergency_shutdown
-    emergency_shutdown=$(echo "$previous_boot_logs" | grep -i "SYSTEM SHUTDOWN.*Thermal crisis\|emergency.*shutdown" | tail -1 || echo "")
-    
-    if [[ -n "$emergency_shutdown" ]]; then
-        echo -e "${RED}  🚨 EMERGENCY SHUTDOWN DETECTED:${NC}"
-        echo "    $(echo "$emergency_shutdown" | sed 's/^.*modular-monitor//' | cut -c1-80)"
-        analyze_thermal_emergency "$previous_boot_logs"
-        return
-    fi
-    
-    # Check for critical alerts before shutdown
-    local critical_alerts
-    critical_alerts=$(echo "$previous_boot_logs" | grep "ALERT\[critical\]" | tail -5 || echo "")
-    
-    if [[ -n "$critical_alerts" ]]; then
-        echo -e "${RED}  🔥 CRITICAL ALERTS BEFORE SHUTDOWN:${NC}"
-        echo "$critical_alerts" | while read -r alert; do
-            local timestamp=$(echo "$alert" | awk '{print $1, $2, $3}')
-            local message=$(echo "$alert" | sed 's/^.*ALERT\[critical\]://')
-            echo -e "${RED}    [$timestamp]${NC}$message"
-        done
-    fi
-    
-    # Check for hardware errors before shutdown
-    analyze_hardware_patterns "$previous_boot_logs"
-    
-    # Check for thermal events
-    analyze_thermal_patterns "$previous_boot_logs"
-    
-    # Check for USB issues
-    analyze_usb_patterns "$previous_boot_logs"
-    
-    # Check for process kills
-    analyze_process_kills "$previous_boot_logs"
-}
-
-analyze_thermal_emergency() {
-    local logs="$1"
-    
-    # Look for temperature readings before shutdown
-    local temp_readings
-    temp_readings=$(echo "$logs" | grep -i "temperature\|thermal\|°C" | tail -3 || echo "")
-    
-    if [[ -n "$temp_readings" ]]; then
-        echo -e "${RED}  🌡️  THERMAL READINGS BEFORE SHUTDOWN:${NC}"
-        echo "$temp_readings" | while read -r reading; do
-            echo "    $(echo "$reading" | sed 's/^.*modular-monitor//' | cut -c1-80)"
-        done
-    fi
-    
-    # Look for killed processes
-    local killed_processes
-    killed_processes=$(echo "$logs" | grep -i "killed.*PID\|terminated.*process" | tail -3 || echo "")
-    
-    if [[ -n "$killed_processes" ]]; then
-        echo -e "${RED}  ⚔️  PROCESSES KILLED:${NC}"
-        echo "$killed_processes" | while read -r kill; do
-            echo "    $(echo "$kill" | sed 's/^.*modular-monitor//' | cut -c1-80)"
-        done
-    fi
-}
-
-analyze_hardware_patterns() {
-    local logs="$1"
-    
-    # Count different types of hardware errors
-    local i915_errors usb_errors network_errors
-    i915_errors=$(echo "$logs" | grep "i915.*ERROR\|drm.*ERROR" 2>/dev/null | wc -l)
-    usb_errors=$(echo "$logs" | grep "usb.*reset\|USB disconnect" 2>/dev/null | wc -l)
-    network_errors=$(echo "$logs" | grep "network.*error\|ethernet.*fail" 2>/dev/null | wc -l)
-    
-    # Ensure we have valid numbers
-    [[ -z "$i915_errors" || ! "$i915_errors" =~ ^[0-9]+$ ]] && i915_errors=0
-    [[ -z "$usb_errors" || ! "$usb_errors" =~ ^[0-9]+$ ]] && usb_errors=0
-    [[ -z "$network_errors" || ! "$network_errors" =~ ^[0-9]+$ ]] && network_errors=0
-    
-    if [[ $i915_errors -gt 0 || $usb_errors -gt 0 || $network_errors -gt 0 ]]; then
-        echo -e "${YELLOW}  ⚠️  HARDWARE ERROR SUMMARY:${NC}"
-        [[ $i915_errors -gt 0 ]] && echo "    🎮 i915 GPU errors: $i915_errors"
-        [[ $usb_errors -gt 0 ]] && echo "    🔌 USB errors: $usb_errors"
-        [[ $network_errors -gt 0 ]] && echo "    🌐 Network errors: $network_errors"
-    fi
-}
-
-analyze_thermal_patterns() {
-    local logs="$1"
-    
-    # Look for high temperature warnings
-    local thermal_warnings
-    thermal_warnings=$(echo "$logs" | grep -i "temperature.*warning\|thermal.*critical\|°C.*high" 2>/dev/null | wc -l)
-    [[ -z "$thermal_warnings" || ! "$thermal_warnings" =~ ^[0-9]+$ ]] && thermal_warnings=0
-    
-    if [[ $thermal_warnings -gt 0 ]]; then
-        echo -e "${YELLOW}  🌡️  THERMAL WARNINGS: $thermal_warnings events${NC}"
-        
-        # Show the last thermal reading
-        local last_temp
-        last_temp=$(echo "$logs" | grep -i "temperature.*[0-9][0-9]°C" | tail -1 | sed 's/^.*temperature[^0-9]*\([0-9]*\)°C.*/\1/' || echo "unknown")
-        if [[ "$last_temp" != "unknown" && $last_temp -gt 0 ]]; then
-            echo "    Last reading: ${last_temp}°C"
-        fi
-    fi
-}
-
-analyze_usb_patterns() {
-    local logs="$1"
-    
-    # Count USB resets in the last session
-    local usb_resets
-    usb_resets=$(echo "$logs" | grep "USB device resets detected" 2>/dev/null | wc -l)
-    [[ -z "$usb_resets" || ! "$usb_resets" =~ ^[0-9]+$ ]] && usb_resets=0
-    
-    if [[ $usb_resets -gt 0 ]]; then
-        echo -e "${YELLOW}  🔌 USB RESET WARNINGS: $usb_resets alerts${NC}"
-        
-        # Get the last USB reset count
-        local last_count
-        last_count=$(echo "$logs" | grep "USB device resets detected" | tail -1 | sed 's/.*detected.*(\([0-9]*\).*/\1/' || echo "unknown")
-        if [[ "$last_count" != "unknown" ]]; then
-            echo "    Last count: $last_count resets"
-        fi
-    fi
-}
-
-analyze_process_kills() {
-    local logs="$1"
-    
-    # Look for emergency process terminations
-    local process_kills
-    process_kills=$(echo "$logs" | grep -i "emergency.*killed\|terminated.*PID" 2>/dev/null | wc -l)
-    [[ -z "$process_kills" || ! "$process_kills" =~ ^[0-9]+$ ]] && process_kills=0
-    
-    if [[ $process_kills -gt 0 ]]; then
-        echo -e "${RED}  ⚔️  EMERGENCY PROCESS KILLS: $process_kills events${NC}"
-        
-        # Show what was killed
-        local killed_apps
-        killed_apps=$(echo "$logs" | grep -i "killed.*PID\|terminated.*process" | tail -2 | sed 's/^.*killed.*PID [0-9]* (\([^)]*\)).*/\1/' || echo "")
-        if [[ -n "$killed_apps" ]]; then
-            echo "$killed_apps" | while read -r app; do
-                [[ -n "$app" ]] && echo "    Killed: $app"
-            done
-        fi
-    fi
-}
-
-analyze_pre_shutdown_hour() {
-    echo -e "${BLUE}🕐 PRE-SHUTDOWN HOUR ANALYSIS${NC}"
-    echo "========================================================"
-    
-    # Find the last shutdown/boot time
-    local current_boot_time
-    local previous_shutdown_time
-    
-    # Get current boot time
-    current_boot_time=$(journalctl -b 0 --no-pager -q --output=short-iso | head -1 | awk '{print $1}' 2>/dev/null || echo "")
-    
-    if [[ -z "$current_boot_time" ]]; then
-        echo -e "${RED}❌ Unable to determine current boot time${NC}"
-        return 1
-    fi
-    
-    echo -e "${BLUE}Current boot started: ${NC}$current_boot_time"
-    
-    # Find the last log entry before current boot (previous shutdown)
-    local previous_logs
-    previous_logs=$(journalctl -b -1 --no-pager -q --output=short-iso 2>/dev/null | tail -1 || echo "")
-    
-    if [[ -z "$previous_logs" ]]; then
-        echo -e "${RED}❌ Unable to access previous boot logs${NC}"
-        echo -e "${YELLOW}Try running with sudo for full log access${NC}"
-        return 1
-    fi
-    
-    # Extract the timestamp of the last log before shutdown
-    previous_shutdown_time=$(echo "$previous_logs" | awk '{print $1}' || echo "")
-    
-    if [[ -z "$previous_shutdown_time" ]]; then
-        echo -e "${RED}❌ Unable to determine previous shutdown time${NC}"
-        return 1
-    fi
-    
-    echo -e "${BLUE}Previous shutdown around: ${NC}$previous_shutdown_time"
-    
-    # Calculate one hour before the shutdown
-    local one_hour_before
-    if command -v date >/dev/null 2>&1; then
-        # Convert ISO timestamp to epoch, subtract 3600 seconds (1 hour), convert back
-        local shutdown_epoch
-        shutdown_epoch=$(date -d "$previous_shutdown_time" +%s 2>/dev/null || echo "")
-        
-        if [[ -n "$shutdown_epoch" ]]; then
-            local hour_before_epoch=$((shutdown_epoch - 3600))
-            one_hour_before=$(date -d "@$hour_before_epoch" --iso-8601=seconds 2>/dev/null || echo "")
-        fi
-    fi
-    
-    if [[ -z "$one_hour_before" ]]; then
-        echo -e "${RED}❌ Unable to calculate time window${NC}"
-        return 1
-    fi
-    
-    echo -e "${BLUE}Analyzing period: ${NC}$one_hour_before ${BLUE}to${NC} $previous_shutdown_time"
-    echo
-    
-    # Run analysis on that time window using existing functions
-    analyze_time_period "$one_hour_before" "$previous_shutdown_time"
-}
-
-analyze_time_period() {
-    local start_time="$1"
-    local end_time="$2"
-    
-    echo -e "${BLUE}📊 ACTIVITY ANALYSIS FOR TIME PERIOD:${NC}"
-    
-    # Get logs for the specific time period
-    local period_logs
-    period_logs=$(journalctl --since "$start_time" --until "$end_time" --no-pager 2>/dev/null || echo "")
-    
-    if [[ -z "$period_logs" ]]; then
-        echo -e "${YELLOW}  ⚠️  No logs found for this time period${NC}"
-        return
-    fi
-    
-    # Monitor alerts during this period
-    local monitor_alerts
-    monitor_alerts=$(echo "$period_logs" | grep -i "modular-monitor.*ALERT" || echo "")
-    
-    if [[ -n "$monitor_alerts" ]]; then
-        echo -e "${RED}🚨 MONITOR ALERTS DURING PERIOD:${NC}"
-        echo "$monitor_alerts" | while read -r alert; do
-            local timestamp=$(echo "$alert" | awk '{print $1, $2, $3}')
-            local alert_type=$(echo "$alert" | sed -n 's/.*ALERT\[\([^]]*\)\].*/\1/p')
-            local message=$(echo "$alert" | sed 's/^.*ALERT\[[^]]*\]://')
-            echo -e "${RED}  [$timestamp] [$alert_type]${NC}$message"
-        done
-        echo
-    fi
-    
-    # Check for hardware errors
-    local hw_errors
-    hw_errors=$(echo "$period_logs" | grep -c -i "hardware error\|machine check\|mce:" 2>/dev/null || echo "0")
-    [[ -z "$hw_errors" || ! "$hw_errors" =~ ^[0-9]+$ ]] && hw_errors=0
-    
-    if [[ $hw_errors -gt 0 ]]; then
-        echo -e "${YELLOW}⚠️  Hardware errors detected: $hw_errors${NC}"
-    fi
-    
-    # Check for thermal events
-    local thermal_events
-    thermal_events=$(echo "$period_logs" | grep -c -i "thermal\|temperature\|overheating" 2>/dev/null || echo "0")
-    [[ -z "$thermal_events" || ! "$thermal_events" =~ ^[0-9]+$ ]] && thermal_events=0
-    
-    if [[ $thermal_events -gt 0 ]]; then
-        echo -e "${YELLOW}🌡️  Thermal events detected: $thermal_events${NC}"
-    fi
-    
-    # Check for USB issues
-    local usb_issues
-    usb_issues=$(echo "$period_logs" | grep -c -i "usb.*reset\|usb disconnect\|device descriptor" 2>/dev/null || echo "0")
-    [[ -z "$usb_issues" || ! "$usb_issues" =~ ^[0-9]+$ ]] && usb_issues=0
-    
-    if [[ $usb_issues -gt 0 ]]; then
-        echo -e "${YELLOW}🔌 USB issues detected: $usb_issues${NC}"
-        
-        # Show recent USB issues
-        echo "$period_logs" | grep -i "usb.*reset\|usb disconnect\|device descriptor" | tail -5 | while read -r line; do
-            local timestamp=$(echo "$line" | awk '{print $1, $2, $3}')
-            local usb_event=$(echo "$line" | sed 's/.*kernel: //')
-            echo -e "${YELLOW}    [$timestamp] $usb_event${NC}"
-        done
-        echo
-    fi
-    
-    # Check for i915 GPU errors
-    local i915_errors
-    i915_errors=$(echo "$period_logs" | grep -c -i "i915.*error\|workqueue.*i915" 2>/dev/null || echo "0")
-    [[ -z "$i915_errors" || ! "$i915_errors" =~ ^[0-9]+$ ]] && i915_errors=0
-    
-    if [[ $i915_errors -gt 0 ]]; then
-        echo -e "${YELLOW}🎮 i915 GPU errors detected: $i915_errors${NC}"
-    fi
-    
-    # Check for memory issues
-    local memory_issues
-    memory_issues=$(echo "$period_logs" | grep -c -i "out of memory\|oom-killer\|memory pressure" 2>/dev/null || echo "0")
-    [[ -z "$memory_issues" || ! "$memory_issues" =~ ^[0-9]+$ ]] && memory_issues=0
-    
-    if [[ $memory_issues -gt 0 ]]; then
-        echo -e "${YELLOW}🧠 Memory issues detected: $memory_issues${NC}"
-    fi
-    
-    # Summary
-    local total_issues=$((hw_errors + thermal_events + usb_issues + i915_errors + memory_issues))
-    
-    if [[ $total_issues -eq 0 ]] && [[ -z "$monitor_alerts" ]]; then
-        echo -e "${GREEN}✅ No significant issues detected during this period${NC}"
-    else
-        echo -e "${YELLOW}📊 Summary: $total_issues hardware/system issues detected${NC}"
-        if [[ -n "$monitor_alerts" ]]; then
-            local alert_count
-            alert_count=$(echo "$monitor_alerts" | wc -l 2>/dev/null || echo "0")
-            echo -e "${YELLOW}📊 Monitor alerts: $alert_count${NC}"
-        fi
-    fi
-}
-
-show_usb_analysis() {
-    local since_time="$1"
-    local time_filter="${since_time:-1 hour ago}"
-    
-    # Check if there are USB issues to analyze
-    local usb_issues
-    usb_issues=$(journalctl -t modular-monitor --since "$time_filter" --no-pager 2>/dev/null | grep -c "USB device resets detected" || echo "0")
-    
-    if [[ $usb_issues -gt 0 ]]; then
-        echo -e "\n${BLUE}🔌 USB DEVICE ANALYSIS:${NC}"
-        
-        # Source the USB monitoring functions
-        if [[ -f "$SCRIPT_DIR/modules/usb-monitor.sh" ]]; then
-            source "$SCRIPT_DIR/modules/usb-monitor.sh"
-            
-            # Run USB device analysis
-            if [[ $EUID -eq 0 ]]; then
-                get_usb_device_details "$time_filter"
-            else
-                echo -e "${YELLOW}  ⚠️  Detailed USB analysis requires root access${NC}"
-                echo -e "${YELLOW}  Run: sudo ./status.sh --since '$time_filter' for device details${NC}"
-                
-                # Show basic info we can get without root
-                echo "  Recent USB alerts:"
-                journalctl -t modular-monitor --since "$time_filter" --no-pager 2>/dev/null | grep "USB device resets" | tail -3 | while read -r line; do
-                    local timestamp=$(echo "$line" | awk '{print $1, $2, $3}')
-                    local message=$(echo "$line" | sed 's/.*USB device resets detected.*/USB resets detected/')
-                    echo -e "${YELLOW}    [$timestamp] $message${NC}"
-                done
-            fi
-        fi
+        echo -e "${GREEN}  ✅ No alerts since $since_time${NC}"
     fi
 }
 
 show_help() {
     cat << 'EOF'
-status.sh - Modular Monitor Status Checker with Incident Analysis
+status.sh - Modular Monitor Status Checker (Restructured)
 
 USAGE:
     ./status.sh [OPTIONS]
 
 OPTIONS:
-    --help, -h          Show this help message
-    --since TIME        Only analyze events since specified time
-                        Formats: "1 hour ago", "30 minutes ago", "2025-08-23 18:25:00"
-                        Use this to set a baseline after configuration changes
-    --usb-details       Show detailed USB device analysis (requires sudo)
-    --pre-shutdown      Analyze the hour before the previous shutdown/boot
-                        Useful for identifying what led to system issues
+    --help, -h              Show this help message
+    --since TIME            Only analyze events since specified time
+                            Formats: "1 hour ago", "30 minutes ago", "2025-08-23 18:25:00"
+    --end-time TIME         Set end time for analysis (default: now)
+    --modules-only          Show only individual module status
+    --summary-only          Show only system summary (no individual modules)
+    --list-modules          List enabled modules and their configuration
+    --all                   Generate complete historical report (all available logs)
 
 EXAMPLES:
     ./status.sh                           # Full status report
     ./status.sh --since "1 hour ago"      # Only show activity from last hour
     ./status.sh --since "18:25:00"        # Only show activity since 6:25 PM today
-    ./status.sh --since "2025-08-23 18:25:00"  # Full timestamp
-    sudo ./status.sh --usb-details        # Detailed USB port/device analysis
-    ./status.sh --pre-shutdown            # Analyze hour before previous shutdown
+    ./status.sh --modules-only            # Show only module-specific status
+    ./status.sh --list-modules            # List all enabled modules
+    ./status.sh --all                     # Complete historical analysis
 
-INCIDENT ANALYSIS:
-    - Automatically detects recent boots (< 10 minutes)
-    - Analyzes previous boot logs for emergency shutdowns
-    - Reports critical alerts, hardware errors, and thermal events
-    - Shows emergency process kills and system patterns
+COMPLETE HISTORY REPORT (--all):
+    Generates comprehensive analysis including:
+    - All available boot sessions and kernel changes
+    - Complete alert and emergency action history
+    - Full hardware error timeline
+    - System configuration changes over time
+    - Module performance patterns and trends
+    - Long-term stability analysis
 
-USB ANALYSIS:
-    - Identifies specific USB ports with issues
-    - Shows device disconnect/reset patterns
-    - Maps current connected devices
-    - Requires sudo for detailed kernel message access
+MODULAR STRUCTURE:
+    - Individual module status: modules/MODULE/status.sh
+    - Module configurations: modules/MODULE/config.conf
+    - Override configurations: config/MODULE.conf
+    - Enabled modules: config/*.enabled symlinks
+    - System configuration: config/SYSTEM.conf
 
 EOF
 }
 
+generate_complete_history_report() {
+    echo -e "${BLUE}🕰️  COMPLETE SYSTEM HISTORY REPORT${NC}"
+    echo -e "${BLUE}   Analyzing all available logs and system data${NC}"
+    echo "========================================================"
+    echo ""
+    
+    local report_file="/tmp/modular-monitor-complete-history-$(date +%Y%m%d-%H%M%S).log"
+    echo "Generating comprehensive report to: $report_file"
+    echo ""
+    
+    {
+        echo "COMPLETE SYSTEM HISTORY REPORT"
+        echo "==============================="
+        echo "Generated: $(date)"
+        echo "System: $(uname -a)"
+        echo ""
+        
+        # 1. Boot History Analysis
+        echo "=== BOOT HISTORY ANALYSIS ==="
+        echo ""
+        generate_boot_history
+        echo ""
+        
+        # 2. Kernel Change Timeline
+        echo "=== KERNEL CHANGE TIMELINE ==="
+        echo ""
+        generate_kernel_timeline
+        echo ""
+        
+        # 3. Complete Alert History
+        echo "=== COMPLETE ALERT HISTORY ==="
+        echo ""
+        generate_alert_history
+        echo ""
+        
+        # 4. Hardware Error Timeline
+        echo "=== HARDWARE ERROR TIMELINE ==="
+        echo ""
+        generate_hardware_error_timeline
+        echo ""
+        
+        # 5. Emergency Actions History
+        echo "=== EMERGENCY ACTIONS HISTORY ==="
+        echo ""
+        generate_emergency_actions_history
+        echo ""
+        
+        # 6. Module Performance Analysis
+        echo "=== MODULE PERFORMANCE ANALYSIS ==="
+        echo ""
+        generate_module_performance_analysis
+        echo ""
+        
+        # 7. System Configuration Changes
+        echo "=== SYSTEM CONFIGURATION CHANGES ==="
+        echo ""
+        generate_config_changes_history
+        echo ""
+        
+        # 8. Long-term Stability Patterns
+        echo "=== LONG-TERM STABILITY PATTERNS ==="
+        echo ""
+        generate_stability_analysis
+        echo ""
+        
+        # 9. Summary and Recommendations
+        echo "=== SUMMARY AND RECOMMENDATIONS ==="
+        echo ""
+        generate_history_summary
+        
+    } > "$report_file" 2>&1
+    
+    echo -e "${GREEN}✅ Complete history report generated: $report_file${NC}"
+    echo ""
+    echo -e "${BLUE}Report Contents Preview:${NC}"
+    head -50 "$report_file" | while IFS= read -r line; do
+        echo "  $line"
+    done
+    echo "  ..."
+    echo ""
+    echo -e "${BLUE}Quick Commands:${NC}"
+    echo "  View full report: less $report_file"
+    echo "  Search in report: grep 'pattern' $report_file"
+    echo "  Copy report: cp $report_file /desired/location/"
+}
+
+generate_boot_history() {
+    echo "Boot Sessions (all available):"
+    journalctl --list-boots --no-pager 2>/dev/null | while IFS= read -r line; do
+        echo "  $line"
+    done
+    
+    echo ""
+    echo "Boot Timeline Analysis:"
+    local boot_count
+    boot_count=$(journalctl --list-boots --no-pager 2>/dev/null | wc -l)
+    echo "  Total recorded boots: $boot_count"
+    
+    # Calculate average uptime between boots
+    if [[ $boot_count -gt 1 ]]; then
+        local first_boot last_boot
+        first_boot=$(journalctl --list-boots --no-pager 2>/dev/null | head -1 | awk '{print $3, $4}')
+        last_boot=$(journalctl --list-boots --no-pager 2>/dev/null | tail -1 | awk '{print $3, $4}')
+        echo "  First recorded boot: $first_boot"
+        echo "  Most recent boot: $last_boot"
+        
+        if command -v date >/dev/null 2>&1; then
+            local first_epoch last_epoch
+            first_epoch=$(date -d "$first_boot" +%s 2>/dev/null || echo "0")
+            last_epoch=$(date -d "$last_boot" +%s 2>/dev/null || echo "0")
+            
+            if [[ $first_epoch -gt 0 && $last_epoch -gt 0 && $last_epoch -gt $first_epoch ]]; then
+                local total_days=$(( (last_epoch - first_epoch) / 86400 ))
+                local avg_uptime=$(( total_days / boot_count ))
+                echo "  Average uptime between boots: ~$avg_uptime days"
+            fi
+        fi
+    fi
+}
+
+generate_kernel_timeline() {
+    # Use kernel module if available, otherwise do basic analysis
+    if [[ -f "$SCRIPT_DIR/$MODULES_DIR/kernel/monitor.sh" ]]; then
+        echo "Kernel change analysis (using kernel module):"
+        bash "$SCRIPT_DIR/$MODULES_DIR/kernel/monitor.sh" --start-time "$(journalctl --list-boots --no-pager 2>/dev/null | head -1 | awk '{print $3, $4}' || echo '30 days ago')" 2>/dev/null || echo "Kernel module analysis failed"
+    else
+        echo "Basic kernel timeline:"
+        echo "  Current kernel: $(uname -r)"
+        echo "  Kernel build: $(uname -v)"
+        
+        # Look for kernel version mentions in all logs
+        echo ""
+        echo "Kernel versions mentioned in logs:"
+        journalctl --no-pager 2>/dev/null | grep -o "Linux version [0-9][^[:space:]]*" | sort | uniq -c | sort -nr | head -10 | while read -r count version; do
+            echo "  $version (mentioned $count times)"
+        done
+    fi
+}
+
+generate_alert_history() {
+    echo "All monitoring alerts (complete history):"
+    journalctl -t modular-monitor --no-pager 2>/dev/null | grep -i "alert\|critical\|warning\|emergency" | while IFS= read -r line; do
+        echo "  $line"
+    done | tail -100  # Limit to last 100 for readability
+    
+    echo ""
+    echo "Alert summary statistics:"
+    local total_alerts critical_alerts warning_alerts emergency_alerts
+    total_alerts=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "alert\|critical\|warning\|emergency" || echo "0")
+    critical_alerts=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "critical" || echo "0")
+    warning_alerts=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "warning" || echo "0")
+    emergency_alerts=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "emergency" || echo "0")
+    
+    echo "  Total alerts: $total_alerts"
+    echo "  Critical alerts: $critical_alerts"
+    echo "  Warning alerts: $warning_alerts"
+    echo "  Emergency alerts: $emergency_alerts"
+}
+
+generate_hardware_error_timeline() {
+    echo "Hardware error patterns (all logs):"
+    
+    # Different categories of hardware errors
+    local categories=(
+        "i915.*ERROR"
+        "usb.*reset"
+        "thermal"
+        "ata.*error"
+        "memory.*error"
+        "mce:"
+    )
+    
+    for category in "${categories[@]}"; do
+        local count
+        count=$(journalctl --no-pager 2>/dev/null | grep -c -i "$category" || echo "0")
+        echo "  $category errors: $count"
+    done
+    
+    echo ""
+    echo "Recent hardware errors (last 50):"
+    journalctl --no-pager 2>/dev/null | grep -i "error\|fail\|critical" | grep -i "hardware\|thermal\|usb\|i915\|ata\|memory" | tail -50 | while IFS= read -r line; do
+        echo "  $line"
+    done
+}
+
+generate_emergency_actions_history() {
+    echo "Emergency actions taken by monitoring system:"
+    journalctl -t modular-monitor --no-pager 2>/dev/null | grep -i "emergency.*killed\|emergency.*shutdown\|thermal.*protection" | while IFS= read -r line; do
+        echo "  $line"
+    done
+    
+    echo ""
+    echo "Emergency action statistics:"
+    local process_kills shutdowns
+    process_kills=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "emergency.*killed" || echo "0")
+    shutdowns=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "emergency.*shutdown" || echo "0")
+    
+    echo "  Emergency process kills: $process_kills"
+    echo "  Emergency shutdowns: $shutdowns"
+}
+
+generate_module_performance_analysis() {
+    echo "Module execution patterns:"
+    
+    mapfile -t enabled_modules < <(get_enabled_modules)
+    for module in "${enabled_modules[@]}"; do
+        echo "  === $module Module ==="
+        
+        # Count how many times module ran
+        local executions
+        executions=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c "Running module: $module" || echo "0")
+        echo "    Total executions: $executions"
+        
+        # Count issues detected
+        local issues
+        issues=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c "Module $module: ISSUES DETECTED" || echo "0")
+        echo "    Issues detected: $issues"
+        
+        # Success rate
+        if [[ $executions -gt 0 ]]; then
+            local success_rate=$(( (executions - issues) * 100 / executions ))
+            echo "    Success rate: ${success_rate}%"
+        fi
+        
+        echo ""
+    done
+}
+
+generate_config_changes_history() {
+    echo "System configuration timeline:"
+    
+    # Check for package installations that might affect monitoring
+    if [[ -f /var/log/dpkg.log ]]; then
+        echo "  Recent package changes (last 10):"
+        grep -h "install\|upgrade\|remove" /var/log/dpkg.log* 2>/dev/null | tail -10 | while IFS= read -r line; do
+            echo "    $line"
+        done
+    fi
+    
+    # Check for kernel parameter changes
+    echo ""
+    echo "  Current kernel parameters:"
+    if [[ -f /proc/cmdline ]]; then
+        echo "    $(cat /proc/cmdline)"
+    fi
+    
+    # Check for modular monitor config changes (if git is available)
+    if [[ -d "$SCRIPT_DIR/.git" ]] && command -v git >/dev/null 2>&1; then
+        echo ""
+        echo "  Monitoring configuration changes:"
+        cd "$SCRIPT_DIR" && git log --oneline --since="30 days ago" 2>/dev/null | head -10 | while IFS= read -r line; do
+            echo "    $line"
+        done
+    fi
+}
+
+generate_stability_analysis() {
+    echo "Long-term stability analysis:"
+    
+    # Uptime patterns
+    local current_uptime
+    current_uptime=$(uptime -p 2>/dev/null || uptime)
+    echo "  Current uptime: $current_uptime"
+    
+    # System load analysis
+    local current_load
+    current_load=$(uptime | awk -F'load average:' '{print $2}' | awk -F',' '{print $1}' | sed 's/^ *//')
+    echo "  Current load: $current_load"
+    
+    # Memory usage trends
+    if command -v free >/dev/null 2>&1; then
+        local mem_usage
+        mem_usage=$(free | grep '^Mem:' | awk '{printf "%.1f", ($3/$2) * 100}')
+        echo "  Current memory usage: ${mem_usage}%"
+    fi
+    
+    # Temperature patterns (if available)
+    local temp
+    temp=$(get_cpu_package_temp)
+    if [[ "$temp" != "unknown" ]]; then
+        echo "  Current CPU temperature: ${temp}°C"
+    fi
+    
+    echo ""
+    echo "  Stability indicators:"
+    
+    # Calculate stability score based on various factors
+    local stability_score=100
+    local deductions=""
+    
+    # Deduct for recent emergency actions
+    local recent_emergencies
+    recent_emergencies=$(journalctl -t modular-monitor --since "7 days ago" --no-pager 2>/dev/null | grep -c -i "emergency" || echo "0")
+    if [[ $recent_emergencies -gt 0 ]]; then
+        stability_score=$((stability_score - recent_emergencies * 10))
+        deductions="$deductions -${recent_emergencies}0 (emergencies)"
+    fi
+    
+    # Deduct for frequent reboots
+    local recent_boots
+    recent_boots=$(journalctl --list-boots --since "7 days ago" --no-pager 2>/dev/null | wc -l || echo "0")
+    if [[ $recent_boots -gt 7 ]]; then
+        local excess_boots=$((recent_boots - 7))
+        stability_score=$((stability_score - excess_boots * 5))
+        deductions="$deductions -$((excess_boots * 5)) (excess reboots)"
+    fi
+    
+    # Ensure score doesn't go below 0
+    [[ $stability_score -lt 0 ]] && stability_score=0
+    
+    echo "    Stability score: ${stability_score}/100"
+    [[ -n "$deductions" ]] && echo "    Deductions: $deductions"
+}
+
+generate_history_summary() {
+    echo "Historical Analysis Summary:"
+    echo ""
+    
+    # Key findings
+    echo "Key Findings:"
+    
+    # Most problematic module
+    mapfile -t enabled_modules < <(get_enabled_modules)
+    local max_issues=0
+    local most_problematic=""
+    
+    for module in "${enabled_modules[@]}"; do
+        local issues
+        issues=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c "Module $module: ISSUES DETECTED" || echo "0")
+        if [[ $issues -gt $max_issues ]]; then
+            max_issues=$issues
+            most_problematic=$module
+        fi
+    done
+    
+    if [[ -n "$most_problematic" && $max_issues -gt 0 ]]; then
+        echo "  • Most issues detected by: $most_problematic module ($max_issues issues)"
+    fi
+    
+    # Emergency patterns
+    local total_emergencies
+    total_emergencies=$(journalctl -t modular-monitor --no-pager 2>/dev/null | grep -c -i "emergency" || echo "0")
+    if [[ $total_emergencies -gt 0 ]]; then
+        echo "  • Total emergency interventions: $total_emergencies"
+    fi
+    
+    echo ""
+    echo "Recommendations:"
+    
+    if [[ $total_emergencies -gt 5 ]]; then
+        echo "  • High emergency intervention count - consider reviewing thermal management"
+    fi
+    
+    if [[ -n "$most_problematic" && $max_issues -gt 10 ]]; then
+        echo "  • Focus attention on $most_problematic module configuration"
+    fi
+    
+    echo "  • Regular monitoring appears to be functioning correctly"
+    echo "  • For detailed analysis, review individual sections above"
+    
+    echo ""
+    echo "Report completed: $(date)"
+}
+
 main() {
-    local since_time=""
-    local usb_details_only=false
+    local since_time="$DEFAULT_STATUS_TIMESPAN"
+    local end_time="$DEFAULT_STATUS_END_TIME"
+    local modules_only=false
+    local summary_only=false
+    local complete_history=false
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -642,14 +697,35 @@ main() {
                     exit 1
                 fi
                 ;;
-            --usb-details)
-                usb_details_only=true
+            --end-time)
+                if [[ -n "${2:-}" ]]; then
+                    end_time="$2"
+                    shift 2
+                else
+                    echo "Error: --end-time requires a time specification"
+                    exit 1
+                fi
+                ;;
+            --modules-only)
+                modules_only=true
                 shift
                 ;;
-            --pre-shutdown)
-                # New flag for pre-shutdown analysis
-                analyze_pre_shutdown_hour
+            --summary-only)
+                summary_only=true
+                shift
+                ;;
+            --list-modules)
+                echo "Enabled Modules:"
+                get_enabled_modules | while read -r module; do
+                    echo "  - $module"
+                done
+                echo ""
+                bash "$SCRIPT_DIR/monitor.sh" --list
                 exit 0
+                ;;
+            --all)
+                complete_history=true
+                shift
                 ;;
             *)
                 echo "Unknown option: $1"
@@ -659,47 +735,15 @@ main() {
         esac
     done
     
-    # USB details only mode
-    if [[ "$usb_details_only" == "true" ]]; then
-        echo -e "${BLUE}🔌 USB DEVICE DETAILED ANALYSIS${NC}"
-        echo "========================================================"
-        
-        if [[ $EUID -ne 0 ]]; then
-            echo -e "${RED}❌ This feature requires root access${NC}"
-            echo "Run: sudo ./status.sh --usb-details"
-            exit 1
-        fi
-        
-        # Determine appropriate time period based on uptime
-        local analysis_period
-        local uptime_seconds
-        uptime_seconds=$(awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 7200)
-        
-        if [[ $uptime_seconds -lt 7200 ]]; then
-            # Less than 2 hours uptime - analyze since boot
-            analysis_period="boot"
-            echo "Analyzing USB activity since boot ($(($uptime_seconds / 60)) minutes ago)..."
-        else
-            # More than 2 hours uptime - use specified time or default to 2 hours
-            analysis_period="${since_time:-2 hours ago}"
-            echo "Analyzing USB activity since: $analysis_period"
-        fi
-        echo
-        
-        # Source USB monitoring functions
-        if [[ -f "$SCRIPT_DIR/modules/usb-monitor.sh" ]]; then
-            source "$SCRIPT_DIR/modules/usb-monitor.sh"
-            get_usb_device_details "$analysis_period"
-        else
-            echo "USB monitoring module not found"
-            exit 1
-        fi
+    # Handle complete history report
+    if [[ "$complete_history" == "true" ]]; then
+        generate_complete_history_report
         exit 0
     fi
     
     print_header
     
-    # Check sudo recommendation
+    # Check sudo recommendation [[memory:7056066]]
     check_sudo_recommendation
     
     # System uptime first
@@ -707,33 +751,33 @@ main() {
     uptime_info=$(uptime -p 2>/dev/null || uptime)
     echo -e "${BLUE}System uptime: $uptime_info${NC}"
     
-    # Show time filter if specified
-    if [[ -n "$since_time" ]]; then
-        echo -e "${YELLOW}📅 Time filter: Only showing data since '$since_time'${NC}"
+    # Show time filter
+    echo -e "${YELLOW}📅 Analyzing period: since '$since_time' until '$end_time'${NC}"
+    
+    if [[ "$modules_only" != "true" ]]; then
+        check_systemd_status "$since_time"
+        test_modules
+        
+        if [[ "${STATUS_SHOW_CURRENT_READINGS:-true}" == "true" ]]; then
+            show_current_readings
+        fi
+        
+        if [[ "${STATUS_SHOW_RECENT_ALERTS:-true}" == "true" ]]; then
+            show_recent_alerts "$since_time"
+        fi
     fi
     
-    # Incident analysis (new feature)
-    check_incident_analysis
-    
-    check_systemd_status "$since_time"
-    test_modules  
-    show_current_readings "$since_time"
-    show_recovered_features
-    show_recent_alerts "$since_time"
-    
-    # USB Analysis (if USB issues detected)
-    show_usb_analysis "$since_time"
+    if [[ "$summary_only" != "true" ]]; then
+        show_individual_module_status "$since_time" "$end_time"
+    fi
     
     echo -e "\n${BLUE}📋 QUICK COMMANDS:${NC}"
-    echo "  Monitor logs: journalctl -t modular-monitor -f"
-    if [[ -n "$since_time" ]]; then
-        echo "  Monitor logs (filtered): journalctl -t modular-monitor --since '$since_time' -f"
-    fi
-    echo "  USB analysis: sudo ./status.sh --usb-details"
-    echo "  Pre-shutdown: ./status.sh --pre-shutdown"
-    echo "  Test i915:    $SCRIPT_DIR/orchestrator.sh --test i915-monitor"
-    echo "  Test system:  $SCRIPT_DIR/orchestrator.sh --test system-monitor"
-    echo "  Run manual:   $SCRIPT_DIR/orchestrator.sh"
+    echo "  Monitor logs: journalctl -t modular-monitor -f --no-pager"
+    echo "  Complete history: ./status.sh --all"
+    echo "  Test specific module: ./monitor.sh --test MODULE_NAME"
+    echo "  List modules: ./monitor.sh --list"
+    echo "  Run manual check: ./monitor.sh"
+    echo "  Module configs: ls -la config/*.enabled"
 }
 
 main "$@"
