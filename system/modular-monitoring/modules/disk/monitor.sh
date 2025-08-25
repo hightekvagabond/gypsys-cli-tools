@@ -40,6 +40,14 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor disk space usage, health, and I/O performance"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "disk-cleanup"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -82,6 +90,22 @@ check_status() {
     # Check disk space for all mounted filesystems
     while read -r filesystem; do
         if [[ -n "$filesystem" && "$filesystem" != "tmpfs" && "$filesystem" != "devtmpfs" ]]; then
+            # Skip filesystems matching ignore patterns
+            if [[ -n "${DISK_IGNORE_PATTERNS:-}" ]]; then
+                local should_ignore=false
+                IFS='|' read -ra patterns <<< "$DISK_IGNORE_PATTERNS"
+                for pattern in "${patterns[@]}"; do
+                    if [[ "$filesystem" =~ $pattern ]]; then
+                        should_ignore=true
+                        break
+                    fi
+                done
+                if [[ "$should_ignore" == "true" ]]; then
+                    log "Skipping $filesystem - matches ignore pattern"
+                    continue
+                fi
+            fi
+            
             local disk_usage
             disk_usage=$(df "$filesystem" 2>/dev/null | tail -1 | awk '{print $5}' | sed 's/%//' || echo "0")
             

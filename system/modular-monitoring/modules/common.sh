@@ -276,59 +276,38 @@ check_enabled_modules_hardware() {
 # Autofix management functions
 list_autofix_scripts() {
     local module_name="${MODULE_NAME:-unknown}"
-    local autofix_dir="$SCRIPT_DIR/autofix"
     
     echo "AUTOFIX SCRIPTS FOR MODULE: $module_name"
     echo "==========================================="
     
-    if [[ ! -d "$autofix_dir" ]]; then
-        echo "❌ No autofix directory found"
-        return 1
-    fi
-    
-    # Find all executable scripts in autofix directory
-    local autofix_scripts=()
-    while IFS= read -r -d '' script; do
-        autofix_scripts+=("$(basename "$script")")
-    done < <(find "$autofix_dir" -name "*.sh" -type f -executable -print0 2>/dev/null)
-    
-    if [[ ${#autofix_scripts[@]} -eq 0 ]]; then
-        echo "ℹ️  No autofix scripts found in $autofix_dir"
-        return 0
-    fi
-    
-    echo "Available autofix scripts:"
-    for script in "${autofix_scripts[@]}"; do
-        local script_path="$autofix_dir/$script"
-        echo "  📄 $script"
-        
-        # Try to extract description from script comments
-        local description
-        description=$(grep -m1 "^# " "$script_path" 2>/dev/null | sed 's/^# //' || echo "No description available")
-        echo "     Description: $description"
-        
-        # Check if script is referenced in configuration
-        local script_basename="${script%.*}"
-        # Convert to valid variable name (replace hyphens with underscores, uppercase)
-        local enable_var="ENABLE_${script_basename^^}"
-        enable_var="${enable_var//-/_}_AUTOFIX"
-        if [[ -n "${!enable_var:-}" ]]; then
-            echo "     Config: $enable_var=${!enable_var}"
-        fi
-        
-        # Look for trigger conditions in monitor script
-        if [[ -f "$SCRIPT_DIR/monitor.sh" ]]; then
-            local triggers
-            triggers=$(grep -n "$script" "$SCRIPT_DIR/monitor.sh" 2>/dev/null | head -3 || echo "")
-            if [[ -n "$triggers" ]]; then
-                echo "     Triggered by:"
-                echo "$triggers" | while IFS= read -r line; do
-                    echo "       $line"
-                done
+    # Get list of autofixes this module declares it uses
+    local declared_autofixes
+    if declared_autofixes=$("$SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
+        echo "Module declares the following autofixes:"
+        while IFS= read -r autofix_name; do
+            [[ -z "$autofix_name" ]] && continue
+            echo "  📄 ${autofix_name}.sh"
+            
+            # Check if the autofix exists in global directory
+            local global_autofix_dir="$(dirname "$SCRIPT_DIR")/autofix"
+            local autofix_script="$global_autofix_dir/${autofix_name}.sh"
+            if [[ -f "$autofix_script" && -x "$autofix_script" ]]; then
+                echo "     Status: ✅ Available in global autofix directory"
+                
+                # Try to extract description from script comments
+                local description
+                description=$(grep -m1 "^# " "$autofix_script" 2>/dev/null | sed 's/^# //' || echo "No description available")
+                echo "     Description: $description"
+            else
+                echo "     Status: ❌ NOT FOUND in global autofix directory"
             fi
-        fi
-        echo ""
-    done
+            
+        done <<< "$declared_autofixes"
+    else
+        echo "ℹ️  Module does not declare any autofixes (--list-autofixes not supported or empty)"
+    fi
+    
+    echo ""
     
     # Check for configuration variables that might control autofixes
     echo "Configuration variables (from config.conf):"
@@ -345,14 +324,15 @@ get_expected_autofix_scripts() {
     local module_name="${MODULE_NAME:-unknown}"
     local expected_scripts=()
     
-    # Parse monitor script to find autofix script references
+    # Get autofix scripts declared by the module
     if [[ -f "$SCRIPT_DIR/monitor.sh" ]]; then
-        # Look for patterns like: "$SCRIPT_DIR/autofix/script.sh"
-        while IFS= read -r line; do
-            if [[ -n "$line" ]]; then
-                expected_scripts+=("$line")
-            fi
-        done < <(grep -o '\$SCRIPT_DIR/autofix/[^"]*\.sh' "$SCRIPT_DIR/monitor.sh" 2>/dev/null | sed 's|.*autofix/||' | sort -u)
+        local declared_autofixes
+        if declared_autofixes=$("$SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
+            while IFS= read -r autofix_name; do
+                [[ -z "$autofix_name" ]] && continue
+                expected_scripts+=("${autofix_name}.sh")
+            done <<< "$declared_autofixes"
+        fi
     fi
     
     printf '%s\n' "${expected_scripts[@]}"
@@ -635,10 +615,12 @@ show_module_help() {
     if [[ -f "$module_dir/README.md" ]]; then
         echo "   Documentation: $module_dir/README.md"
     fi
-    if [[ -d "$module_dir/autofix" ]]; then
+    # Check for declared autofixes in global directory
+    local declared_autofixes
+    if declared_autofixes=$("$module_dir/monitor.sh" --list-autofixes 2>/dev/null); then
         local autofix_count
-        autofix_count=$(find "$module_dir/autofix" -name "*.sh" | wc -l)
-        echo "   Autofix scripts: $autofix_count available"
+        autofix_count=$(echo "$declared_autofixes" | grep -c . || echo "0")
+        echo "   Declared autofixes: $autofix_count (in global autofix directory)"
     fi
     
     echo ""

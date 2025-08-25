@@ -181,19 +181,19 @@ validate_module_structure() {
             validation_errors+=("⚠️  $file_name exists but not executable")
         else
             echo -e "  ✅ $file_name: Found and valid"
+            
+            # Additional validation for monitor.sh - check for --description flag
+            if [[ "$file_name" == "monitor.sh" ]]; then
+                if ! "$file_path" --description >/dev/null 2>&1; then
+                    validation_errors+=("⚠️  monitor.sh missing required --description flag")
+                else
+                    echo -e "  ✅ monitor.sh: --description flag working"
+                fi
+            fi
         fi
     done
     
-    # Autofix directory check
-    local autofix_dir="$module_dir/autofix"
-    if [[ ! -d "$autofix_dir" ]]; then
-        validation_errors+=("❌ Missing autofix/ directory")
-    else
-        echo -e "  ✅ autofix/: Directory exists"
-        
-        # Validate autofix scripts
-        validate_autofix_scripts "$module" validation_errors
-    fi
+    # Note: Autofix directories are now centralized in /autofix/ - no longer required per module
     
     # Report validation results
     if [[ ${#validation_errors[@]} -gt 0 ]]; then

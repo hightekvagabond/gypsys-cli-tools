@@ -1,96 +1,123 @@
 #!/bin/bash
-# Generic Disk Cleanup Autofix
+# Disk Cleanup Autofix Script  
+# Usage: disk-cleanup.sh <calling_module> <grace_period_seconds> [filesystem] [usage_percent]
 # Attempts to clean up disk space when usage is high
-# Can be triggered by disk, memory swap, or other space-related conditions
 
-# Get the project root directory
-AUTOFIX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$AUTOFIX_DIR")"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+
+# Load modules common.sh for helper functions
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$PROJECT_ROOT/modules/common.sh"
 
-disk_cleanup() {
-    local filesystem="${1:-/}"
-    local usage="${2:-unknown}"
-    local calling_module="${3:-unknown}"
+# Validate arguments
+if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
+    exit 1
+fi
+
+CALLING_MODULE="$1"
+GRACE_PERIOD="$2"
+FILESYSTEM="${3:-/}"
+USAGE_PERCENT="${4:-unknown}"
+
+# Load autofix configuration
+AUTOFIX_CONFIG="$PROJECT_ROOT/config/autofix.conf"
+if [[ -f "$AUTOFIX_CONFIG" ]]; then
+    source "$AUTOFIX_CONFIG"
+fi
+
+# The actual disk cleanup action
+perform_disk_cleanup() {
+    local filesystem="$1"
+    local usage_percent="$2"
     
-    log "AUTOFIX: Attempting disk cleanup for $filesystem (${usage}% full) - triggered by $calling_module module"
-    
-    # Load global autofix configuration
-    local autofix_config="$PROJECT_ROOT/config/autofix.conf"
-    if [[ -f "$autofix_config" ]]; then
-        source "$autofix_config"
-    fi
+    autofix_log "INFO" "Disk cleanup initiated for $filesystem (${usage_percent}% full)"
     
     # Common cleanup actions that are safe
-    local cleanup_actions=()
     local safe_actions=()
     local manual_actions=()
+    local cleanup_size=0
     
     # Safe actions that don't require root
     if [[ -w "$HOME/.cache" ]]; then
-        safe_actions+=("rm -rf $HOME/.cache/thumbnails/*")
-        safe_actions+=("find $HOME/.cache -type f -mtime +7 -delete")
+        autofix_log "INFO" "Cleaning user cache directories..."
+        
+        # Clean thumbnails cache
+        if [[ -d "$HOME/.cache/thumbnails" ]]; then
+            local thumb_size=$(du -sm "$HOME/.cache/thumbnails" 2>/dev/null | cut -f1 || echo "0")
+            if [[ $thumb_size -gt 0 ]]; then
+                rm -rf "$HOME/.cache/thumbnails"/* 2>/dev/null || true
+                autofix_log "INFO" "Cleaned ${thumb_size}MB from thumbnails cache"
+                cleanup_size=$((cleanup_size + thumb_size))
+            fi
+        fi
+        
+        # Clean old cache files
+        local cache_files_cleaned=0
+        find "$HOME/.cache" -type f -mtime +7 -delete 2>/dev/null && cache_files_cleaned=1 || true
+        if [[ $cache_files_cleaned -eq 1 ]]; then
+            autofix_log "INFO" "Cleaned old cache files (older than 7 days)"
+        fi
     fi
     
+    # Clean user trash
     if [[ -w "$HOME/.local/share/Trash" ]]; then
-        safe_actions+=("rm -rf $HOME/.local/share/Trash/*")
+        local trash_size=$(du -sm "$HOME/.local/share/Trash" 2>/dev/null | cut -f1 || echo "0")
+        if [[ $trash_size -gt 0 ]]; then
+            rm -rf "$HOME/.local/share/Trash"/* 2>/dev/null || true
+            autofix_log "INFO" "Cleaned ${trash_size}MB from user trash"
+            cleanup_size=$((cleanup_size + trash_size))
+        fi
     fi
     
     # Actions that require root privileges
-    if command -v apt-get >/dev/null 2>&1; then
-        manual_actions+=("sudo apt-get clean")
-        manual_actions+=("sudo apt-get autoremove")
-    fi
-    
-    if command -v yum >/dev/null 2>&1; then
-        manual_actions+=("sudo yum clean all")
-    fi
-    
-    if command -v dnf >/dev/null 2>&1; then
-        manual_actions+=("sudo dnf clean all")
-    fi
-    
-    # System cleanup (requires root)
-    manual_actions+=("sudo find /tmp -type f -mtime +7 -delete")
-    manual_actions+=("sudo find /var/tmp -type f -mtime +7 -delete")
-    manual_actions+=("sudo journalctl --vacuum-time=30d")
-    manual_actions+=("sudo find /var/log -name '*.log' -mtime +30 -delete")
-    
-    # Execute safe actions automatically
-    local safe_cleanup_size=0
-    if [[ ${#safe_actions[@]} -gt 0 ]]; then
-        log "AUTOFIX: Executing safe user-space cleanup actions..."
-        for action in "${safe_actions[@]}"; do
-            log "AUTOFIX: Running: $action"
-            eval "$action" 2>/dev/null || true
-        done
-        safe_cleanup_size=$(echo "Safe cleanup completed" | wc -c)
-    fi
-    
-    # Report current disk usage breakdown
-    log "AUTOFIX: Current disk usage breakdown for $filesystem:"
-    if [[ "$filesystem" == "/" ]]; then
-        {
-            echo "DISK USAGE ANALYSIS:"
-            echo "==================="
-            du -sh /var/log /tmp /var/tmp /var/cache /home /usr /opt 2>/dev/null | sort -hr | head -10
-            echo ""
-            echo "LARGEST FILES:"
-            find "$filesystem" -type f -size +100M 2>/dev/null | head -10 | while read -r file; do
-                ls -lh "$file" 2>/dev/null || echo "Cannot access: $file"
-            done
-        } | while IFS= read -r line; do
-            log "AUTOFIX: $line"
-        done
-    fi
-    
-    # Suggest manual actions
-    if [[ ${#manual_actions[@]} -gt 0 ]]; then
-        log "AUTOFIX: Manual cleanup actions recommended (require elevated privileges):"
-        send_alert "warning" "💾 Disk cleanup: Manual intervention needed for $filesystem (${usage}% full)"
+    if [[ $EUID -eq 0 ]]; then
+        autofix_log "INFO" "Running as root - performing system cleanup..."
+        
+        # Package manager cleanup
+        if command -v apt-get >/dev/null 2>&1; then
+            autofix_log "INFO" "Cleaning APT package cache..."
+            apt-get clean 2>/dev/null || autofix_log "WARN" "APT clean failed"
+            apt-get autoremove -y 2>/dev/null || autofix_log "WARN" "APT autoremove failed"
+        fi
+        
+        if command -v yum >/dev/null 2>&1; then
+            autofix_log "INFO" "Cleaning YUM package cache..."
+            yum clean all 2>/dev/null || autofix_log "WARN" "YUM clean failed"
+        fi
+        
+        if command -v dnf >/dev/null 2>&1; then
+            autofix_log "INFO" "Cleaning DNF package cache..."
+            dnf clean all 2>/dev/null || autofix_log "WARN" "DNF clean failed"
+        fi
+        
+        # System temporary files cleanup
+        autofix_log "INFO" "Cleaning system temporary files..."
+        find /tmp -type f -mtime +7 -delete 2>/dev/null || true
+        find /var/tmp -type f -mtime +7 -delete 2>/dev/null || true
+        
+        # Journal cleanup
+        autofix_log "INFO" "Cleaning old journal logs..."
+        journalctl --vacuum-time=30d 2>/dev/null || autofix_log "WARN" "Journal cleanup failed"
+        
+        # Old log files cleanup
+        find /var/log -name "*.log" -mtime +30 -delete 2>/dev/null || true
+        find /var/log -name "*.log.*.gz" -mtime +30 -delete 2>/dev/null || true
+        
+    else
+        # Not running as root - provide recommendations
+        autofix_log "WARN" "System cleanup requires root privileges - providing recommendations"
+        
+        manual_actions+=("sudo apt-get clean && sudo apt-get autoremove")
+        manual_actions+=("sudo find /tmp -type f -mtime +7 -delete")
+        manual_actions+=("sudo find /var/tmp -type f -mtime +7 -delete")
+        manual_actions+=("sudo journalctl --vacuum-time=30d")
+        manual_actions+=("sudo find /var/log -name '*.log' -mtime +30 -delete")
         
         for action in "${manual_actions[@]}"; do
-            log "AUTOFIX: Recommended: $action"
+            autofix_log "INFO" "RECOMMENDATION: $action"
         done
         
         # Create a cleanup script for the user
@@ -100,10 +127,10 @@ disk_cleanup() {
             echo "# Automatic disk cleanup script generated by modular-monitor"
             echo "# Generated: $(date)"
             echo "# Filesystem: $filesystem"
-            echo "# Usage: ${usage}%"
-            echo "# Triggered by: $calling_module module"
+            echo "# Usage: ${usage_percent}%"
+            echo "# Triggered by: $CALLING_MODULE module"
             echo ""
-            echo "echo 'Starting disk cleanup for $filesystem ($usage% full)...'"
+            echo "echo 'Starting disk cleanup for $filesystem ($usage_percent% full)...'"
             echo ""
             for action in "${manual_actions[@]}"; do
                 echo "echo 'Running: $action'"
@@ -115,18 +142,58 @@ disk_cleanup() {
         } > "$cleanup_script"
         chmod +x "$cleanup_script"
         
-        log "AUTOFIX: Created cleanup script: $cleanup_script"
-        send_alert "info" "💾 Disk cleanup script created: $cleanup_script"
+        autofix_log "INFO" "Created cleanup script: $cleanup_script"
+        
+        if command -v notify-send >/dev/null 2>&1; then
+            notify-send "Disk Cleanup Script Created" "Manual cleanup script: $cleanup_script\nRequires root privileges to run" 2>/dev/null || true
+        fi
     fi
     
+    # Report current disk usage breakdown
+    autofix_log "INFO" "Current disk usage analysis for $filesystem:"
+    if [[ "$filesystem" == "/" ]]; then
+        {
+            echo "DISK USAGE ANALYSIS:"
+            echo "==================="
+            du -sh /var/log /tmp /var/tmp /var/cache /home /usr /opt 2>/dev/null | sort -hr | head -10
+            echo ""
+            echo "LARGEST FILES:"
+            find "$filesystem" -type f -size +100M 2>/dev/null | head -10 | while read -r file; do
+                ls -lh "$file" 2>/dev/null || echo "Cannot access: $file"
+            done
+        } | while IFS= read -r line; do
+            autofix_log "INFO" "$line"
+        done
+    fi
+    
+    # Report cleanup results
+    if [[ $cleanup_size -gt 0 ]]; then
+        autofix_log "INFO" "User-space cleanup freed approximately ${cleanup_size}MB"
+        
+        if command -v notify-send >/dev/null 2>&1; then
+            notify-send "Disk Cleanup Complete" "Freed ~${cleanup_size}MB of disk space\nFilesystem: $filesystem" 2>/dev/null || true
+        fi
+    else
+        autofix_log "INFO" "Disk cleanup completed - limited space freed in user areas"
+    fi
+    
+    # Show updated disk usage
+    local new_usage=$(df -h "$filesystem" | tail -1 | awk '{print $5}' | tr -d '%')
+    if [[ -n "$new_usage" && "$new_usage" =~ ^[0-9]+$ ]]; then
+        autofix_log "INFO" "Updated disk usage for $filesystem: ${new_usage}%"
+        
+        if [[ "$usage_percent" != "unknown" && "$usage_percent" =~ ^[0-9]+$ ]]; then
+            local freed_percent=$((usage_percent - new_usage))
+            if [[ $freed_percent -gt 0 ]]; then
+                autofix_log "INFO" "Disk cleanup reduced usage by ${freed_percent} percentage points"
+            fi
+        fi
+    fi
+    
+    autofix_log "INFO" "Disk cleanup procedure completed"
     return 0
 }
 
-# If script is run directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    filesystem="${1:-/}"
-    usage="${2:-unknown}"
-    calling_module="${3:-direct}"
-    disk_cleanup "$filesystem" "$usage" "$calling_module"
-fi
-
+# Execute with grace period management
+autofix_log "INFO" "Disk cleanup requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
+run_autofix_with_grace "disk-cleanup" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_disk_cleanup" "$FILESYSTEM" "$USAGE_PERCENT"

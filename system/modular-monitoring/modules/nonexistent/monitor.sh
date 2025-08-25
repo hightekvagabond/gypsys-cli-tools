@@ -40,6 +40,14 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor for nonexistent quantum flux capacitor hardware (placeholder/testing module)"
+                exit 0
+                ;;
+            --list-autofixes)
+                # Testing module - no autofixes needed
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help

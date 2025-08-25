@@ -40,6 +40,10 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor CPU temperature, thermal throttling, and overheating conditions"
+                exit 0
+                ;;
             --list-autofixes)
                 list_autofix_scripts
                 exit 0

@@ -40,6 +40,16 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor kernel errors, version changes, and system stability"
+                exit 0
+                ;;
+            --list-autofixes)
+                # Kernel module doesn't currently have specific autofixes
+                # but could use emergency actions if needed
+                echo "emergency-process-kill"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -88,6 +98,9 @@ check_status() {
     
     local error_count
     error_count=$(eval "journalctl -k $time_filter --no-pager 2>/dev/null" | grep -c -i "kernel.*error\|kernel.*warning\|oops\|panic" || echo "0")
+    
+    # Ensure error_count is a clean number
+    [[ -z "$error_count" || ! "$error_count" =~ ^[0-9]+$ ]] && error_count=0
     
     if [[ $error_count -gt 0 ]]; then
         send_alert "warning" "⚠️ Kernel errors detected: $error_count errors since last check"

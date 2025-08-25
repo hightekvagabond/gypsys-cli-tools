@@ -121,23 +121,27 @@ test_monitor_script() {
     return 0
 }
 
-# Test 6: Check autofix scripts
-test_autofix_scripts() {
-    local autofix_dir="$SCRIPT_DIR/autofix"
+# Test 6: Check module's declared autofix scripts exist in main autofix directory
+test_autofix_availability() {
+    local project_root="$(dirname "$SCRIPT_DIR")"
+    local main_autofix_dir="$project_root/autofix"
     
-    # Check if autofix directory exists
-    if [[ ! -d "$autofix_dir" ]]; then
-        return 1
+    # Get list of autofixes this module uses
+    local declared_autofixes
+    if ! declared_autofixes=$("$SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
+        # If module doesn't support --list-autofixes, assume it uses no autofix
+        return 0
     fi
     
-    # Check for key autofix scripts
-    if [[ ! -f "$autofix_dir/emergency-process-kill.sh" ]]; then
-        return 1
-    fi
-    
-    if [[ ! -f "$autofix_dir/emergency-shutdown.sh" ]]; then
-        return 1
-    fi
+    # Check if each declared autofix exists in main autofix directory
+    while IFS= read -r autofix_name; do
+        [[ -z "$autofix_name" ]] && continue
+        
+        local autofix_script="$main_autofix_dir/${autofix_name}.sh"
+        if [[ ! -f "$autofix_script" ]] || [[ ! -x "$autofix_script" ]]; then
+            return 1
+        fi
+    done <<< "$declared_autofixes"
     
     return 0
 }
@@ -185,7 +189,7 @@ main() {
     run_test "Notification tools" test_notification_tools
     run_test "Configuration loading" test_configuration
     run_test "Monitor script functionality" test_monitor_script
-    run_test "Autofix scripts presence" test_autofix_scripts
+    run_test "Declared autofix availability" test_autofix_availability
     run_test "System integration tools" test_system_integration
     run_test "Thermal monitoring permissions" test_permissions
     

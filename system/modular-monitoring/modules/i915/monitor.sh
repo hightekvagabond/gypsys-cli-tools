@@ -40,6 +40,16 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor Intel i915 GPU errors, hangs, and performance issues"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "i915-dkms-rebuild"
+                echo "i915-grub-flags"
+                echo "emergency-process-kill"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -94,6 +104,9 @@ check_status() {
     
     local error_count
     error_count=$(eval "journalctl -k $time_filter --no-pager 2>/dev/null" | grep -c "i915.*error\|i915.*timeout\|i915.*hang" || echo "0")
+    
+    # Ensure error_count is a clean number
+    [[ -z "$error_count" || ! "$error_count" =~ ^[0-9]+$ ]] && error_count=0
     
     if [[ $error_count -ge ${I915_CRITICAL_THRESHOLD:-50} ]]; then
         send_alert "critical" "🎮 CRITICAL: $error_count i915 GPU errors detected"

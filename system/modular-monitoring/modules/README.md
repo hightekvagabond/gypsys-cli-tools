@@ -142,6 +142,17 @@ parse_args() {
                 AUTO_FIX_ENABLED=false
                 shift
                 ;;
+            --description)
+                echo "Monitor NEW_MODULE_NAME hardware/software status and performance"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "emergency-process-kill.sh"
+                echo "emergency-shutdown.sh"
+                echo "disk-cleanup.sh"
+                # Add your module-specific autofixes here
+                exit 0
+                ;;
             --help)
                 show_help
                 exit 0
@@ -167,6 +178,8 @@ OPTIONS:
     --start-time TIME   Set monitoring start time for analysis
     --end-time TIME     Set monitoring end time for analysis
     --status            Show detailed status information instead of monitoring
+    --description       Show a short description of what this module monitors
+    --list-autofixes    List autofix scripts that this module uses
     --help              Show this help message
 
 EXAMPLES:

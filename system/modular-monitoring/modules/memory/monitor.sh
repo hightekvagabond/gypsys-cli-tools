@@ -40,6 +40,15 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor memory usage, swap activity, and out-of-memory conditions"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "memory-cleanup"
+                echo "emergency-process-kill"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help

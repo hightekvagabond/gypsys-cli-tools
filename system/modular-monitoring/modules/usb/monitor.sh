@@ -40,6 +40,15 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor USB device resets, connection failures, and port issues"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "usb-storage-reset"
+                echo "usb-network-disconnect"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -395,9 +404,13 @@ identify_usb_device_from_address() {
 attempt_usb_fix() {
     log "Attempting USB fixes..."
     
-    # Try USB storage reset
-    if [[ -x "$SCRIPT_DIR/autofix/storage-reset.sh" ]]; then
-        "$SCRIPT_DIR/autofix/storage-reset.sh"
+    # Try USB storage reset using global autofix
+    local global_autofix_dir="$(dirname "$SCRIPT_DIR")/autofix"
+    if [[ -x "$global_autofix_dir/usb-storage-reset.sh" ]]; then
+        local grace_seconds=${USB_AUTOFIX_GRACE_SECONDS:-30}
+        "$global_autofix_dir/usb-storage-reset.sh" "usb" "$grace_seconds"
+    else
+        log "USB storage reset autofix not available"
     fi
     
     log "USB fix attempt completed"
@@ -407,9 +420,13 @@ attempt_network_fix() {
     local dock_failures="$1"
     log "Attempting network fixes..."
     
-    # Try network adapter disconnect
-    if [[ -x "$SCRIPT_DIR/autofix/network-disconnect.sh" ]]; then
-        "$SCRIPT_DIR/autofix/network-disconnect.sh" "$dock_failures"
+    # Try network adapter disconnect using global autofix
+    local global_autofix_dir="$(dirname "$SCRIPT_DIR")/autofix"
+    if [[ -x "$global_autofix_dir/usb-network-disconnect.sh" ]]; then
+        local grace_seconds=${USB_AUTOFIX_GRACE_SECONDS:-30}
+        "$global_autofix_dir/usb-network-disconnect.sh" "usb" "$grace_seconds" "$dock_failures"
+    else
+        log "USB network disconnect autofix not available"
     fi
     
     log "Network fix attempt completed"
@@ -438,7 +455,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ "$STATUS_MODE" == "true" ]]; then
         show_status
     else
-    check_status
+        check_status
+    fi
 fi
 
 show_status() {

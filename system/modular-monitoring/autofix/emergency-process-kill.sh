@@ -1,30 +1,67 @@
 #!/bin/bash
-# Emergency Process Kill Autofix with Centralized Grace Period Management
+# Emergency Process Kill Autofix Script
+# Usage: emergency-process-kill.sh <calling_module> <grace_period_seconds> [trigger_reason] [trigger_value]
 # Handles kill requests from multiple monitors with intelligent grace period tracking
-# Usage: emergency-process-kill.sh <trigger_reason> <trigger_value> <grace_seconds>
 
-# Get the project root directory
-AUTOFIX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$AUTOFIX_DIR")"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
+
+# Load modules common.sh for helper functions like get_top_cpu_processes
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$PROJECT_ROOT/modules/common.sh"
 
-# Grace period tracking directory
-GRACE_DIR="/tmp/modular-monitor-grace"
-mkdir -p "$GRACE_DIR"
+# Validate arguments
+if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
+    exit 1
+fi
 
-emergency_process_kill() {
-    local trigger_reason="${1:-emergency}"
-    local trigger_value="${2:-unknown}"
-    local grace_seconds="${3:-45}"
-    local calling_module="${4:-unknown}"
+CALLING_MODULE="$1"
+GRACE_PERIOD="$2"
+TRIGGER_REASON="${3:-emergency}"
+TRIGGER_VALUE="${4:-unknown}"
+
+# Load autofix configuration
+AUTOFIX_CONFIG="$PROJECT_ROOT/config/autofix.conf"
+if [[ -f "$AUTOFIX_CONFIG" ]]; then
+    source "$AUTOFIX_CONFIG"
+fi
+
+# Check if a process is system critical
+is_system_critical_process() {
+    local pid="$1"
+    local cmd="$2"
     
-    log "AUTOFIX: Emergency process kill request - Trigger: $trigger_reason ($trigger_value) from $calling_module module (grace: ${grace_seconds}s)"
-    
-    # Load global autofix configuration
-    local autofix_config="$PROJECT_ROOT/config/autofix.conf"
-    if [[ -f "$autofix_config" ]]; then
-        source "$autofix_config"
+    # Skip kernel threads (processes in brackets)
+    if [[ "$cmd" =~ ^\[.*\]$ ]]; then
+        return 0  # Critical
     fi
+    
+    # Skip essential system processes
+    case "$cmd" in
+        systemd|init|kthreadd|ksoftirqd|rcu_*|watchdog|migration|systemd-*|dbus|NetworkManager|sshd)
+            return 0  # Critical
+            ;;
+        */systemd|*/init|*/dbus|*/NetworkManager|*/sshd)
+            return 0  # Critical
+            ;;
+    esac
+    
+    # Skip processes with PID 1, 2, or in the first 100 PIDs (likely system)
+    if [[ $pid -le 100 ]]; then
+        return 0  # Critical
+    fi
+    
+    return 1  # Not critical
+}
+
+# The actual emergency process kill action
+perform_emergency_process_kill() {
+    local trigger_reason="$1"
+    local trigger_value="$2"
+    
+    autofix_log "INFO" "Emergency process kill request - Trigger: $trigger_reason ($trigger_value)"
     
     # Find the top CPU process first
     local target_pid target_pcpu target_cmd
@@ -44,7 +81,7 @@ emergency_process_kill() {
             
             # Skip system critical processes
             if is_system_critical_process "$pid" "$cmd"; then
-                log "AUTOFIX: Skipping critical process: PID $pid ($cmd)"
+                autofix_log "DEBUG" "Skipping critical process: PID $pid ($cmd)"
                 continue
             fi
             
@@ -58,92 +95,78 @@ emergency_process_kill() {
     done <<< "$(get_top_cpu_processes)"
     
     if [[ "$found_target" != "true" ]]; then
-        log "AUTOFIX: No suitable processes found for emergency kill"
-        return 1
+        autofix_log "WARN" "No suitable processes found for emergency kill (all processes below ${PROCESS_CPU_THRESHOLD:-10}% CPU or critical)"
+        return 0  # Not an error - just no targets
     fi
     
     local app_name=$(basename "$target_cmd" | cut -d' ' -f1)
-    local grace_file="$GRACE_DIR/kill_${target_pid}_${app_name}"
-    local current_time=$(date +%s)
+    autofix_log "INFO" "Target identified: $app_name (PID $target_pid, ${target_pcpu}% CPU)"
     
-    # Check if we already have a grace period active for this process
-    if [[ -f "$grace_file" ]]; then
-        local grace_start=$(cat "$grace_file" 2>/dev/null || echo "0")
-        local elapsed=$((current_time - grace_start))
+    # Check current status
+    if ! kill -0 "$target_pid" 2>/dev/null; then
+        autofix_log "INFO" "Target process PID $target_pid no longer exists"
+        return 0
+    fi
+    
+    # Re-check CPU usage to make sure it's still high
+    local current_cpu
+    current_cpu=$(ps -p "$target_pid" -o %cpu= 2>/dev/null | tr -d ' ' || echo "0")
+    local current_cpu_int=$(echo "$current_cpu" | cut -d. -f1)
+    
+    if [[ $current_cpu_int -lt ${PROCESS_CPU_THRESHOLD:-10} ]]; then
+        autofix_log "INFO" "Target process CPU usage dropped to $current_cpu% - no longer a threat"
+        return 0
+    fi
+    
+    # Send notifications before kill
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -u critical "Emergency Process Kill" "Killing: $app_name (${current_cpu}% CPU)\nReason: $trigger_reason\nCaller: $CALLING_MODULE" 2>/dev/null || true
+    fi
+    
+    autofix_log "INFO" "Terminating PID $target_pid ($app_name) - ${current_cpu}% CPU - trigger: $trigger_reason"
+    
+    # Try graceful termination first
+    if kill -TERM "$target_pid" 2>/dev/null; then
+        autofix_log "INFO" "Sent SIGTERM to PID $target_pid"
         
-        if [[ $elapsed -lt $grace_seconds ]]; then
-            local remaining=$((grace_seconds - elapsed))
-            log "AUTOFIX: Process $app_name (PID $target_pid) still in grace period (${remaining}s remaining)"
-            log "AUTOFIX: Kill request from $calling_module noted but grace period active"
-            
-            # Log the additional kill request
-            echo "$(date '+%Y-%m-%d %H:%M:%S') $calling_module requested kill due to $trigger_reason ($trigger_value)" >> "${grace_file}.requests"
-            
-            return 0  # Don't kill yet, grace period active
+        # Wait for graceful shutdown
+        local wait_time="${KILL_PROCESS_WAIT_TIME:-3}"
+        sleep "$wait_time"
+        
+        # Check if process still exists
+        if kill -0 "$target_pid" 2>/dev/null; then
+            autofix_log "WARN" "Process PID $target_pid still running after SIGTERM, sending SIGKILL"
+            if kill -KILL "$target_pid" 2>/dev/null; then
+                autofix_log "INFO" "Sent SIGKILL to PID $target_pid"
+            else
+                autofix_log "ERROR" "Failed to send SIGKILL to PID $target_pid"
+                return 1
+            fi
         else
-            log "AUTOFIX: Grace period expired for $app_name (PID $target_pid) after ${elapsed}s"
+            autofix_log "INFO" "Process PID $target_pid terminated gracefully"
         fi
     else
-        # First kill request for this process - start grace period
-        echo "$current_time" > "$grace_file"
-        echo "$(date '+%Y-%m-%d %H:%M:%S') $calling_module initiated grace period due to $trigger_reason ($trigger_value)" > "${grace_file}.requests"
-        
-        log "AUTOFIX: Starting ${grace_seconds}s grace period for $app_name (PID $target_pid) - ${target_pcpu}% CPU"
-        log "AUTOFIX: Target: $app_name (PID $target_pid, ${target_pcpu}% CPU) from $calling_module"
-        
-        send_alert "warning" "⏳ Grace period started: $app_name (${target_pcpu}% CPU) - ${grace_seconds}s to cool down"
-        
-        return 0  # Don't kill yet, just started grace period
+        autofix_log "ERROR" "Failed to send SIGTERM to PID $target_pid"
+        return 1
     fi
     
-    # Grace period has expired - proceed with kill
-    log "AUTOFIX: Terminating PID $target_pid ($app_name) - ${target_pcpu}% CPU - grace period expired"
-    
-    # Show all the kill requests that led to this
-    if [[ -f "${grace_file}.requests" ]]; then
-        log "AUTOFIX: Kill requests during grace period:"
-        while IFS= read -r request_line; do
-            log "AUTOFIX:   $request_line"
-        done < "${grace_file}.requests"
-    fi
-    
-    # Send notifications
-    send_alert "emergency" "🚨 EMERGENCY: Killed '$app_name' (${target_pcpu}% CPU) - grace period expired after multiple requests"
-    
-    if command -v notify-send >/dev/null 2>&1; then
-        DISPLAY=:0 notify-send -u critical -t 15000 "🚨 Emergency Protection" \
-            "Killed: $app_name\nCPU: ${target_pcpu}%\nFinal Trigger: $trigger_reason\nValue: $trigger_value\nModule: $calling_module\nGrace Period: Expired" 2>/dev/null &
-    fi
-    
-    echo "🚨 EMERGENCY: Monitor killed '$app_name' (${target_pcpu}% CPU) after grace period - Final trigger: $trigger_reason ($trigger_value)" | wall 2>/dev/null || true
-    
-    # Kill process
-    kill -TERM "$target_pid" 2>/dev/null || true
-    sleep "${KILL_PROCESS_WAIT_TIME:-2}"
+    # Final verification
+    sleep 1
     if kill -0 "$target_pid" 2>/dev/null; then
-        kill -KILL "$target_pid" 2>/dev/null || true
+        autofix_log "ERROR" "Process PID $target_pid still running after both SIGTERM and SIGKILL"
+        return 1
+    else
+        autofix_log "INFO" "Process $app_name (PID $target_pid) successfully terminated"
+        
+        # Send success notification
+        if command -v notify-send >/dev/null 2>&1; then
+            notify-send "Emergency Kill Complete" "Successfully terminated: $app_name\nCPU usage: ${current_cpu}%\nReason: $trigger_reason" 2>/dev/null || true
+        fi
+        
+        return 0
     fi
-    
-    # Clean up grace tracking files
-    rm -f "$grace_file" "${grace_file}.requests"
-    
-    log "AUTOFIX: Process terminated successfully"
-    return 0
 }
 
-# Cleanup function for old grace files
-cleanup_old_grace_files() {
-    find "$GRACE_DIR" -name "kill_*" -mtime +1 -delete 2>/dev/null || true
-}
-
-# Clean up old files on startup
-cleanup_old_grace_files
-
-# If script is run directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    trigger_reason="${1:-emergency}"
-    trigger_value="${2:-unknown}"
-    grace_seconds="${3:-45}"
-    calling_module="${4:-direct}"
-    emergency_process_kill "$trigger_reason" "$trigger_value" "$grace_seconds" "$calling_module"
-fi
+# Execute with grace period management
+autofix_log "INFO" "Emergency process kill requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
+run_autofix_with_grace "emergency-process-kill" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_emergency_process_kill" "$TRIGGER_REASON" "$TRIGGER_VALUE"

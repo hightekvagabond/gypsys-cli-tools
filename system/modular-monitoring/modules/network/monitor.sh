@@ -40,6 +40,14 @@ parse_args() {
                 show_help
                 exit 0
                 ;;
+            --description)
+                echo "Monitor network interface status, packet drops, and connectivity issues"
+                exit 0
+                ;;
+            --list-autofixes)
+                echo "usb-network-disconnect"
+                exit 0
+                ;;
             *)
                 echo "Unknown option: $1"
                 show_help
@@ -102,6 +110,9 @@ check_status() {
     
     local network_errors
     network_errors=$(eval "journalctl -k $time_filter --no-pager 2>/dev/null" | grep -c -i "network.*error\|ethernet.*timeout\|wifi.*failed" || echo "0")
+    
+    # Ensure network_errors is a clean number
+    [[ -z "$network_errors" || ! "$network_errors" =~ ^[0-9]+$ ]] && network_errors=0
     
     if [[ $network_errors -ge ${NETWORK_ERROR_CRITICAL:-15} ]]; then
         send_alert "critical" "🌐 CRITICAL: $network_errors network errors detected"

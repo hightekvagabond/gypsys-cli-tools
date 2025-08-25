@@ -179,6 +179,15 @@ Run 'gypsy-monitor config show' to review or 'gypsy-monitor setup --reconfigure'
 - [ ] Hardware-specific thermal profiles
 - [ ] Thermal throttling detection and response
 
+#### **PY-007b: Disk/Storage Monitoring**
+- [ ] **Intelligent filesystem filtering** - ignore system/virtual filesystems by default
+- [ ] **Configurable ignore patterns** for drives/mounts (regex support)
+- [ ] **Default ignore list** for common pseudo-filesystems (/sys/firmware, /dev, /proc, /snap)
+- [ ] **User-customizable ignore patterns** via configuration
+- [ ] **Smart detection** of virtual vs physical storage
+- [ ] **SMART health monitoring** integration for physical drives
+- [ ] **Snapshot-aware monitoring** for BTRFS/ZFS filesystems
+
 #### **PY-008: Memory Monitoring**
 - [ ] Memory pressure detection with multiple metrics
 - [ ] Memory leak detection and analysis
@@ -279,6 +288,20 @@ Run 'gypsy-monitor config show' to review or 'gypsy-monitor setup --reconfigure'
 - [ ] Historical data visualization and analysis
 - [ ] Mobile-responsive web interface
 - [ ] Multi-user authentication and authorization
+
+#### **PY-017: Deployment Mode Support**
+- [ ] **Desktop mode detection** - automatic GUI notification support
+- [ ] **Headless mode detection** - disable desktop notifications, enable alternatives
+- [ ] **Notification alternatives for headless**:
+  - [ ] Email notifications for critical alerts
+  - [ ] Webhook notifications to external services
+  - [ ] SMS notifications via API providers
+  - [ ] Slack/Discord integration for server monitoring
+  - [ ] MQTT publishing for home automation integration
+  - [ ] File-based alert logging for external monitoring tools
+- [ ] **Auto-detection of environment** (desktop session vs headless)
+- [ ] **Configuration profiles** for different deployment scenarios
+- [ ] **Fallback notification chains** (try desktop → email → webhook → log)
 
 ---
 
