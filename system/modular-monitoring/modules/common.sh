@@ -12,16 +12,55 @@ STATE_DIR="/var/tmp/modular-monitor-state"
 # Ensure state directory exists
 mkdir -p "$STATE_DIR"
 
-# Load configuration files in order (framework config first, then module-specific)
-if [[ -f "$FRAMEWORK_DIR/monitor-config.sh" ]]; then
-    MONITOR_ROOT="$MODULAR_DIR"
-    source "$FRAMEWORK_DIR/monitor-config.sh"
-fi
-
-# Legacy config support
+# Load configuration with 4-tier precedence hierarchy
+load_configuration() {
+    # Save any existing environment variables before loading configs
+    local saved_env_vars=()
+    local var_name
+    
+    # List of important config variables to preserve from environment
+    local config_vars=("USE_MODULES" "IGNORE_MODULES" "DEFAULT_MONITOR_INTERVAL" "TEMP_WARNING" "TEMP_CRITICAL" "TEMP_EMERGENCY" "MEMORY_WARNING" "MEMORY_CRITICAL" "WARNING_COOLDOWN" "CRITICAL_COOLDOWN" "EMERGENCY_COOLDOWN")
+    
+    # Save environment variables that are already set
+    for var_name in "${config_vars[@]}"; do
+        if [[ -n "${!var_name:-}" ]]; then
+            saved_env_vars+=("$var_name=${!var_name}")
+        fi
+    done
+    
+    # 4. System Default Config (lowest precedence)
+    if [[ -f "$MODULAR_DIR/system_default.conf" ]]; then
+        source "$MODULAR_DIR/system_default.conf"
+    fi
+    
+    # 3. Module-Specific Config (when MODULE_NAME is set)
+    if [[ -n "${MODULE_NAME:-}" && -f "$MODULAR_DIR/modules/$MODULE_NAME/config.conf" ]]; then
+        source "$MODULAR_DIR/modules/$MODULE_NAME/config.conf"
+    fi
+    
+    # 2. Machine-Specific System Config (higher precedence)
+    if [[ -f "$CONFIG_DIR/SYSTEM.conf" ]]; then
+        source "$CONFIG_DIR/SYSTEM.conf"
+    fi
+    
+    # 1. Environment Variables (highest precedence) - restore saved values
+    for var_assignment in "${saved_env_vars[@]}"; do
+        eval "export $var_assignment"
+    done
+    
+    # Legacy config support for backward compatibility
+    if [[ -f "$FRAMEWORK_DIR/monitor-config.sh" ]]; then
+        MONITOR_ROOT="$MODULAR_DIR"
+        source "$FRAMEWORK_DIR/monitor-config.sh"
+    fi
+    
 if [[ -f "$CONFIG_DIR/thresholds.conf" ]]; then
     source "$CONFIG_DIR/thresholds.conf"
 fi
+}
+
+# Load configuration immediately
+load_configuration
 
 # Logging functions
 log() {
@@ -228,16 +267,14 @@ check_nonexistent_hardware() {
 
 # Get enabled modules based on USE_MODULES and IGNORE_MODULES configuration
 get_enabled_modules() {
-    local system_config="$CONFIG_DIR/SYSTEM.conf"
     local modules_dir="${MODULAR_DIR}/modules"
     local use_modules="ALL"
     local ignore_modules=""
     local enabled_modules=()
     
-    # Load system configuration
-    if [[ -f "$system_config" ]]; then
-        source "$system_config"
-    fi
+    # Load configuration with proper hierarchy to get USE_MODULES/IGNORE_MODULES
+    # (this ensures we get the right precedence: env vars > machine config > defaults)
+    load_configuration
     
     # Parse USE_MODULES and IGNORE_MODULES
     use_modules="${USE_MODULES:-ALL}"
@@ -579,6 +616,10 @@ init_framework() {
     MODULE_NAME="$module_name"
     LOG_TAG="$module_name"
     mkdir -p "$STATE_DIR/$module_name"
+    
+    # Reload configuration with module-specific settings
+    load_configuration
+    
     log "Framework initialized for module: $module_name"
 }
 
