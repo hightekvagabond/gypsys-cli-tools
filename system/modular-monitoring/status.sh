@@ -44,33 +44,8 @@ print_header() {
     echo "========================================================"
 }
 
-get_enabled_modules() {
-    local enabled_modules=()
-    
-    # Look for .enabled symlinks in config directory
-    if [[ -d "$SCRIPT_DIR/$ENABLED_MODULES_DIR" ]]; then
-        for enabled_file in "$SCRIPT_DIR/$ENABLED_MODULES_DIR"/*.enabled; do
-            if [[ -L "$enabled_file" && -f "$enabled_file" ]]; then
-                local module_name
-                module_name=$(basename "$enabled_file" .enabled)
-                enabled_modules+=("$module_name")
-            fi
-        done
-    fi
-    
-    # If no enabled modules found, fall back to all available modules
-    if [[ ${#enabled_modules[@]} -eq 0 ]]; then
-        for module_dir in "$SCRIPT_DIR/$MODULES_DIR"/*/; do
-            if [[ -d "$module_dir" && -f "$module_dir/monitor.sh" ]]; then
-                local module_name
-                module_name=$(basename "$module_dir")
-                enabled_modules+=("$module_name")
-            fi
-        done
-    fi
-    
-    printf '%s\n' "${enabled_modules[@]}"
-}
+# Load common functions that include get_enabled_modules()
+source "$SCRIPT_DIR/modules/common.sh"
 
 check_systemd_status() {
     local since_time="$1"

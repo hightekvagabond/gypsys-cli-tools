@@ -226,31 +226,107 @@ check_nonexistent_hardware() {
     return 1
 }
 
-# Helper function to check enabled modules and their hardware existence
+# Get enabled modules based on USE_MODULES and IGNORE_MODULES configuration
+get_enabled_modules() {
+    local system_config="$CONFIG_DIR/SYSTEM.conf"
+    local modules_dir="${MODULAR_DIR}/modules"
+    local use_modules="ALL"
+    local ignore_modules=""
+    local enabled_modules=()
+    
+    # Load system configuration
+    if [[ -f "$system_config" ]]; then
+        source "$system_config"
+    fi
+    
+    # Parse USE_MODULES and IGNORE_MODULES
+    use_modules="${USE_MODULES:-ALL}"
+    ignore_modules="${IGNORE_MODULES:-}"
+    
+    # Convert ignore list to array for easier processing
+    local ignore_array=()
+    if [[ -n "$ignore_modules" ]]; then
+        read -ra ignore_array <<< "$ignore_modules"
+    fi
+    
+    # Determine which modules to include
+    case "$use_modules" in
+        "ALL")
+            # Include all modules except those in ignore list
+            for module_dir in "$modules_dir"/*/; do
+                if [[ -d "$module_dir" && -f "$module_dir/monitor.sh" ]]; then
+                    local module_name
+                    module_name=$(basename "$module_dir")
+                    
+                    # Check if module should be ignored
+                    local should_ignore=false
+                    for ignore_mod in "${ignore_array[@]}"; do
+                        if [[ "$module_name" == "$ignore_mod" ]]; then
+                            should_ignore=true
+                            break
+                        fi
+                    done
+                    
+                    if [[ "$should_ignore" == "false" ]]; then
+                        enabled_modules+=("$module_name")
+                    fi
+                fi
+            done
+            ;;
+        "NONE")
+            # No modules enabled
+            enabled_modules=()
+            ;;
+        *)
+            # Specific list of modules
+            read -ra module_list <<< "$use_modules"
+            for module_name in "${module_list[@]}"; do
+                # Check if module exists and should not be ignored
+                if [[ -d "$modules_dir/$module_name" && -f "$modules_dir/$module_name/monitor.sh" ]]; then
+                    local should_ignore=false
+                    for ignore_mod in "${ignore_array[@]}"; do
+                        if [[ "$module_name" == "$ignore_mod" ]]; then
+                            should_ignore=true
+                            break
+                        fi
+                    done
+                    
+                    if [[ "$should_ignore" == "false" ]]; then
+                        enabled_modules+=("$module_name")
+                    fi
+                fi
+            done
+            ;;
+    esac
+    
+    # Return the list of enabled modules
+    printf '%s\n' "${enabled_modules[@]}"
+}
+
+# Check enabled modules and their hardware existence (updated to use new config system)
 check_enabled_modules_hardware() {
-    local config_dir="${CONFIG_DIR:-$(dirname "$MODULAR_DIR")/config}"
     local modules_dir="${MODULAR_DIR}/modules"
     local skipped_modules=()
     local missing_hardware=()
     local available_modules=()
     
-    # Find all enabled modules
-    for enabled_file in "$config_dir"/*.enabled; do
-        if [[ -L "$enabled_file" && -f "$enabled_file" ]]; then
-            local module_name
-            module_name=$(basename "$enabled_file" .enabled)
-            local exists_script="$modules_dir/$module_name/exists.sh"
-            
-            if [[ -f "$exists_script" && -x "$exists_script" ]]; then
-                if "$exists_script" >/dev/null 2>&1; then
-                    available_modules+=("$module_name")
-                else
-                    missing_hardware+=("$module_name")
-                fi
-            else
-                # No exists.sh script - assume available for backwards compatibility
+    # Get enabled modules using new configuration system
+    local enabled_modules
+    mapfile -t enabled_modules < <(get_enabled_modules)
+    
+    # Check hardware existence for each enabled module
+    for module_name in "${enabled_modules[@]}"; do
+        local exists_script="$modules_dir/$module_name/exists.sh"
+        
+        if [[ -f "$exists_script" && -x "$exists_script" ]]; then
+            if "$exists_script" >/dev/null 2>&1; then
                 available_modules+=("$module_name")
+            else
+                missing_hardware+=("$module_name")
             fi
+        else
+            # No exists.sh script - assume available for backwards compatibility
+            available_modules+=("$module_name")
         fi
     done
     

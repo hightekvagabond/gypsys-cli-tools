@@ -98,6 +98,9 @@ list_modules() {
     exit 0
 }
 
+# Load common functions for get_enabled_modules()
+source "$SCRIPT_DIR/modules/common.sh"
+
 discover_modules() {
     local test_all_modules="$1"
     local specific_modules=("${@:2}")
@@ -124,14 +127,12 @@ discover_modules() {
             fi
         done
     else
-        # Test only enabled modules
-        for enabled_file in "$SCRIPT_DIR/config"/*.enabled; do
-            if [[ -L "$enabled_file" && -f "$enabled_file" ]]; then
-                local module_name
-                module_name=$(basename "$enabled_file" .enabled)
-                if [[ -f "$SCRIPT_DIR/modules/$module_name/test.sh" ]]; then
-                    modules+=("$module_name")
-                fi
+        # Test only enabled modules (using new configuration system)
+        local enabled_modules
+        mapfile -t enabled_modules < <(get_enabled_modules)
+        for module_name in "${enabled_modules[@]}"; do
+            if [[ -f "$SCRIPT_DIR/modules/$module_name/test.sh" ]]; then
+                modules+=("$module_name")
             fi
         done
     fi
