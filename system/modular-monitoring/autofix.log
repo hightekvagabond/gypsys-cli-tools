@@ -315,3 +315,691 @@
 [2025-08-25 23:50:13] [INFO] Function: perform_graphics_autofix
 [2025-08-25 23:50:13] [INFO] Arguments: driver_error critical
 [2025-08-25 23:50:13] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:50] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:50] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:08:50] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:08:50] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:50] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:08:50] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:08:50] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:08:50] [INFO] Called by: --dry-run
+[2025-08-26 00:08:50] [INFO] Grace period: test_modules
+[2025-08-26 00:08:50] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:08:50] [INFO] Arguments: 60 unknown
+[2025-08-26 00:08:50] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:50] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:50] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:08:50] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:50] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:08:50] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:08:50] [INFO] Would execute: display-autofix
+[2025-08-26 00:08:50] [INFO] Called by: --dry-run
+[2025-08-26 00:08:50] [INFO] Grace period: test_modules
+[2025-08-26 00:08:50] [INFO] Function: perform_display_autofix
+[2025-08-26 00:08:50] [INFO] Arguments: 60 unknown
+[2025-08-26 00:08:50] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:50] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:50] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:50] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:08:50] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:50] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:08:51] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:08:51] [INFO] Called by: --dry-run
+[2025-08-26 00:08:51] [INFO] Grace period: test_modules
+[2025-08-26 00:08:51] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:08:51] [INFO] Arguments: emergency unknown
+[2025-08-26 00:08:51] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:51] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:51] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:08:51] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:08:51] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:08:51] [INFO] Called by: --dry-run
+[2025-08-26 00:08:51] [INFO] Grace period: test_modules
+[2025-08-26 00:08:51] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:08:51] [INFO] Arguments: 60 unknown
+[2025-08-26 00:08:51] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:51] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:51] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:08:51] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:08:51] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:08:51] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:08:51] [INFO] Called by: --dry-run
+[2025-08-26 00:08:51] [INFO] Grace period: test_modules
+[2025-08-26 00:08:51] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:08:51] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:08:51] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:51] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:51] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-26 00:08:51] [DEBUG] No existing grace file for usb-network-disconnect - proceeding
+[2025-08-26 00:08:51] [INFO] Started test_modules grace period for usb-network-disconnect (requested by --dry-run)
+[2025-08-26 00:08:51] [INFO] Executing usb-network-disconnect (called by --dry-run)
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would start network adapter disconnect for 60 dock failures
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would analyze network adapters:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Network adapters found:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   wlp8s0           wifi      connected               GypsyVerse_5
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   p2p-dev-wlp8s0   wifi-p2p  disconnected            --
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   veth6c9629f      ethernet  unmanaged               --
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   vethc33577c      ethernet  unmanaged               --
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would disconnect these non-connected adapters:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Would disconnect: veth6c9629f
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Would disable autoconnect for connections on: veth6c9629f
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Would disconnect: vethc33577c
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Would disable autoconnect for connections on: vethc33577c
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would analyze USB ports and devices:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] USB devices detected:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 001 Device 002: ID 047d:80a6 Kensington ORBIT WIRELESS TB
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 001 Device 003: ID 0e6a:1620 Megawin Technology Co., Ltd Gaming KB
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 001 Device 004: ID 04f2:b64f Chicony Electronics Co., Ltd HD User Facing
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 001 Device 005: ID 8087:0029 Intel Corp. AX200 Bluetooth
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 003 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Bus 004 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] No USB ethernet adapters detected
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Network disconnect procedure would complete successfully
+[2025-08-26 00:08:51] [INFO] Successfully executed usb-network-disconnect
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:08:51] [INFO] usb-storage-reset.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:08:51] [DEBUG] usb-storage-reset.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:08:51] [INFO] USB storage reset requested by --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [INFO] Autofix request: usb-storage-reset from module --dry-run with test_modules grace period
+[2025-08-26 00:08:51] [DEBUG] Checking grace period for usb-storage-reset (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-26 00:08:51] [DEBUG] No existing grace file for usb-storage-reset - proceeding
+[2025-08-26 00:08:51] [INFO] Started test_modules grace period for usb-storage-reset (requested by --dry-run)
+[2025-08-26 00:08:51] [INFO] Executing usb-storage-reset (called by --dry-run)
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would start USB storage reset procedure
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would check for loaded USB storage modules:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Module not loaded: usb_storage
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   Module not loaded: uas
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would provide recommendation if not running as root:
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   sudo modprobe -r usb_storage && sudo modprobe usb_storage
+[2025-08-26 00:08:51] [INFO] [DRY-RUN]   sudo modprobe -r uas && sudo modprobe uas
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] Would send desktop notification about module restart
+[2025-08-26 00:08:51] [INFO] [DRY-RUN] USB storage reset procedure would complete successfully
+[2025-08-26 00:08:51] [INFO] Successfully executed usb-storage-reset
+[2025-08-26 00:09:45] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:09:50] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:10:45] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:10:49] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:10:55] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:01] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:01] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:11:01] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:11:01] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:11:01] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:11:01] [INFO] Called by: --dry-run
+[2025-08-26 00:11:01] [INFO] Grace period: test_modules
+[2025-08-26 00:11:01] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:11:01] [INFO] Arguments: 60 unknown
+[2025-08-26 00:11:01] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:01] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:01] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:11:01] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:11:01] [INFO] Would execute: display-autofix
+[2025-08-26 00:11:01] [INFO] Called by: --dry-run
+[2025-08-26 00:11:01] [INFO] Grace period: test_modules
+[2025-08-26 00:11:01] [INFO] Function: perform_display_autofix
+[2025-08-26 00:11:01] [INFO] Arguments: 60 unknown
+[2025-08-26 00:11:01] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:01] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:01] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:11:01] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:11:01] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:11:01] [INFO] Called by: --dry-run
+[2025-08-26 00:11:01] [INFO] Grace period: test_modules
+[2025-08-26 00:11:01] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:11:01] [INFO] Arguments: emergency unknown
+[2025-08-26 00:11:01] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:01] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:01] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:01] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:11:01] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:11:01] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:11:01] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:11:01] [INFO] Called by: --dry-run
+[2025-08-26 00:11:01] [INFO] Grace period: test_modules
+[2025-08-26 00:11:01] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:11:01] [INFO] Arguments: 60 unknown
+[2025-08-26 00:11:01] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:11:01] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:02] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:02] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:02] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:02] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:11:02] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:11:02] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:02] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:11:02] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:11:02] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:11:02] [INFO] Called by: --dry-run
+[2025-08-26 00:11:02] [INFO] Grace period: test_modules
+[2025-08-26 00:11:02] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:11:02] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:11:02] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:11:02] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:02] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:11:02] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:11:02] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:11:02] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:11:02] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:11:02] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-26 00:11:08] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:15] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:22] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:22] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:12:22] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:12:22] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:12:22] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:12:22] [INFO] Called by: --dry-run
+[2025-08-26 00:12:22] [INFO] Grace period: test_modules
+[2025-08-26 00:12:22] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:12:22] [INFO] Arguments: 60 unknown
+[2025-08-26 00:12:22] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:22] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:22] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:12:22] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:12:22] [INFO] Would execute: display-autofix
+[2025-08-26 00:12:22] [INFO] Called by: --dry-run
+[2025-08-26 00:12:22] [INFO] Grace period: test_modules
+[2025-08-26 00:12:22] [INFO] Function: perform_display_autofix
+[2025-08-26 00:12:22] [INFO] Arguments: 60 unknown
+[2025-08-26 00:12:22] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:22] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:22] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:12:22] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:12:22] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:12:22] [INFO] Called by: --dry-run
+[2025-08-26 00:12:22] [INFO] Grace period: test_modules
+[2025-08-26 00:12:22] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:12:22] [INFO] Arguments: emergency unknown
+[2025-08-26 00:12:22] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:22] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:22] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:12:22] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:12:22] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:12:22] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:12:22] [INFO] Called by: --dry-run
+[2025-08-26 00:12:22] [INFO] Grace period: test_modules
+[2025-08-26 00:12:22] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:12:22] [INFO] Arguments: 60 unknown
+[2025-08-26 00:12:22] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:22] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:22] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:23] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:12:23] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:12:23] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:23] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:12:23] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:12:23] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:12:23] [INFO] Called by: --dry-run
+[2025-08-26 00:12:23] [INFO] Grace period: test_modules
+[2025-08-26 00:12:23] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:12:23] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:12:23] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:12:23] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:23] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:23] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:23] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:12:23] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:12:23] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:12:23] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-26 00:12:29] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:29] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:29] [ERROR] usb-network-disconnect.sh: Missing calling module in dry-run mode
+[2025-08-26 00:12:35] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:12:35] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:12:35] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=thermal, grace=300s, mode=DRY-RUN MODE
+[2025-08-26 00:12:35] [INFO] USB network disconnect requested by --dry-run with thermals grace period
+[2025-08-26 00:12:35] [INFO] Autofix request: usb-network-disconnect from module --dry-run with thermals grace period
+[2025-08-26 00:12:35] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: thermals, freq: 120s)
+[2025-08-26 00:13:51] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:13:51] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:13:51] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:13:51] [INFO] Initialized usb-network-disconnect.sh: module=--dry-run, grace=thermal
+[2025-08-26 00:13:51] [INFO] USB network disconnect requested by --dry-run with thermals grace period
+[2025-08-26 00:13:51] [INFO] Autofix request: usb-network-disconnect from module --dry-run with thermals grace period
+[2025-08-26 00:13:51] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:13:51] [INFO] Would execute: usb-network-disconnect
+[2025-08-26 00:13:51] [INFO] Called by: --dry-run
+[2025-08-26 00:13:51] [INFO] Grace period: thermals
+[2025-08-26 00:13:51] [INFO] Function: perform_network_disconnect
+[2025-08-26 00:13:51] [INFO] Arguments: 300
+[2025-08-26 00:13:51] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:13:58] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:14:05] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:14:05] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: display-autofix
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_display_autofix
+[2025-08-26 00:14:05] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:14:05] [INFO] Arguments: emergency unknown
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:14:05] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:14:05] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:14:05] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:05] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:05] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:05] [INFO] Initialized usb-network-disconnect.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:05] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:14:05] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:05] [INFO] Would execute: usb-network-disconnect
+[2025-08-26 00:14:05] [INFO] Called by: --dry-run
+[2025-08-26 00:14:05] [INFO] Grace period: test_modules
+[2025-08-26 00:14:05] [INFO] Function: perform_network_disconnect
+[2025-08-26 00:14:05] [INFO] Arguments: 60
+[2025-08-26 00:14:05] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:06] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:06] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:06] [INFO] usb-storage-reset.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:06] [DEBUG] usb-storage-reset.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:06] [INFO] USB storage reset requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:06] [INFO] Autofix request: usb-storage-reset from module --dry-run with test_modules grace period
+[2025-08-26 00:14:06] [DEBUG] Checking grace period for usb-storage-reset (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-26 00:14:12] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:44] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:49] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:49] [INFO] usb-storage-reset.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:50] [DEBUG] usb-storage-reset.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:50] [INFO] Initialized usb-storage-reset.sh: module=--dry-run, grace=thermal
+[2025-08-26 00:14:50] [INFO] USB storage reset requested by --dry-run with thermals grace period
+[2025-08-26 00:14:50] [INFO] Autofix request: usb-storage-reset from module --dry-run with thermals grace period
+[2025-08-26 00:14:50] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:50] [INFO] Would execute: usb-storage-reset
+[2025-08-26 00:14:50] [INFO] Called by: --dry-run
+[2025-08-26 00:14:50] [INFO] Grace period: thermals
+[2025-08-26 00:14:50] [INFO] Function: perform_usb_storage_reset
+[2025-08-26 00:14:50] [INFO] Arguments: 
+[2025-08-26 00:14:50] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:55] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:55] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:14:56] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:14:56] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: display-autofix
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_display_autofix
+[2025-08-26 00:14:56] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:14:56] [INFO] Arguments: emergency unknown
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:14:56] [INFO] Arguments: 60 unknown
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:14:56] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:14:56] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized usb-network-disconnect.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: usb-network-disconnect
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_network_disconnect
+[2025-08-26 00:14:56] [INFO] Arguments: 60
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:14:56] [INFO] usb-storage-reset.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:14:56] [DEBUG] usb-storage-reset.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:14:56] [INFO] Initialized usb-storage-reset.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:14:56] [INFO] USB storage reset requested by --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] Autofix request: usb-storage-reset from module --dry-run with test_modules grace period
+[2025-08-26 00:14:56] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:14:56] [INFO] Would execute: usb-storage-reset
+[2025-08-26 00:14:56] [INFO] Called by: --dry-run
+[2025-08-26 00:14:56] [INFO] Grace period: test_modules
+[2025-08-26 00:14:56] [INFO] Function: perform_usb_storage_reset
+[2025-08-26 00:14:56] [INFO] Arguments: 
+[2025-08-26 00:14:56] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:25:44] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:25:44] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:25:44] [DEBUG] disk-cleanup.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:25:44] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=thermal
+[2025-08-26 00:25:44] [DEBUG] Filesystem path validation passed: 300
+[2025-08-26 00:25:44] [INFO] Disk cleanup requested by --dry-run with thermals grace period
+[2025-08-26 00:25:44] [INFO] Autofix request: disk-cleanup from module --dry-run with thermals grace period
+[2025-08-26 00:25:44] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:25:44] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:25:44] [INFO] Called by: --dry-run
+[2025-08-26 00:25:44] [INFO] Grace period: thermals
+[2025-08-26 00:25:44] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:25:44] [INFO] Arguments: 300 unknown
+[2025-08-26 00:25:44] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:25:44] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'disk-cleanup' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:04] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:04] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:04] [DEBUG] disk-cleanup.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:04] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=thermal
+[2025-08-26 00:26:04] [DEBUG] Filesystem path validation passed: 300
+[2025-08-26 00:26:04] [INFO] Disk cleanup requested by --dry-run with thermals grace period
+[2025-08-26 00:26:04] [INFO] Autofix request: disk-cleanup from module --dry-run with thermals grace period
+[2025-08-26 00:26:04] [INFO] AUTOFIX SELECTIVELY DISABLED - disk-cleanup is in DISABLE_AUTOFIX list
+[2025-08-26 00:26:04] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:26:04] [INFO] Called by: --dry-run
+[2025-08-26 00:26:04] [INFO] Grace period: thermals
+[2025-08-26 00:26:04] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:26:04] [INFO] Arguments: 300 unknown
+[2025-08-26 00:26:04] [INFO] Disabled by DISABLE_AUTOFIX list: emergency-shutdown disk-cleanup graphics-autofix display-autofix
+[2025-08-26 00:26:04] [INFO] NOTIFICATION: 🚫 Autofix Selectively Disabled - Action 'disk-cleanup' was requested by '--dry-run' but is in DISABLE_AUTOFIX list. Remove from config/SYSTEM.conf to enable
+[2025-08-26 00:26:18] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:18] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:18] [DEBUG] manage-greedy-process.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:18] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=thermal
+[2025-08-26 00:26:18] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:26:18] [INFO] Greedy process management requested by --dry-run with thermals grace period
+[2025-08-26 00:26:18] [INFO] Autofix request: manage-greedy-process from module --dry-run with thermals grace period
+[2025-08-26 00:26:18] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:18] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:26:18] [INFO] Called by: --dry-run
+[2025-08-26 00:26:18] [INFO] Grace period: thermals
+[2025-08-26 00:26:18] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:26:18] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:26:18] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:18] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'manage-greedy-process' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:26] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:26] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:26] [DEBUG] Filesystem path validation passed: 60
+[2025-08-26 00:26:26] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:26] [INFO] Would execute: disk-cleanup
+[2025-08-26 00:26:26] [INFO] Called by: --dry-run
+[2025-08-26 00:26:26] [INFO] Grace period: test_modules
+[2025-08-26 00:26:26] [INFO] Function: perform_disk_cleanup
+[2025-08-26 00:26:26] [INFO] Arguments: 60 unknown
+[2025-08-26 00:26:26] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:26] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'disk-cleanup' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [INFO] display-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:26] [DEBUG] display-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:26] [INFO] Initialized display-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:26] [INFO] Display autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] Autofix request: display-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:26] [INFO] Would execute: display-autofix
+[2025-08-26 00:26:26] [INFO] Called by: --dry-run
+[2025-08-26 00:26:26] [INFO] Grace period: test_modules
+[2025-08-26 00:26:26] [INFO] Function: perform_display_autofix
+[2025-08-26 00:26:26] [INFO] Arguments: 60 unknown
+[2025-08-26 00:26:26] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:26] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'display-autofix' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:26] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:26] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:26] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-26 00:26:26] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:26] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:26:26] [INFO] Called by: --dry-run
+[2025-08-26 00:26:26] [INFO] Grace period: test_modules
+[2025-08-26 00:26:26] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:26:26] [INFO] Arguments: emergency unknown
+[2025-08-26 00:26:26] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:26] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'emergency-shutdown' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:26] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [INFO] graphics-autofix.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:27] [DEBUG] graphics-autofix.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:27] [INFO] Initialized graphics-autofix.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:27] [INFO] Graphics autofix requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] Autofix request: graphics-autofix from module --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:27] [INFO] Would execute: graphics-autofix
+[2025-08-26 00:26:27] [INFO] Called by: --dry-run
+[2025-08-26 00:26:27] [INFO] Grace period: test_modules
+[2025-08-26 00:26:27] [INFO] Function: perform_graphics_autofix
+[2025-08-26 00:26:27] [INFO] Arguments: 60 unknown
+[2025-08-26 00:26:27] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:27] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'graphics-autofix' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:27] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:27] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:27] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: unknown)
+[2025-08-26 00:26:27] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:27] [INFO] Would execute: manage-greedy-process
+[2025-08-26 00:26:27] [INFO] Called by: --dry-run
+[2025-08-26 00:26:27] [INFO] Grace period: test_modules
+[2025-08-26 00:26:27] [INFO] Function: perform_greedy_process_management
+[2025-08-26 00:26:27] [INFO] Arguments: MEMORY_GREEDY unknown
+[2025-08-26 00:26:27] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:27] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'manage-greedy-process' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:27] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:27] [INFO] Initialized usb-network-disconnect.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:27] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:27] [INFO] Would execute: usb-network-disconnect
+[2025-08-26 00:26:27] [INFO] Called by: --dry-run
+[2025-08-26 00:26:27] [INFO] Grace period: test_modules
+[2025-08-26 00:26:27] [INFO] Function: perform_network_disconnect
+[2025-08-26 00:26:27] [INFO] Arguments: 60
+[2025-08-26 00:26:27] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:27] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'usb-network-disconnect' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:27] [INFO] usb-storage-reset.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-26 00:26:27] [DEBUG] usb-storage-reset.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-26 00:26:27] [INFO] Initialized usb-storage-reset.sh: module=--dry-run, grace=test_module
+[2025-08-26 00:26:27] [INFO] USB storage reset requested by --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] Autofix request: usb-storage-reset from module --dry-run with test_modules grace period
+[2025-08-26 00:26:27] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:27] [INFO] Would execute: usb-storage-reset
+[2025-08-26 00:26:27] [INFO] Called by: --dry-run
+[2025-08-26 00:26:27] [INFO] Grace period: test_modules
+[2025-08-26 00:26:27] [INFO] Function: perform_usb_storage_reset
+[2025-08-26 00:26:27] [INFO] Arguments: 
+[2025-08-26 00:26:27] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:27] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'usb-storage-reset' was requested by '--dry-run' but autofix is globally disabled. Enable in config/SYSTEM.conf
+[2025-08-26 00:26:35] [DEBUG] Autofix common functions loaded
+[2025-08-26 00:26:35] [DEBUG] emergency-shutdown.sh: Valid arguments - module=thermal, grace=300s, mode=LIVE MODE
+[2025-08-26 00:26:35] [INFO] Initialized emergency-shutdown.sh: module=thermal, grace=300
+[2025-08-26 00:26:35] [INFO] Emergency shutdown requested by thermal with 300s grace period
+[2025-08-26 00:26:35] [INFO] Autofix request: emergency-shutdown from module thermal with 300s grace period
+[2025-08-26 00:26:35] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-26 00:26:35] [INFO] Would execute: emergency-shutdown
+[2025-08-26 00:26:35] [INFO] Called by: thermal
+[2025-08-26 00:26:35] [INFO] Grace period: 300s
+[2025-08-26 00:26:35] [INFO] Function: perform_emergency_shutdown
+[2025-08-26 00:26:35] [INFO] Arguments: thermal_emergency 95C
+[2025-08-26 00:26:35] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-26 00:26:35] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'emergency-shutdown' was requested by 'thermal' but autofix is globally disabled. Enable in config/SYSTEM.conf

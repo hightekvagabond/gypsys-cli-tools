@@ -31,6 +31,85 @@
 #
 # =============================================================================
 
+# show_autofix_help() - Display help information for autofix scripts
+# =============================================================================
+#
+# PURPOSE:
+#   Provides standardized help information for all autofix scripts, showing
+#   common usage patterns and safety information.
+#
+# PARAMETERS:
+#   $1 - script_name: Name of the autofix script
+#
+# send_autofix_notification() - Send desktop notification for autofix events
+# =============================================================================
+#
+# PURPOSE:
+#   Sends desktop notifications to inform users about autofix actions,
+#   especially when actions are disabled or prevented.
+#
+# PARAMETERS:
+#   $1 - title: Notification title
+#   $2 - message: Notification message
+#   $3 - urgency: low, normal, or critical (optional, defaults to normal)
+#
+send_autofix_notification() {
+    local title="$1"
+    local message="$2"
+    local urgency="${3:-normal}"
+    
+    # Try to send desktop notification if notify-send is available
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send --urgency="$urgency" --icon=dialog-warning --app-name="Modular Monitor" "$title" "$message" 2>/dev/null || true
+    fi
+    
+    # Also log the notification attempt
+    autofix_log "INFO" "NOTIFICATION: $title - $message"
+}
+
+show_autofix_help() {
+    local script_name="$1"
+    
+    cat << EOF
+AUTOFIX SCRIPT: $script_name
+
+PURPOSE:
+    Automated system remediation script called by monitoring modules
+    when critical issues are detected.
+
+USAGE:
+    $script_name <calling_module> <grace_period_seconds> [additional_args...]
+    $script_name --dry-run [additional_args...]
+    $script_name --help
+
+ARGUMENTS:
+    calling_module        Name of monitoring module triggering this autofix
+    grace_period_seconds  Minimum seconds between autofix executions
+    additional_args       Script-specific arguments (varies by script)
+
+OPTIONS:
+    --dry-run            Test mode - logs actions but doesn't execute them
+    --help               Show this help information
+
+SAFETY FEATURES:
+    • Grace period prevents rapid repeated execution
+    • Dry-run mode for safe testing
+    • Comprehensive logging of all actions
+    • Input validation and sanity checks
+
+EXAMPLES:
+    $script_name thermal 300 cpu_temp 95C     # Called by thermal module
+    $script_name --dry-run                     # Test mode
+    $script_name --help                        # Show help
+
+For script-specific usage and parameters, see the script's header comments.
+
+SECURITY WARNING:
+    Autofix scripts perform potentially dangerous system operations.
+    Always test with --dry-run first and understand what the script does.
+EOF
+}
+
 # Configuration
 # Use local log file if /var/log is not writable (for testing)
 if [[ -w "/var/log" ]]; then
@@ -75,6 +154,12 @@ init_autofix_script() {
     local script_name
     script_name="$(basename "${BASH_SOURCE[1]}")"  # Get calling script name
     
+    # Check for help request BEFORE argument validation
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_autofix_help "$script_name"
+        exit 0
+    fi
+    
     # Load modules common.sh for helper functions
     local project_root
     project_root="$(dirname "$SCRIPT_DIR")"
@@ -82,7 +167,7 @@ init_autofix_script() {
         source "$project_root/modules/common.sh"
     fi
     
-    # Validate arguments
+    # Validate arguments (now safe since help was already handled)
     if ! validate_autofix_args "$script_name" "$1" "$2"; then
         exit 1
     fi
@@ -418,6 +503,10 @@ run_autofix_with_grace() {
         autofix_log "INFO" "Function: $action_function"
         autofix_log "INFO" "Arguments: $*"
         autofix_log "INFO" "AUTOFIX is disabled in system configuration - no action taken"
+        
+        # Send desktop notification
+        send_autofix_notification "🚫 Autofix Disabled" "Action '$action_name' was requested by '$calling_module' but autofix is globally disabled. Enable in config/SYSTEM.conf" "low"
+        
         echo "🚫 AUTOFIX DISABLED: $action_name would be executed but AUTOFIX=false in configuration"
         echo "   Called by: $calling_module"
         echo "   Function: $action_function"
@@ -441,6 +530,10 @@ run_autofix_with_grace() {
             autofix_log "INFO" "Function: $action_function"
             autofix_log "INFO" "Arguments: $*"
             autofix_log "INFO" "Disabled by DISABLE_AUTOFIX list: $disable_list"
+            
+            # Send desktop notification
+            send_autofix_notification "🚫 Autofix Selectively Disabled" "Action '$action_name' was requested by '$calling_module' but is in DISABLE_AUTOFIX list. Remove from config/SYSTEM.conf to enable" "low"
+            
             echo "🚫 AUTOFIX SELECTIVELY DISABLED: $action_name is in DISABLE_AUTOFIX list"
             echo "   Called by: $calling_module"
             echo "   Function: $action_function"
@@ -504,8 +597,14 @@ run_autofix_with_grace() {
 #
 validate_autofix_args() {
     local script_name="$1"
-    local calling_module="$2"
-    local grace_period="$3"
+    local calling_module="${2:-}"
+    local grace_period="${3:-}"
+    
+    # Check for help request first
+    if [[ "$calling_module" =~ ^(-h|--help|help)$ ]]; then
+        show_autofix_help "$script_name"
+        return 1  # Signal to exit
+    fi
     
     # Check for dry-run mode
     if [[ "$calling_module" == "--dry-run" ]]; then

@@ -116,13 +116,10 @@ SECURITY:
 EOF
 }
 
-# Validate arguments and handle help
-if ! validate_autofix_args "$(basename "$0")" "$@"; then
-    exit 1
-fi
+# Initialize autofix script with common setup (handles help, validation, and argument shifting)
+init_autofix_script "$@"
 
-CALLING_MODULE="$1"
-GRACE_PERIOD="$2"
+# Additional arguments specific to this script
 DOCK_FAILURES="${3:-0}"
 
 # ============================================================================

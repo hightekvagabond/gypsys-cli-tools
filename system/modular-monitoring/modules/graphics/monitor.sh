@@ -224,6 +224,13 @@ show_status() {
     echo "✅ graphics status completed"
 }
 
+# Make autofix scripts executable
+make_autofix_executable() {
+    if [[ -d "$SCRIPT_DIR/autofix" ]]; then
+        chmod +x "$SCRIPT_DIR/autofix"/*.sh 2>/dev/null || true
+    fi
+}
+
 # Initialize framework
 init_framework "$MODULE_NAME"
 make_autofix_executable
