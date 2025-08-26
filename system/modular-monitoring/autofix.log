@@ -1,0 +1,317 @@
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:23] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:23] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:27:23] [DEBUG] Filesystem path validation passed: 60
+[2025-08-25 22:27:23] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [DEBUG] Checking grace period for disk-cleanup (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:23] [DEBUG] No existing grace file for disk-cleanup - proceeding
+[2025-08-25 22:27:23] [INFO] Started test_modules grace period for disk-cleanup (requested by --dry-run)
+[2025-08-25 22:27:23] [INFO] Executing disk-cleanup (called by --dry-run)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would perform disk cleanup for 60 (unknown% full)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would analyze disk usage to identify space hogs
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would clean the following if they exist:
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - Thumbnail cache: $HOME/.cache/thumbnails/*
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - Old cache files: $HOME/.cache/* (older than 7 days)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - User trash: $HOME/.local/share/Trash/*
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - System temp files: /tmp/* and /var/tmp/* (older than 7 days)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - Package cache: apt clean, yum clean, dnf clean
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - Journal logs: journalctl --vacuum-time=30d
+[2025-08-25 22:27:23] [INFO] [DRY-RUN]   - Rotated log files: *.log.[0-9]*, *.log.*.gz, *.log.*.bz2 (older than 30 days)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would show disk usage analysis and space recovery report
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Disk cleanup procedure would complete successfully
+[2025-08-25 22:27:23] [INFO] Successfully executed disk-cleanup
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:23] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:23] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:27:23] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [DEBUG] Checking grace period for emergency-shutdown (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:23] [DEBUG] No existing grace file for emergency-shutdown - proceeding
+[2025-08-25 22:27:23] [INFO] Started test_modules grace period for emergency-shutdown (requested by --dry-run)
+[2025-08-25 22:27:23] [INFO] Executing emergency-shutdown (called by --dry-run)
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would initiate system shutdown - grace period completed
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Shutdown trigger: emergency (unknown) from --dry-run
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would execute emergency diagnostic dump creation
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would check disk space before shutdown
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would execute shutdown command: shutdown -h "+1" "EMERGENCY: System shutdown initiated - Reason: emergency (unknown) from --dry-run"
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Would try fallback commands if shutdown fails: systemctl poweroff, /sbin/poweroff
+[2025-08-25 22:27:23] [INFO] [DRY-RUN] Emergency shutdown procedure would complete successfully
+[2025-08-25 22:27:23] [INFO] Successfully executed emergency-shutdown
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:23] [INFO] i915-dkms-rebuild.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:23] [DEBUG] i915-dkms-rebuild.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:23] [INFO] i915 DKMS rebuild requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [INFO] Autofix request: i915-dkms-rebuild from module --dry-run with test_modules grace period
+[2025-08-25 22:27:23] [DEBUG] Checking grace period for i915-dkms-rebuild (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:23] [DEBUG] No existing grace file for i915-dkms-rebuild - proceeding
+[2025-08-25 22:27:23] [INFO] Started test_modules grace period for i915-dkms-rebuild (requested by --dry-run)
+[2025-08-25 22:27:24] [INFO] Executing i915-dkms-rebuild (called by --dry-run)
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would start i915 DKMS rebuild process
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would check if DKMS is available on system
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would list i915-related DKMS modules: dkms status | grep -i "i915\|intel"
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would execute DKMS autoinstall if running as root: dkms autoinstall
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would recommend manual DKMS rebuild if not running as root: sudo dkms autoinstall
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would recommend system reboot after successful rebuild
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] i915 DKMS rebuild process would complete successfully
+[2025-08-25 22:27:24] [INFO] Successfully executed i915-dkms-rebuild
+[2025-08-25 22:27:24] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:24] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:24] [INFO] i915-grub-flags.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:24] [DEBUG] i915-grub-flags.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:24] [INFO] i915 GRUB flags requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:24] [INFO] Autofix request: i915-grub-flags from module --dry-run with test_modules grace period
+[2025-08-25 22:27:24] [DEBUG] Checking grace period for i915-grub-flags (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:24] [DEBUG] No existing grace file for i915-grub-flags - proceeding
+[2025-08-25 22:27:24] [INFO] Started test_modules grace period for i915-grub-flags (requested by --dry-run)
+[2025-08-25 22:27:24] [INFO] Executing i915-grub-flags (called by --dry-run)
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would start i915 GRUB flags application
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would check GRUB configuration at /etc/default/grub
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would check if i915 flags are already present: grep 'i915.enable_psr=0'
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would backup GRUB config: cp /etc/default/grub /etc/default/grub.backup.TIMESTAMP
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would add i915 stability flags: 'i915.enable_psr=0 i915.enable_fbc=0'
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would update GRUB configuration: update-grub
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] Would recommend system reboot to apply kernel parameters
+[2025-08-25 22:27:24] [INFO] [DRY-RUN] i915 GRUB flags application would complete successfully
+[2025-08-25 22:27:24] [INFO] Successfully executed i915-grub-flags
+[2025-08-25 22:27:24] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:24] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:24] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:24] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:24] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:27:24] [ERROR] Invalid resource type: 60
+[2025-08-25 22:27:24] [ERROR] Valid types: CPU_GREEDY, MEMORY_GREEDY
+[2025-08-25 22:27:24] [CRITICAL] Invalid resource type '60' - ABORTING
+[2025-08-25 22:27:39] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:39] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:39] [INFO] disk-cleanup.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:39] [DEBUG] disk-cleanup.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:39] [INFO] Initialized disk-cleanup.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:27:39] [DEBUG] Filesystem path validation passed: 60
+[2025-08-25 22:27:39] [INFO] Disk cleanup requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:39] [INFO] Autofix request: disk-cleanup from module --dry-run with test_modules grace period
+[2025-08-25 22:27:39] [DEBUG] Checking grace period for disk-cleanup (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:43] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:44] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:44] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:44] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:27:44] [INFO] Greedy process killer: targeting CPU_GREEDY processes (threshold: 80)
+[2025-08-25 22:27:44] [INFO] Greedy process management requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:44] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_modules grace period
+[2025-08-25 22:27:44] [DEBUG] Checking grace period for manage-greedy-process (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:44] [DEBUG] No existing grace file for manage-greedy-process - proceeding
+[2025-08-25 22:27:44] [INFO] Started test_modules grace period for manage-greedy-process (requested by --dry-run)
+[2025-08-25 22:27:51] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:51] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:51] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:51] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:51] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-25 22:27:51] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:27:51] [DEBUG] No existing grace file for usb-network-disconnect - proceeding
+[2025-08-25 22:27:51] [INFO] Started test_modules grace period for usb-network-disconnect (requested by --dry-run)
+[2025-08-25 22:27:51] [INFO] Executing usb-network-disconnect (called by --dry-run)
+[2025-08-25 22:27:51] [INFO] [DRY-RUN] Would start network adapter disconnect for 60 dock failures
+[2025-08-25 22:27:51] [INFO] [DRY-RUN] Would analyze network adapters:
+[2025-08-25 22:27:51] [INFO] [DRY-RUN] Network adapters found:
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   wlp8s0           wifi      connected               GypsyVerse_5
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   p2p-dev-wlp8s0   wifi-p2p  disconnected            --
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   vethae91ed7      ethernet  unmanaged               --
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   vethb96a8c2      ethernet  unmanaged               --
+[2025-08-25 22:27:51] [INFO] [DRY-RUN] Would disconnect these non-connected adapters:
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   Would disconnect: vethae91ed7
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   Would disable autoconnect for connections on: vethae91ed7
+[2025-08-25 22:27:51] [INFO] [DRY-RUN]   Would disconnect: vethb96a8c2
+[2025-08-25 22:27:57] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:27:57] [INFO] usb-network-disconnect.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:27:57] [DEBUG] usb-network-disconnect.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:27:57] [INFO] USB network disconnect requested by --dry-run with test_modules grace period
+[2025-08-25 22:27:57] [INFO] Autofix request: usb-network-disconnect from module --dry-run with test_modules grace period
+[2025-08-25 22:27:57] [DEBUG] Checking grace period for usb-network-disconnect (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:28:06] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:28:06] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:28:06] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:28:06] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:28:06] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-25 22:28:06] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-25 22:28:06] [DEBUG] Checking grace period for emergency-shutdown (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:28:10] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:28:10] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:28:10] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:28:10] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:28:10] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-25 22:28:10] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-25 22:28:10] [DEBUG] Checking grace period for emergency-shutdown (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:28:14] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:28:14] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:28:14] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_module, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:28:14] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_module
+[2025-08-25 22:28:14] [INFO] Emergency shutdown requested by --dry-run with test_modules grace period
+[2025-08-25 22:28:14] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_modules grace period
+[2025-08-25 22:28:14] [DEBUG] Checking grace period for emergency-shutdown (module: --dry-run, grace: test_modules, freq: 120s)
+[2025-08-25 22:43:26] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:43:27] [INFO] emergency-shutdown.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:43:27] [DEBUG] emergency-shutdown.sh: Valid arguments - module=test_thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:43:27] [INFO] Initialized emergency-shutdown.sh: module=--dry-run, grace=test_thermal
+[2025-08-25 22:43:27] [INFO] Emergency shutdown requested by --dry-run with test_thermals grace period
+[2025-08-25 22:43:27] [INFO] Autofix request: emergency-shutdown from module --dry-run with test_thermals grace period
+[2025-08-25 22:43:27] [DEBUG] Checking grace period for emergency-shutdown (module: --dry-run, grace: test_thermals, freq: 120s)
+[2025-08-25 22:43:27] [DEBUG] No existing grace file for emergency-shutdown - proceeding
+[2025-08-25 22:43:27] [INFO] Started test_thermals grace period for emergency-shutdown (requested by --dry-run)
+[2025-08-25 22:43:27] [INFO] Executing emergency-shutdown (called by --dry-run)
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Would initiate system shutdown - grace period completed
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Shutdown trigger: thermal_test (85C) from --dry-run
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Would execute emergency diagnostic dump creation
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Would check disk space before shutdown
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Would execute shutdown command: shutdown -h "+1" "EMERGENCY: System shutdown initiated - Reason: thermal_test (85C) from --dry-run"
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Would try fallback commands if shutdown fails: systemctl poweroff, /sbin/poweroff
+[2025-08-25 22:43:27] [INFO] [DRY-RUN] Emergency shutdown procedure would complete successfully
+[2025-08-25 22:43:27] [INFO] Successfully executed emergency-shutdown
+[2025-08-25 22:43:32] [DEBUG] Autofix common functions loaded
+[2025-08-25 22:43:32] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 22:43:32] [DEBUG] manage-greedy-process.sh: Valid arguments - module=test_memory, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 22:43:32] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=test_memory
+[2025-08-25 22:43:32] [INFO] Greedy process killer: targeting MEMORY_GREEDY processes (threshold: 1024)
+[2025-08-25 22:43:32] [INFO] Greedy process management requested by --dry-run with test_memorys grace period
+[2025-08-25 22:43:32] [INFO] Autofix request: manage-greedy-process from module --dry-run with test_memorys grace period
+[2025-08-25 22:43:32] [DEBUG] Checking grace period for manage-greedy-process (module: --dry-run, grace: test_memorys, freq: 120s)
+[2025-08-25 22:43:32] [DEBUG] No existing grace file for manage-greedy-process - proceeding
+[2025-08-25 22:43:32] [INFO] Started test_memorys grace period for manage-greedy-process (requested by --dry-run)
+[2025-08-25 22:43:32] [INFO] Executing manage-greedy-process (called by --dry-run)
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would perform greedy process management
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] === CPU GREEDY PROCESS ANALYSIS ===
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would identify high-CPU processes (threshold: 80%+ CPU usage)
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Top CPU-consuming processes:
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       4739 27.6  0.3 1853036 214144 ?      SNl  22:34   2:34 /usr/bin/syncthing serve --no-browser --no-restart --logflags=0
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       5015 24.5  0.3 3045732 251476 ?      Sl   22:34   2:17 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :1 --xwayland-xauthority /run/user/1000/xauth_KZkHfQ --xwayland
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       8211 21.5  0.8 1221435348 525752 pts/1 Rl 22:35   1:44 /tmp/.mount_Cursorts0vzp/usr/share/cursor/cursor --type=renderer --crashpad-handler-pid=6945 --enable-crash-reporter=70354cb3-fb43-4004-83de-cfc76cb59e25,no_channel --user-data-dir=/home/gypsy/.config/Cursor --standard-schemes=vscode-webview,vscode-file --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/tmp/.mount_Cursorts0vzp/usr/share/cursor/resources/app --enable-sandbox --enable-blink-features=HighlightAPI --no-sandbox --force-gpu-mem-available-mb=1024 --js-flags=--nodecommit_pooled_pages --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --time-ticks-at-unix-epoch=-1756186359584340 --launch-time-ticks=165940051 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,14258740240142957743,1464114735398743452,262144 --enable-features=DocumentPolicyIncludeJSCallStacksInCrashReports --disable-features=CalculateNativeWinOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess --variations-seed-version --vscode-window-config=vscode:2dd5657c-50ed-4092-aa33-931e5b8e1e44
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       7294 15.1  0.3 2278944 230436 ?      Sl   22:35   1:17 /usr/bin/plasma-systemmonitor
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       5764 13.5  0.3 34680216 214676 ?     Sl   22:34   1:14 /opt/brave.com/brave/brave --type=gpu-process --enable-gpu-rasterization --crashpad-handler-pid=5517 --enable-crash-reporter=2deaeba0-de37-49ff-b41a-e80ec5dc70ee, --change-stack-guard-on-fork=enable --gpu-preferences=UAAAAAAAAAAgAAAIAAAAAAAAAAAAAGAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAABgAAAAAAAAAAQAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --shared-files --metrics-shmem-handle=4,i,92472149717266225,8795991250950164322,262144 --field-trial-handle=3,i,8765766614516345919,6056989724106298421,262144 --disable-features=EyeDropper --variations-seed-version=main@8507055a00cdc794e3457ca51991b7cd87e8b74e
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would apply CPU throttling (nice, ionice, CPU affinity) to high-CPU processes
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would skip critical system processes (systemd, ssh, etc.)
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would only kill non-critical processes if throttling fails
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] === MEMORY GREEDY PROCESS ANALYSIS ===
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would identify high-memory processes (threshold: 15%+ memory usage)
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Top memory-consuming processes:
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       8211 21.5  0.8 1221431764 528952 pts/1 Rl 22:35   1:44 /tmp/.mount_Cursorts0vzp/usr/share/cursor/cursor --type=renderer --crashpad-handler-pid=6945 --enable-crash-reporter=70354cb3-fb43-4004-83de-cfc76cb59e25,no_channel --user-data-dir=/home/gypsy/.config/Cursor --standard-schemes=vscode-webview,vscode-file --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/tmp/.mount_Cursorts0vzp/usr/share/cursor/resources/app --enable-sandbox --enable-blink-features=HighlightAPI --no-sandbox --force-gpu-mem-available-mb=1024 --js-flags=--nodecommit_pooled_pages --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --time-ticks-at-unix-epoch=-1756186359584340 --launch-time-ticks=165940051 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,14258740240142957743,1464114735398743452,262144 --enable-features=DocumentPolicyIncludeJSCallStacksInCrashReports --disable-features=CalculateNativeWinOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess --variations-seed-version --vscode-window-config=vscode:2dd5657c-50ed-4092-aa33-931e5b8e1e44
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       5391 10.2  0.7 34680308 514984 ?     Sl   22:34   0:56 /opt/brave.com/brave/brave --profile-directory=Default
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       5186  1.1  0.5 3679744 367104 ?      Ssl  22:34   0:06 /usr/bin/plasmashell --no-respawn
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       6260  1.8  0.5 1459880800 353684 ?   Sl   22:34   0:09 /opt/brave.com/brave/brave --type=renderer --crashpad-handler-pid=5517 --enable-crash-reporter=2deaeba0-de37-49ff-b41a-e80ec5dc70ee, --enable-distillability-service --origin-trial-public-key=bYUKPJoPnCxeNvu72j4EmPuK7tr1PAC7SHh8ld9Mw3E=,fMS4mpO6buLQ/QMd+zJmxzty/VQ6B1EUZqoCU04zoRU= --change-stack-guard-on-fork=enable --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=25 --time-ticks-at-unix-epoch=-1756186359584341 --launch-time-ticks=113598534 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,12008860193359302,16168558386258971181,2097152 --field-trial-handle=3,i,8765766614516345919,6056989724106298421,262144 --disable-features=EyeDropper --variations-seed-version=main@8507055a00cdc794e3457ca51991b7cd87e8b74e
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   gypsy       5127  0.3  0.5 2413196 351040 ?      Ssl  22:34   0:01 /usr/bin/kded5
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would apply memory throttling (cgroups, process suspension) to high-memory processes
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would drop system caches if running as root: echo 3 > /proc/sys/vm/drop_caches
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would analyze swap usage and warn if excessive
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] === GENERAL ANALYSIS ===
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Current memory status:
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   total        used        free      shared  buff/cache   available
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   Mem:           64141        6531       52382        1029        6968       57609
+[2025-08-25 22:43:32] [INFO] [DRY-RUN]   Swap:            511           0         511
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Would provide process termination recommendations if emergency kill is disabled
+[2025-08-25 22:43:32] [INFO] [DRY-RUN] Greedy process management analysis would complete successfully
+[2025-08-25 22:43:32] [INFO] Successfully executed manage-greedy-process
+[2025-08-25 23:43:46] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:43:46] [INFO] manage-greedy-process.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-25 23:43:46] [DEBUG] manage-greedy-process.sh: Valid arguments - module=thermal, grace=60s, mode=DRY-RUN MODE
+[2025-08-25 23:43:46] [INFO] Initialized manage-greedy-process.sh: module=--dry-run, grace=thermal
+[2025-08-25 23:43:46] [INFO] Greedy process killer: targeting CPU_GREEDY processes (threshold: 80)
+[2025-08-25 23:43:46] [INFO] Greedy process management requested by --dry-run with thermals grace period
+[2025-08-25 23:43:46] [INFO] Autofix request: manage-greedy-process from module --dry-run with thermals grace period
+[2025-08-25 23:43:46] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-25 23:43:46] [INFO] Would execute: manage-greedy-process
+[2025-08-25 23:43:46] [INFO] Called by: --dry-run
+[2025-08-25 23:43:46] [INFO] Grace period: thermals
+[2025-08-25 23:43:46] [INFO] Function: perform_greedy_process_management
+[2025-08-25 23:43:46] [INFO] Arguments: CPU_GREEDY 80
+[2025-08-25 23:43:46] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-25 23:43:54] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:43:54] [DEBUG] graphics-autofix.sh: Valid arguments - module=graphics, grace=300s, mode=LIVE MODE
+[2025-08-25 23:43:54] [INFO] Initialized graphics-autofix.sh: module=graphics, grace=300
+[2025-08-25 23:43:54] [INFO] Graphics autofix requested by graphics with 300s grace period
+[2025-08-25 23:43:54] [INFO] Autofix request: graphics-autofix from module graphics with 300s grace period
+[2025-08-25 23:43:54] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-25 23:43:54] [INFO] Would execute: graphics-autofix
+[2025-08-25 23:43:54] [INFO] Called by: graphics
+[2025-08-25 23:43:54] [INFO] Grace period: 300s
+[2025-08-25 23:43:54] [INFO] Function: perform_graphics_autofix
+[2025-08-25 23:43:54] [INFO] Arguments: gpu_hang warning
+[2025-08-25 23:43:54] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-25 23:45:11] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:45:11] [DEBUG] graphics-autofix.sh: Valid arguments - module=graphics, grace=300s, mode=LIVE MODE
+[2025-08-25 23:45:11] [INFO] Initialized graphics-autofix.sh: module=graphics, grace=300
+[2025-08-25 23:45:11] [INFO] Graphics autofix requested by graphics with 300s grace period
+[2025-08-25 23:45:11] [INFO] Autofix request: graphics-autofix from module graphics with 300s grace period
+[2025-08-25 23:45:11] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-25 23:45:11] [INFO] Would execute: graphics-autofix
+[2025-08-25 23:45:11] [INFO] Called by: graphics
+[2025-08-25 23:45:11] [INFO] Grace period: 300s
+[2025-08-25 23:45:11] [INFO] Function: perform_graphics_autofix
+[2025-08-25 23:45:11] [INFO] Arguments: gpu_hang warning
+[2025-08-25 23:45:11] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-25 23:45:16] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:45:16] [DEBUG] manage-greedy-process.sh: Valid arguments - module=thermal, grace=180s, mode=LIVE MODE
+[2025-08-25 23:45:16] [INFO] Initialized manage-greedy-process.sh: module=thermal, grace=180
+[2025-08-25 23:45:16] [INFO] Greedy process killer: targeting CPU_GREEDY processes (threshold: 80)
+[2025-08-25 23:45:16] [INFO] Greedy process management requested by thermal with 180s grace period
+[2025-08-25 23:45:16] [INFO] Autofix request: manage-greedy-process from module thermal with 180s grace period
+[2025-08-25 23:45:16] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-25 23:45:16] [INFO] Would execute: manage-greedy-process
+[2025-08-25 23:45:16] [INFO] Called by: thermal
+[2025-08-25 23:45:16] [INFO] Grace period: 180s
+[2025-08-25 23:45:16] [INFO] Function: perform_greedy_process_management
+[2025-08-25 23:45:16] [INFO] Arguments: CPU_GREEDY 80
+[2025-08-25 23:45:16] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-25 23:45:41] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:45:41] [DEBUG] graphics-autofix.sh: Valid arguments - module=graphics, grace=300s, mode=LIVE MODE
+[2025-08-25 23:45:41] [INFO] Initialized graphics-autofix.sh: module=graphics, grace=300
+[2025-08-25 23:45:41] [INFO] Graphics autofix requested by graphics with 300s grace period
+[2025-08-25 23:45:41] [INFO] Autofix request: graphics-autofix from module graphics with 300s grace period
+[2025-08-25 23:45:41] [INFO] AUTOFIX SELECTIVELY DISABLED - graphics-autofix is in DISABLE_AUTOFIX list
+[2025-08-25 23:45:41] [INFO] Would execute: graphics-autofix
+[2025-08-25 23:45:41] [INFO] Called by: graphics
+[2025-08-25 23:45:41] [INFO] Grace period: 300s
+[2025-08-25 23:45:41] [INFO] Function: perform_graphics_autofix
+[2025-08-25 23:45:41] [INFO] Arguments: gpu_hang warning
+[2025-08-25 23:45:41] [INFO] Disabled by DISABLE_AUTOFIX list: emergency-shutdown disk-cleanup graphics-autofix display-autofix
+[2025-08-25 23:45:49] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:45:49] [DEBUG] manage-greedy-process.sh: Valid arguments - module=thermal, grace=180s, mode=LIVE MODE
+[2025-08-25 23:45:49] [INFO] Initialized manage-greedy-process.sh: module=thermal, grace=180
+[2025-08-25 23:45:49] [INFO] Greedy process killer: targeting CPU_GREEDY processes (threshold: 80)
+[2025-08-25 23:45:49] [INFO] Greedy process management requested by thermal with 180s grace period
+[2025-08-25 23:45:49] [INFO] Autofix request: manage-greedy-process from module thermal with 180s grace period
+[2025-08-25 23:45:50] [DEBUG] Checking grace period for manage-greedy-process (module: thermal, grace: 180s, freq: 120s)
+[2025-08-25 23:45:50] [DEBUG] Grace period check: elapsed=3737s, total_grace=300s, recorded_module=--dry-run
+[2025-08-25 23:45:50] [DEBUG] Grace period expired for manage-greedy-process - proceeding
+[2025-08-25 23:45:50] [INFO] Started 180s grace period for manage-greedy-process (requested by thermal)
+[2025-08-25 23:45:50] [INFO] Executing manage-greedy-process (called by thermal)
+[2025-08-25 23:45:50] [INFO] Greedy process management initiated - Resource: CPU_GREEDY (threshold: 80)
+[2025-08-25 23:45:50] [INFO] Memory status - Total: 64141MB, Used: 7619MB, Free: 50899MB, Available: 56521MB
+[2025-08-25 23:45:50] [INFO] Attempting to drop system caches...
+[2025-08-25 23:45:50] [WARN] Cache drop requires root privileges - providing recommendation
+[2025-08-25 23:45:50] [INFO] RECOMMENDATION: Run 'sudo sync && sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"' to drop caches
+[2025-08-25 23:45:50] [INFO] Analyzing memory-heavy processes...
+[2025-08-25 23:45:50] [INFO] Top memory-consuming processes:
+[2025-08-25 23:45:50] [INFO]      8211  1.8 /tmp/.mount_Cursorts0vzp/usr/share/cursor/cursor --type=renderer --crashpad-handler-pid=6945 --enable-crash-reporter=70354cb3-fb43-4004-83de-cfc76cb59e25,no_channel --user-data-dir=/home/gypsy/.config/Cursor --standard-schemes=vscode-webview,vscode-file --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/tmp/.mount_Cursorts0vzp/usr/share/cursor/resources/app --enable-sandbox --enable-blink-features=HighlightAPI --no-sandbox --force-gpu-mem-available-mb=1024 --js-flags=--nodecommit_pooled_pages --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=10 --time-ticks-at-unix-epoch=-1756186359584340 --launch-time-ticks=165940051 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,14258740240142957743,1464114735398743452,262144 --enable-features=DocumentPolicyIncludeJSCallStacksInCrashReports --disable-features=CalculateNativeWinOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess --variations-seed-version --vscode-window-config=vscode:2dd5657c-50ed-4092-aa33-931e5b8e1e44
+[2025-08-25 23:45:50] [INFO]      5391  0.8 /opt/brave.com/brave/brave --profile-directory=Default
+[2025-08-25 23:45:50] [INFO]      6269  0.6 /opt/brave.com/brave/brave --type=renderer --crashpad-handler-pid=5517 --enable-crash-reporter=2deaeba0-de37-49ff-b41a-e80ec5dc70ee, --enable-distillability-service --origin-trial-public-key=bYUKPJoPnCxeNvu72j4EmPuK7tr1PAC7SHh8ld9Mw3E=,fMS4mpO6buLQ/QMd+zJmxzty/VQ6B1EUZqoCU04zoRU= --change-stack-guard-on-fork=enable --lang=en-US --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=20 --time-ticks-at-unix-epoch=-1756186359584341 --launch-time-ticks=113647614 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,16795329861196074939,18063441525283260529,2097152 --field-trial-handle=3,i,8765766614516345919,6056989724106298421,262144 --disable-features=EyeDropper --variations-seed-version=main@8507055a00cdc794e3457ca51991b7cd87e8b74e
+[2025-08-25 23:45:50] [INFO]      5186  0.6 /usr/bin/plasmashell --no-respawn
+[2025-08-25 23:45:50] [INFO]      5127  0.5 /usr/bin/kded5
+[2025-08-25 23:45:50] [INFO] Emergency memory kill disabled or no suitable processes found
+[2025-08-25 23:45:52] [INFO] Memory cleanup completed (no significant memory freed)
+[2025-08-25 23:45:52] [INFO] Memory cleanup procedure completed
+[2025-08-25 23:45:52] [INFO] Successfully executed manage-greedy-process
+[2025-08-25 23:50:13] [DEBUG] Autofix common functions loaded
+[2025-08-25 23:50:13] [DEBUG] graphics-autofix.sh: Valid arguments - module=graphics, grace=300s, mode=LIVE MODE
+[2025-08-25 23:50:13] [INFO] Initialized graphics-autofix.sh: module=graphics, grace=300
+[2025-08-25 23:50:13] [INFO] Graphics autofix requested by graphics with 300s grace period
+[2025-08-25 23:50:13] [INFO] Autofix request: graphics-autofix from module graphics with 300s grace period
+[2025-08-25 23:50:13] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-25 23:50:13] [INFO] Would execute: graphics-autofix
+[2025-08-25 23:50:13] [INFO] Called by: graphics
+[2025-08-25 23:50:13] [INFO] Grace period: 300s
+[2025-08-25 23:50:13] [INFO] Function: perform_graphics_autofix
+[2025-08-25 23:50:13] [INFO] Arguments: driver_error critical
+[2025-08-25 23:50:13] [INFO] AUTOFIX is disabled in system configuration - no action taken

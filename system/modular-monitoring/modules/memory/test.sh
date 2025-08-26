@@ -106,7 +106,7 @@ test_monitor_script() {
 
 # Test: Check module's declared autofix scripts exist in main autofix directory
 test_autofix_availability() {
-    local project_root="$(dirname "$SCRIPT_DIR")"
+    local project_root="$(dirname "$(dirname "$SCRIPT_DIR")")"
     local main_autofix_dir="$project_root/autofix"
     
     # Get list of autofixes this module uses

@@ -1,5 +1,46 @@
 #!/bin/bash
-# Common functions shared across all monitoring modules
+# =============================================================================
+# MODULES COMMON FUNCTIONS LIBRARY
+# =============================================================================
+#
+# PURPOSE:
+#   Foundation library providing essential functions shared across all monitoring
+#   modules. This script establishes configuration management, module discovery,
+#   logging, and common utilities that every monitoring module depends on.
+#
+# CORE FUNCTIONALITY:
+#   ✅ 4-tier configuration hierarchy management
+#   ✅ Module discovery and enablement control
+#   ✅ Hardware detection and validation
+#   ✅ Logging and error reporting
+#   ✅ State management and persistence
+#   ✅ Framework initialization
+#
+# CONFIGURATION HIERARCHY:
+#   1. Environment variables (highest priority)
+#   2. Machine-specific config/SYSTEM.conf
+#   3. Module-specific modules/*/config.conf
+#   4. Default system_default.conf (lowest priority)
+#
+# MODULE DISCOVERY:
+#   - Parses USE_MODULES and IGNORE_MODULES settings
+#   - Validates module existence and structure
+#   - Provides dynamic module enablement/disablement
+#   - Supports hardware-based auto-detection
+#
+# SECURITY CONSIDERATIONS:
+#   - All configuration files validated before sourcing
+#   - Module names restricted to safe character sets
+#   - Path validation prevents directory traversal
+#   - No dynamic code execution from configuration
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - Library pattern provides reusable functions across scripts
+#   - Configuration hierarchy allows flexible system customization
+#   - Module pattern enables extensible architecture
+#   - State management preserves data between script runs
+#
+# =============================================================================
 
 set -euo pipefail
 
@@ -620,7 +661,7 @@ init_framework() {
     # Reload configuration with module-specific settings
     load_configuration
     
-    log "Framework initialized for module: $module_name"
+    # Framework initialization complete (silent for script output compatibility)
 }
 
 # Module help and status function

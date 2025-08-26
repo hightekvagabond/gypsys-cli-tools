@@ -1,6 +1,64 @@
 #!/bin/bash
-# Disk space and health monitoring module
-
+#
+# DISK MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors disk space usage, filesystem health, and I/O performance to prevent
+#   system failures due to full filesystems. A full root partition can prevent
+#   system boot and cause data loss, making this a critical monitoring module.
+#
+# CRITICAL SAFETY FEATURES:
+#   - Early warning for high disk usage
+#   - Intelligent disk cleanup with usage analysis
+#   - Emergency shutdown protection (prevents unbootable systems)
+#   - Filesystem ignore list (excludes virtual/special filesystems)
+#   - Grace period management for disk usage spikes
+#
+# MONITORING CAPABILITIES:
+#   - Real-time disk space monitoring (df command)
+#   - Multiple filesystem support (ext4, xfs, btrfs, etc.)
+#   - Configurable warning and critical thresholds
+#   - Historical disk usage trend analysis
+#   - I/O performance tracking and bottleneck detection
+#   - Automated space hog identification
+#
+# EMERGENCY RESPONSE:
+#   - 80%+ usage: Warning alerts and monitoring
+#   - 90%+ usage: Critical alerts and cleanup analysis
+#   - 95%+ usage: Emergency cleanup with detailed space analysis
+#   - 98%+ usage: Emergency measures to prevent system failure
+#
+# INTELLIGENT CLEANUP:
+#   - Analyzes actual space consumers before cleanup
+#   - Targets log files, cache directories, and temporary files
+#   - Identifies large files and directories for manual review
+#   - Protects critical system files and user data
+#
+# FILESYSTEM SAFETY:
+#   - Ignores virtual filesystems (/proc, /sys, /dev)
+#   - Excludes special-purpose mounts (efivarfs, tmpfs)
+#   - Validates filesystem types before operations
+#   - Prevents cleanup of critical system directories
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
+# SECURITY CONSIDERATIONS:
+#   - Read-only filesystem access for monitoring
+#   - Safe cleanup operations (no critical file deletion)
+#   - Validated mount point analysis
+#   - Prevents accidental system file removal
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - df: Disk filesystem usage reporting tool
+#   - du: Directory usage analysis tool
+#   - Mount points: Locations where filesystems are attached
+#   - Filesystem types: Different storage organization methods
+#   - Space calculations: Understanding bytes, KB, MB, GB conversions
+#
 MODULE_NAME="disk"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"

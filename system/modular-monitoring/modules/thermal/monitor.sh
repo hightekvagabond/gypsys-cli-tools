@@ -1,6 +1,57 @@
 #!/bin/bash
-# Thermal monitoring module - restructured version
-
+#
+# THERMAL MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors CPU temperature, thermal throttling events, and overheating conditions
+#   to prevent permanent hardware damage. This is one of the most critical monitoring
+#   modules as thermal issues can cause immediate hardware failure or degradation.
+#
+# CRITICAL SAFETY FEATURES:
+#   - Multi-tier protection: Warning → Critical → Emergency
+#   - Intelligent process management (throttle before kill)
+#   - Emergency shutdown capability to prevent hardware damage
+#   - Grace period management to prevent rapid-fire actions
+#   - Desktop notifications for immediate user awareness
+#
+# MONITORING CAPABILITIES:
+#   - Real-time CPU temperature readings from sensors
+#   - Thermal throttling event detection
+#   - Historical temperature trend analysis
+#   - Integration with hardware-specific thermal management
+#   - Automated remediation through autofix scripts
+#
+# EMERGENCY RESPONSE:
+#   - 85°C+: Warning alerts and notifications
+#   - 90°C+: Critical alerts and CPU-intensive process throttling
+#   - 95°C+: Emergency process management and potential shutdown
+#   - Configurable thresholds per hardware platform
+#
+# HARDWARE INTEGRATION:
+#   - Supports Acer Predator thermal management
+#   - Generic thermal zone monitoring
+#   - ACPI thermal interface compatibility
+#   - Sensor validation and fallback mechanisms
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
+# SECURITY CONSIDERATIONS:
+#   - Read-only sensor access (no hardware manipulation)
+#   - Safe temperature reading methods
+#   - Validated autofix script execution
+#   - Grace period protection against thermal spike false positives
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - /sys/class/thermal: Linux thermal subsystem interface
+#   - Sensor validation: Checking temperature readings for sanity
+#   - Process throttling: Using CPU affinity and nice values
+#   - Emergency protocols: Escalating response based on severity
+#   - Hardware-specific logic: Conditional behavior based on detected hardware
+#
 MODULE_NAME="thermal"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"
@@ -45,7 +96,8 @@ parse_args() {
                 exit 0
                 ;;
             --list-autofixes)
-                list_autofix_scripts
+                echo "manage-greedy-process"
+                echo "emergency-shutdown"
                 exit 0
                 ;;
             *)
@@ -119,13 +171,14 @@ handle_emergency_thermal() {
     local temp="$1"
     log "EMERGENCY: Thermal protection activated at ${temp}°C"
     
-    # Try emergency process kill first (using global autofix with grace period)
+    # Try intelligent process management first (throttle before kill)
     local global_autofix_dir="$(dirname "$SCRIPT_DIR/../..")/autofix"
-    if [[ -x "$global_autofix_dir/emergency-process-kill.sh" ]]; then
-        # Pass grace period to autofix script
+    if [[ -x "$global_autofix_dir/manage-greedy-process.sh" ]]; then
+        # Use CPU_GREEDY mode for thermal emergencies - target high-CPU processes
         local grace_seconds=${THERMAL_SPIKE_GRACE_SECONDS:-45}
-        if "$global_autofix_dir/emergency-process-kill.sh" "thermal" "$temp" "$grace_seconds"; then
-            log "EMERGENCY: Process kill request submitted (grace period: ${grace_seconds}s)"
+        local cpu_threshold=${THERMAL_CPU_THRESHOLD:-80}  # Kill processes using >80% CPU
+        if "$global_autofix_dir/manage-greedy-process.sh" "thermal" "$grace_seconds" "CPU_GREEDY" "$cpu_threshold"; then
+            log "EMERGENCY: CPU-greedy process management initiated (grace period: ${grace_seconds}s)"
             return 0
         fi
     fi
@@ -134,7 +187,7 @@ handle_emergency_thermal() {
     if [[ -x "$global_autofix_dir/emergency-shutdown.sh" ]] && [[ "${ENABLE_EMERGENCY_SHUTDOWN:-true}" == "true" ]]; then
         local shutdown_grace_seconds=${THERMAL_SHUTDOWN_GRACE_SECONDS:-120}
         log "EMERGENCY: No suitable processes - requesting shutdown (grace period: ${shutdown_grace_seconds}s)"
-        "$global_autofix_dir/emergency-shutdown.sh" "thermal" "$temp" "$shutdown_grace_seconds"
+        "$global_autofix_dir/emergency-shutdown.sh" "thermal" "$shutdown_grace_seconds" "thermal_emergency" "${temp}C"
         return 1
     else
         log "EMERGENCY: System-level thermal issue - no autofix available"

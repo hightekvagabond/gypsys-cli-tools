@@ -1,6 +1,65 @@
 #!/bin/bash
-# USB monitoring module - restructured version
-
+#
+# USB MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors USB device resets, connection failures, and port issues to detect
+#   faulty USB hardware, problematic docking stations, and driver conflicts.
+#   USB issues can cause system instability, thermal problems, and device failures.
+#
+# CRITICAL SAFETY FEATURES:
+#   - Automatic detection of problematic USB devices
+#   - Docking station failure monitoring and mitigation
+#   - USB storage reset and recovery capabilities
+#   - Network adapter disconnect for thermal protection
+#   - Grace period management for transient USB issues
+#
+# MONITORING CAPABILITIES:
+#   - USB device reset detection (kernel messages)
+#   - Connection/disconnection event tracking
+#   - Port error and timeout monitoring
+#   - Docking station health assessment
+#   - USB hub and controller status checking
+#   - Historical USB failure pattern analysis
+#
+# HARDWARE INTEGRATION:
+#   - USB hub enumeration and health checking
+#   - Docking station specific monitoring
+#   - USB controller driver status
+#   - External device connection patterns
+#   - Power management event correlation
+#
+# EMERGENCY RESPONSE:
+#   - Repeated resets: USB storage module restart
+#   - Dock failures: Network adapter disconnection
+#   - Thermal correlation: USB device isolation
+#   - Critical failures: Device-specific remediation
+#
+# AUTOFIX CAPABILITIES:
+#   - USB storage driver restart (usb_storage, uas modules)
+#   - Problematic network adapter disconnection
+#   - Temporary device isolation for thermal protection
+#   - Docking station reset procedures
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
+# SECURITY CONSIDERATIONS:
+#   - Read-only USB subsystem monitoring
+#   - Safe module restart procedures
+#   - No direct hardware manipulation
+#   - Validated device identification
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - dmesg: Kernel message buffer for hardware events
+#   - lsusb: USB device enumeration tool
+#   - Kernel modules: Loadable driver components
+#   - USB subsystem: Linux USB stack and interfaces
+#   - Hardware enumeration: Device discovery and identification
+#
 MODULE_NAME="usb"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"

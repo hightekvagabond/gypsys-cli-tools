@@ -1,6 +1,46 @@
 #!/bin/bash
-# Modular Monitor Orchestrator - Restructured Version
-# Runs individual monitoring modules in a coordinated fashion using new modular structure
+# =============================================================================
+# MODULAR MONITOR ORCHESTRATOR
+# =============================================================================
+#
+# PURPOSE:
+#   Main orchestrator that coordinates all monitoring modules in a systematic
+#   way. This is the core script that runs all individual monitors and manages
+#   their execution, configuration, and error handling.
+#
+# ARCHITECTURE:
+#   - Discovers enabled monitoring modules dynamically
+#   - Runs each module's monitor.sh script in parallel or sequence
+#   - Handles module failures gracefully without stopping others
+#   - Manages module configuration and state
+#   - Provides centralized logging and status reporting
+#
+# MONITORING MODULES:
+#   ✅ disk - Filesystem usage and health monitoring
+#   ✅ memory - RAM usage and memory pressure monitoring  
+#   ✅ thermal - CPU/GPU temperature monitoring
+#   ✅ i915 - Intel GPU driver error monitoring
+#   ✅ usb - USB device connection/error monitoring
+#   ✅ kernel - Kernel version and error monitoring
+#   ✅ network - Network connectivity monitoring
+#
+# USAGE:
+#   monitor.sh [--dry-run] [--verbose] [--help]
+#   monitor.sh --module <module_name>  # Run specific module
+#
+# SECURITY CONSIDERATIONS:
+#   - Module discovery validates names to prevent injection
+#   - Configuration files are validated before sourcing
+#   - No user input passed directly to shell commands
+#   - Module paths are restricted to safe directories
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - Orchestrator pattern coordinates multiple independent scripts
+#   - Module-based architecture allows easy addition/removal of monitors
+#   - Error handling ensures one failing module doesn't break others
+#   - Configuration precedence allows system-specific overrides
+#
+# =============================================================================
 
 set -euo pipefail
 
@@ -256,6 +296,8 @@ run_specific_modules() {
     return 0  # Always success - detecting issues is the intended behavior
 }
 
+
+
 main() {
     local test_mode=""
     local verbose=false
@@ -314,6 +356,15 @@ main() {
     done
     
     log "Modular Monitor Orchestrator starting (restructured version)"
+    
+    # Check for shutdown issues on startup (only for fresh boots)
+    local system_uptime_seconds
+    system_uptime_seconds=$(awk '{print int($1)}' /proc/uptime 2>/dev/null || echo "0")
+    
+    # Only check if system has been up for less than 10 minutes (fresh boot)
+    if [[ $system_uptime_seconds -lt 600 ]]; then
+        "$SCRIPT_DIR/status.sh" --shutdown-analysis
+    fi
     
     # Test mode
     if [[ -n "$test_mode" ]]; then

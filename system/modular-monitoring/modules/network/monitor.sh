@@ -1,6 +1,26 @@
 #!/bin/bash
-# Network monitoring module
-
+#
+# NETWORK MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors network connectivity, interface health, and connection stability
+#   to detect network failures, configuration issues, and hardware problems.
+#   Network issues can affect system functionality and remote access.
+#
+# MONITORING CAPABILITIES:
+#   - Network interface status monitoring
+#   - Connectivity testing and validation
+#   - Link state change detection
+#   - DNS resolution health checking
+#   - Network performance tracking
+#   - Historical connection stability analysis
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
 MODULE_NAME="network"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"

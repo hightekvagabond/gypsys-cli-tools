@@ -1,6 +1,25 @@
 #!/bin/bash
-# Nonexistent module monitor - monitors fictional quantum hardware
-
+#
+# NONEXISTENT MODULE (TESTING/DEVELOPMENT)
+#
+# PURPOSE:
+#   A test module for development and debugging purposes. This module intentionally
+#   simulates various monitoring scenarios for testing the monitoring framework
+#   without requiring actual hardware or system conditions.
+#
+# TESTING CAPABILITIES:
+#   - Framework validation testing
+#   - Configuration testing
+#   - Error condition simulation
+#   - Development workflow testing
+#   - Quantum hardware simulation (fictional)
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
 MODULE_NAME="nonexistent"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"

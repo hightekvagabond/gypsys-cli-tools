@@ -1,6 +1,25 @@
 #!/bin/bash
-# Kernel monitoring module
-
+#
+# KERNEL MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors kernel version changes, system updates, and kernel-related issues
+#   to track system stability patterns and correlate problems with kernel updates.
+#   Kernel changes can introduce hardware compatibility issues and system instability.
+#
+# MONITORING CAPABILITIES:
+#   - Kernel version change detection
+#   - System boot correlation with kernel updates
+#   - Kernel module loading issues
+#   - Historical kernel stability tracking
+#   - Hardware compatibility analysis
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
 MODULE_NAME="kernel"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"
@@ -47,7 +66,7 @@ parse_args() {
             --list-autofixes)
                 # Kernel module doesn't currently have specific autofixes
                 # but could use emergency actions if needed
-                echo "emergency-process-kill"
+                echo "manage-greedy-process"
                 exit 0
                 ;;
             *)

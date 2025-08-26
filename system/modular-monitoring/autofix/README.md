@@ -13,9 +13,15 @@ Every autofix script **MUST** accept these parameters in order:
 
 ### **Example Usage**
 ```bash
-./emergency-process-kill.sh thermal 45 "high_temperature"
+# Production usage
+./manage-greedy-process.sh thermal 45 CPU_GREEDY 80
 ./disk-cleanup.sh disk 300 "/var/log"
-./memory-cleanup.sh memory 120
+./emergency-shutdown.sh thermal 120 "thermal_emergency"
+
+# REQUIRED: Dry-run testing (see Testing Requirements below)
+./manage-greedy-process.sh --dry-run thermal 45 CPU_GREEDY 80
+./disk-cleanup.sh --dry-run disk 300 "/var/log"
+./emergency-shutdown.sh --dry-run thermal 120 "thermal_emergency"
 ```
 
 ## 🕐 **Grace Period Management**
@@ -44,13 +50,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 ```
 
-### **Step 2: Validate Arguments**
+### **Step 2: Validate Arguments and Handle Help**
 ```bash
-# Validate required arguments
-if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
+# Handle help and dry-run options
+if ! validate_autofix_args "$(basename "$0")" "$@"; then
     exit 1
 fi
 
+# Arguments are now validated and adjusted for dry-run
 CALLING_MODULE="$1"
 GRACE_PERIOD="$2"
 # Additional args as needed (e.g., REASON="${3:-default}")
@@ -112,19 +119,146 @@ if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
 fi
 ```
 
-## 📁 **Current Autofix Scripts**
+## 📁 **Discovery and Documentation**
 
-### **Global Actions**
-- **`emergency-process-kill.sh`** - Kill high-CPU processes (any module)
-- **`emergency-shutdown.sh`** - Emergency system shutdown (any module) 
-- **`disk-cleanup.sh`** - Clean up disk space (any module)
-- **`memory-cleanup.sh`** - Clean up memory/swap (any module)
+### **Script Self-Documentation**
+All autofix scripts are self-documented. Use `--help` to see their specific purpose, parameters, and usage:
 
-### **Module-Specific Actions**
-- **`module-i915-dkms-rebuild.sh`** - Rebuild i915 DKMS modules
-- **`module-i915-grub-flags.sh`** - Apply i915 GRUB parameters
-- **`module-usb-network-disconnect.sh`** - Reset USB network devices
-- **`module-usb-storage-reset.sh`** - Reset USB storage devices
+```bash
+# Get detailed help for any script
+./manage-greedy-process.sh --help
+./emergency-shutdown.sh --help
+./disk-cleanup.sh --help
+
+# List all available scripts
+ls -1 *.sh | grep -v common.sh | head -10
+```
+
+### **Dynamic Discovery**
+The test system automatically discovers all autofix scripts:
+
+```bash
+# Test all autofix scripts
+./test.sh --autofix-only
+
+# See what scripts were discovered
+./test.sh --list --include-autofix
+```
+
+## 🏛️ **Autofix Helper Architecture**
+
+### **Helper Folder Pattern**
+For autofix scripts that need chipset/vendor-specific logic, use the helper folder pattern:
+
+```
+autofix/
+├── main-autofix-script.sh           # Main orchestrator script
+├── main-autofix-script_helpers/     # Helper folder (note the _helpers suffix)
+│   ├── chipset1.sh                  # Specific implementation (e.g., i915.sh)
+│   ├── chipset2.sh                  # Another implementation (e.g., nvidia.sh)
+│   └── chipset3.sh                  # Stub implementation (e.g., amdgpu.sh)
+└── other-simple-autofix.sh          # Scripts without helpers
+```
+
+### **Example: Graphics Autofix with Helpers**
+```
+autofix/
+├── graphics-autofix.sh                    # Main graphics autofix orchestrator
+├── graphics-autofix_helpers/              # Graphics chipset helpers
+│   ├── i915.sh                           # Intel graphics autofix (TESTED)
+│   ├── nvidia.sh                         # NVIDIA graphics autofix (STUB)
+│   └── amdgpu.sh                         # AMD graphics autofix (STUB)
+├── display-autofix.sh                     # Main display autofix orchestrator  
+├── display-autofix_helpers/               # Display system helpers
+│   ├── wayland.sh                        # Wayland display server (TESTED)
+│   ├── kwin.sh                           # KDE KWin compositor (TESTED)
+│   ├── x11.sh                            # X11 display server (STUB)
+│   └── gnome.sh                          # GNOME Shell compositor (STUB)
+└── emergency-shutdown.sh                  # Simple script (no helpers needed)
+```
+
+### **Helper Script Requirements**
+Helper scripts follow the same autofix conventions:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$(dirname "$SCRIPT_DIR")/common.sh"
+
+# Initialize autofix script with common setup
+init_autofix_script "$@"
+
+# Additional arguments specific to this helper
+ISSUE_TYPE="${3:-graphics_error}"
+SEVERITY="${4:-unknown}"
+
+# Helper-specific autofix logic
+perform_helper_autofix() {
+    local issue_type="$1"
+    local severity="$2"
+    
+    # Implement chipset/vendor-specific logic here
+    autofix_log "INFO" "Helper autofix: $issue_type ($severity)"
+    
+    # Use existing autofix scripts when possible
+    # Example: "$autofix_dir/i915-dkms-rebuild.sh" "$CALLING_MODULE" 300
+}
+
+# Execute with grace period management
+run_autofix_with_grace "helper-autofix" "$CALLING_MODULE" "$GRACE_PERIOD" \
+    "perform_helper_autofix" "$ISSUE_TYPE" "$SEVERITY"
+```
+
+### **Main Script Architecture**
+Main autofix scripts detect hardware/configuration and route to helpers:
+
+```bash
+#!/bin/bash
+# graphics-autofix.sh example
+
+# Auto-detect or use config
+GRAPHICS_CHIPSET="${GRAPHICS_CHIPSET:-auto}"
+if [[ "$GRAPHICS_CHIPSET" == "auto" ]]; then
+    # Detection logic here
+    if lsmod | grep -q "i915"; then
+        GRAPHICS_CHIPSET="i915"
+    elif lsmod | grep -q "nvidia"; then
+        GRAPHICS_CHIPSET="nvidia"
+    fi
+fi
+
+# Route to appropriate helper
+helper_script="$SCRIPT_DIR/graphics-autofix_helpers/${GRAPHICS_CHIPSET}.sh"
+if [[ -x "$helper_script" ]]; then
+    "$helper_script" "$CALLING_MODULE" "$GRACE_PERIOD" "$ISSUE_TYPE" "$SEVERITY"
+else
+    autofix_log "ERROR" "No helper available for: $GRAPHICS_CHIPSET"
+    exit 1
+fi
+```
+
+### **When to Use Helpers**
+Use the helper pattern when:
+- **Hardware-specific logic**: Different chipsets need different approaches
+- **Vendor-specific tools**: Intel vs NVIDIA vs AMD require different commands
+- **Multiple implementations**: Wayland vs X11, different compositors
+- **Future extensibility**: Want to support new hardware/software variants
+
+**Don't use helpers for:**
+- Simple, universal scripts (disk cleanup, process management)
+- Single-purpose tools that work the same everywhere
+- Scripts with only one implementation
+
+### **Stub Implementation Guidelines**
+When creating stubs for untested hardware/software:
+
+1. **Clear warnings**: Mark as STUB in filename, comments, and logs
+2. **Implementation roadmap**: Document what needs to be implemented
+3. **Required tools**: List the tools/commands needed for real implementation
+4. **Safe defaults**: Return success to avoid breaking the autofix chain
+5. **Helpful errors**: Log informative messages about the missing implementation
 
 ## 🔧 **Converting Existing Scripts**
 

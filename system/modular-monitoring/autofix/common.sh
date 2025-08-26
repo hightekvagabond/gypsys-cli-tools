@@ -1,18 +1,76 @@
 #!/bin/bash
-# Autofix Common Functions
-# Centralized grace period management and logging for all autofix scripts
+# =============================================================================
+# AUTOFIX COMMON FUNCTIONS
+# =============================================================================
+#
+# PURPOSE:
+#   Provides centralized grace period management, logging, and initialization
+#   for all autofix scripts. This prevents autofix actions from being executed
+#   too frequently and ensures consistent behavior across all emergency response
+#   scripts. The grace period system tracks when actions were last taken and
+#   prevents duplicate actions within configured timeframes.
+#
+# KEY FEATURES:
+#   - Grace period coordination across multiple monitoring modules
+#   - Centralized logging with timestamps and severity levels
+#   - Standardized autofix script initialization
+#   - Cross-module action tracking to prevent conflicts
+#   - Configurable cooldown periods per action type
+#
+# USAGE:
+#   This file is sourced by all autofix scripts. Individual scripts should
+#   call init_autofix_script() for standardized setup, then use the provided
+#   grace period and logging functions.
+#
+# GRACE PERIOD LOGIC:
+#   When multiple modules detect issues requiring the same autofix action,
+#   this system ensures the action is only taken once within the grace period.
+#   For example, if both thermal and memory modules want to kill a high-CPU
+#   process, only the first request will execute immediately; subsequent
+#   requests within the grace period will be logged but not executed.
+#
+# =============================================================================
 
 # Configuration
-AUTOFIX_LOG_FILE="/var/log/modular-monitor-autofix.log"
+# Use local log file if /var/log is not writable (for testing)
+if [[ -w "/var/log" ]]; then
+    AUTOFIX_LOG_FILE="/var/log/modular-monitor-autofix.log"
+else
+    AUTOFIX_LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../autofix.log"
+fi
 GRACE_TRACKING_DIR="/tmp/modular-monitor-grace"
 DEFAULT_MONITOR_FREQUENCY_SECONDS=120  # 2 minutes default
 
 # Ensure grace tracking directory exists
 mkdir -p "$GRACE_TRACKING_DIR"
 
-# Initialize autofix script with common setup
-# Usage: init_autofix_script "$@" (pass all arguments)
-# Sets: CALLING_MODULE, GRACE_PERIOD, and additional arguments as needed
+# =============================================================================
+# init_autofix_script() - Standardized autofix script initialization
+# =============================================================================
+#
+# PURPOSE:
+#   Performs common initialization tasks for all autofix scripts, eliminating
+#   boilerplate code and ensuring consistent setup across all emergency response
+#   actions.
+#
+# PARAMETERS:
+#   $@ - All arguments passed to the autofix script
+#        Expected format: <calling_module> <grace_period_seconds> [additional_args...]
+#
+# SETS GLOBAL VARIABLES:
+#   CALLING_MODULE - Name of the monitoring module that triggered this autofix
+#   GRACE_PERIOD   - Grace period in seconds for this specific action
+#
+# BEHAVIOR:
+#   1. Loads modules/common.sh for access to helper functions
+#   2. Validates that required arguments are present and properly formatted
+#   3. Sets standard variables used by all autofix scripts
+#   4. Logs initialization for debugging and audit purposes
+#   5. Exits with error code 1 if validation fails
+#
+# EXAMPLE:
+#   init_autofix_script "$@"  # Call from autofix script with all arguments
+#
 init_autofix_script() {
     local script_name
     script_name="$(basename "${BASH_SOURCE[1]}")"  # Get calling script name
@@ -39,27 +97,130 @@ init_autofix_script() {
     autofix_log "INFO" "Initialized $script_name: module=$CALLING_MODULE, grace=$GRACE_PERIOD"
 }
 
-# Logging function
+# =============================================================================
+# autofix_log() - Centralized logging with timestamp and syslog integration
+# =============================================================================
+#
+# PURPOSE:
+#   Provides consistent logging across all autofix scripts with both file
+#   and syslog output. Critical for debugging and audit trails.
+#
+# PARAMETERS:
+#   $1 - Log level (INFO, WARN, ERROR, CRITICAL)
+#   $2 - Log message (should be descriptive and include context)
+#
+# SECURITY CONSIDERATIONS:
+#   - Message content is NOT validated for injection attacks
+#   - Could be vulnerable if $2 contains command substitution like $(rm -rf /)
+#   - Should validate/sanitize message content before logging
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - 'local' creates variables that only exist inside this function
+#   - '$()' is command substitution - runs the command and uses its output
+#   - 'tee -a' writes to both stdout AND appends to a file
+#   - 'logger' sends messages to the system log (journald/syslog)
+#
+# EXAMPLE:
+#   autofix_log "ERROR" "Failed to kill process PID 1234"
+#
 autofix_log() {
     local level="$1"
     local message="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # SECURITY ISSUE: Should validate/sanitize message to prevent injection
+    # TODO: Add message validation to prevent command injection
+    
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"  # Quoted to prevent word splitting
+    
     echo "[$timestamp] [$level] $message" | tee -a "$AUTOFIX_LOG_FILE"
     logger -t "modular-monitor-autofix" "[$level] $message"
 }
 
-# Get the time in seconds since epoch
+# =============================================================================
+# get_timestamp() - Get current time as Unix epoch seconds
+# =============================================================================
+#
+# PURPOSE:
+#   Returns the current time as seconds since Unix epoch (1970-01-01).
+#   Used for grace period calculations and time-based comparisons.
+#
+# RETURNS:
+#   Integer representing seconds since epoch (e.g., 1693123456)
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - Unix epoch is the standard way computers measure time
+#   - 'date +%s' outputs current time as a number
+#   - This number increases by 1 every second
+#   - Easy to do math with (current_time - old_time = seconds_elapsed)
+#
+# PERFORMANCE:
+#   - Very fast operation, safe to call frequently
+#   - No external dependencies beyond basic 'date' command
+#
 get_timestamp() {
     date +%s
 }
 
-# Check if we're within the grace period for a specific action
-# Args: $1=action_name, $2=grace_period_seconds, $3=calling_module
+# =============================================================================
+# check_grace_period() - Prevent repeated autofix actions within timeframe
+# =============================================================================
+#
+# PURPOSE:
+#   Checks if a specific autofix action was recently performed and should be
+#   skipped to prevent dangerous repeated actions (like multiple shutdowns).
+#   This is the core safety mechanism of the autofix system.
+#
+# PARAMETERS:
+#   $1 - action_name: Unique identifier for the action (e.g., "emergency_shutdown")
+#   $2 - grace_period_seconds: How long to wait before allowing action again
+#   $3 - calling_module: Which monitoring module is requesting this action
+#   $4 - monitor_frequency_seconds: How often the monitor runs (optional)
+#
+# RETURNS:
+#   0 - We ARE in grace period (don't execute action)
+#   1 - We are NOT in grace period (safe to execute action)
+#
+# SECURITY CONSIDERATIONS:
+#   - Uses $GRACE_TRACKING_DIR which could be manipulated by other processes
+#   - Grace files in /tmp could be deleted by system cleanup or attackers
+#   - action_name should be validated to prevent directory traversal (../)
+#   - File parsing could be vulnerable if grace file is corrupted maliciously
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - 'local' variables only exist inside this function
+#   - '${var:-default}' uses 'default' if 'var' is empty
+#   - '${var%%pattern}' removes longest match of pattern from the end
+#   - '${var##pattern}' removes longest match of pattern from the start
+#   - '[[ ]]' is bash's advanced test command (better than [ ])
+#   - '=~' does regular expression matching
+#   - '^[0-9]+$' means "only digits from start to end"
+#
+# SAFETY MECHANISM:
+#   This prevents disasters like:
+#   - Multiple emergency shutdowns in quick succession
+#   - Repeatedly killing the same critical process
+#   - Rapid-fire disk cleanups that could corrupt filesystems
+#
+# EXAMPLE:
+#   if check_grace_period "emergency_shutdown" 300 "thermal"; then
+#       echo "Recently shut down, skipping"
+#   else 
+#       echo "Safe to shutdown"
+#   fi
+#
 check_grace_period() {
     local action_name="$1"
     local grace_period_seconds="$2"
     local calling_module="$3"
     local monitor_frequency_seconds="${4:-$DEFAULT_MONITOR_FREQUENCY_SECONDS}"
+    
+    # SECURITY: Validate action_name to prevent directory traversal attacks
+    # Only allow alphanumeric, hyphens, and underscores
+    if [[ ! "$action_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        autofix_log "ERROR" "Invalid action_name '$action_name' - security violation"
+        return 1  # Treat as not in grace period but log the security issue
+    fi
     
     local grace_file="$GRACE_TRACKING_DIR/${action_name}.grace"
     local current_time=$(get_timestamp)
@@ -107,12 +268,42 @@ check_grace_period() {
     fi
 }
 
-# Start a grace period for a specific action
-# Args: $1=action_name, $2=grace_period_seconds, $3=calling_module
+# =============================================================================
+# start_grace_period() - Begin tracking grace period for an action
+# =============================================================================
+#
+# PURPOSE:
+#   Records that an autofix action has been taken and should not be repeated
+#   for a specified time period. Called AFTER successfully executing an action.
+#
+# PARAMETERS:
+#   $1 - action_name: Unique identifier for the action
+#   $2 - grace_period_seconds: How long to prevent repeating this action
+#   $3 - calling_module: Which module executed this action
+#
+# SECURITY CONSIDERATIONS:
+#   - Should validate action_name to prevent directory traversal
+#   - Creates files in /tmp which could be manipulated by other processes
+#   - File creation could fail due to permissions or disk space
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - '>' redirects output to a file (overwrites existing content)
+#   - This creates a simple text file with the timestamp and metadata
+#   - The file acts as a "lock" to prevent repeated actions
+#
+# EXAMPLE:
+#   start_grace_period "emergency_shutdown" 300 "thermal"
+#
 start_grace_period() {
     local action_name="$1"
     local grace_period_seconds="$2"
     local calling_module="$3"
+    
+    # SECURITY: Validate action_name to prevent directory traversal attacks
+    if [[ ! "$action_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        autofix_log "ERROR" "Invalid action_name '$action_name' - security violation"
+        return 1
+    fi
     
     local grace_file="$GRACE_TRACKING_DIR/${action_name}.grace"
     local current_time=$(get_timestamp)
@@ -123,7 +314,31 @@ start_grace_period() {
     autofix_log "INFO" "Started ${grace_period_seconds}s grace period for $action_name (requested by $calling_module)"
 }
 
-# Clean up expired grace files (housekeeping)
+# =============================================================================
+# cleanup_expired_grace_files() - Remove old grace tracking files
+# =============================================================================
+#
+# PURPOSE:
+#   Removes grace files older than 24 hours to prevent /tmp from filling up
+#   with stale tracking files. This is maintenance to keep the system clean.
+#
+# SECURITY CONSIDERATIONS:
+#   - Uses 'rm -f' which could be dangerous if GRACE_TRACKING_DIR is wrong
+#   - Glob expansion with *.grace could match unexpected files
+#   - Should validate paths before deletion
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - 'for file in pattern' loops through matching files
+#   - '[[ ! -f "$file" ]] && continue' skips if file doesn't exist
+#   - '&&' means "and" - only run second command if first succeeds
+#   - '(( ))' is arithmetic context for math operations
+#   - '86400' is seconds in 24 hours (60*60*24)
+#
+# PERFORMANCE:
+#   - Only runs cleanup when needed
+#   - Uses efficient file operations
+#   - Logs cleanup activity for debugging
+#
 cleanup_expired_grace_files() {
     local current_time=$(get_timestamp)
     local cleaned=0
@@ -151,9 +366,40 @@ cleanup_expired_grace_files() {
     fi
 }
 
-# Standard autofix wrapper function
-# This should be called by all autofix scripts to ensure proper grace period management
-# Args: $1=action_name, $2=calling_module, $3=grace_period_seconds, $4=actual_action_function, $5...$n=action_function_args
+# =============================================================================
+# run_autofix_with_grace() - Execute autofix action with grace period protection
+# =============================================================================
+#
+# PURPOSE:
+#   High-level wrapper that combines grace period checking, action execution,
+#   and cleanup. This is the recommended way to run any autofix action.
+#
+# PARAMETERS:
+#   $1 - action_name: Unique identifier for this action
+#   $2 - calling_module: Module requesting the action
+#   $3 - grace_period_seconds: Cooldown time before action can repeat
+#   $4 - action_function: Name of function to execute
+#   $5+ - Additional arguments passed to the action function
+#
+# RETURNS:
+#   0 - Action executed successfully
+#   1 - Action failed (check logs for details)
+#   2 - Action skipped due to grace period
+#
+# SECURITY CONSIDERATIONS:
+#   - Action function name should be validated to prevent injection
+#   - Function execution uses "$action_function" which could be exploited
+#   - Should restrict allowed function names or use safer execution method
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - 'shift 4' removes first 4 arguments, leaving remaining ones for function
+#   - '"$@"' passes all remaining arguments exactly as they were received
+#   - 'if "$action_function" "$@"' calls the function by name with arguments
+#   - '$?' captures the exit code of the last command
+#
+# EXAMPLE:
+#   run_autofix_with_grace "disk_cleanup" "disk" 300 cleanup_logs "/var/log"
+#
 run_autofix_with_grace() {
     local action_name="$1"
     local calling_module="$2"
@@ -162,6 +408,48 @@ run_autofix_with_grace() {
     shift 4  # Remove the first 4 args, leaving only function args
     
     autofix_log "INFO" "Autofix request: $action_name from module $calling_module with ${grace_period_seconds}s grace period"
+    
+    # Check global AUTOFIX flag - if disabled, log-only mode
+    if [[ "${AUTOFIX:-true}" == "false" ]]; then
+        autofix_log "INFO" "AUTOFIX DISABLED - Log-only mode active"
+        autofix_log "INFO" "Would execute: $action_name"
+        autofix_log "INFO" "Called by: $calling_module"
+        autofix_log "INFO" "Grace period: ${grace_period_seconds}s"
+        autofix_log "INFO" "Function: $action_function"
+        autofix_log "INFO" "Arguments: $*"
+        autofix_log "INFO" "AUTOFIX is disabled in system configuration - no action taken"
+        echo "🚫 AUTOFIX DISABLED: $action_name would be executed but AUTOFIX=false in configuration"
+        echo "   Called by: $calling_module"
+        echo "   Function: $action_function"
+        echo "   Arguments: $*"
+        echo "   To enable: Set AUTOFIX=true in config/SYSTEM.conf"
+        return 0  # Success (logged the action)
+    fi
+    
+    # Check selective DISABLE_AUTOFIX list - if this action is in the list, log-only mode
+    local disable_list="${DISABLE_AUTOFIX:-}"
+    if [[ -n "$disable_list" ]]; then
+        # Convert action name to match common patterns (e.g., "emergency-shutdown" matches both "emergency-shutdown" and "emergency-shutdown.sh")
+        local action_basename="${action_name%.sh}"  # Remove .sh if present
+        
+        # Check if action is in the disable list (space-separated)
+        if [[ " $disable_list " =~ " $action_basename " ]] || [[ " $disable_list " =~ " ${action_basename}.sh " ]]; then
+            autofix_log "INFO" "AUTOFIX SELECTIVELY DISABLED - $action_name is in DISABLE_AUTOFIX list"
+            autofix_log "INFO" "Would execute: $action_name"
+            autofix_log "INFO" "Called by: $calling_module"
+            autofix_log "INFO" "Grace period: ${grace_period_seconds}s"
+            autofix_log "INFO" "Function: $action_function"
+            autofix_log "INFO" "Arguments: $*"
+            autofix_log "INFO" "Disabled by DISABLE_AUTOFIX list: $disable_list"
+            echo "🚫 AUTOFIX SELECTIVELY DISABLED: $action_name is in DISABLE_AUTOFIX list"
+            echo "   Called by: $calling_module"
+            echo "   Function: $action_function"
+            echo "   Arguments: $*"
+            echo "   Disabled list: $disable_list"
+            echo "   To enable: Remove '$action_basename' from DISABLE_AUTOFIX in config/SYSTEM.conf"
+            return 0  # Success (logged the action)
+        fi
+    fi
     
     # Cleanup expired grace files
     cleanup_expired_grace_files
@@ -187,29 +475,243 @@ run_autofix_with_grace() {
     fi
 }
 
-# Helper function to validate autofix script arguments
-# All autofix scripts should call this to ensure they received proper arguments
+# =============================================================================
+# validate_autofix_args() - Validate arguments passed to autofix scripts
+# =============================================================================
+#
+# PURPOSE:
+#   Ensures autofix scripts receive properly formatted arguments before
+#   proceeding with potentially dangerous operations. Supports dry-run mode
+#   for safe testing of autofix operations.
+#
+# PARAMETERS:
+#   $1 - script_name: Name of script for error messages
+#   $2 - calling_module: Module name (must not be empty, or "--dry-run")
+#   $3 - grace_period: Grace period in seconds (must be a positive number)
+#
+# RETURNS:
+#   0 - Arguments are valid
+#   1 - Arguments are invalid (error logged)
+#
+# DRY-RUN SUPPORT:
+#   If first argument is "--dry-run", sets DRY_RUN=true and adjusts parsing
+#   to allow testing autofix scripts without executing dangerous operations.
+#
+# SECURITY CONSIDERATIONS:
+#   - Should validate calling_module format to prevent injection
+#   - Grace period should be bounded to prevent DoS attacks
+#   - Dry-run mode must be clearly logged to prevent confusion
+#
 validate_autofix_args() {
     local script_name="$1"
     local calling_module="$2"
     local grace_period="$3"
     
+    # Check for dry-run mode
+    if [[ "$calling_module" == "--dry-run" ]]; then
+        export DRY_RUN=true
+        autofix_log "INFO" "$script_name: DRY-RUN MODE ENABLED - No dangerous operations will be performed"
+        
+        # Shift arguments for dry-run mode
+        calling_module="$grace_period"
+        grace_period="${4:-60}"  # Default grace period for dry-run
+        
+        if [[ -z "$calling_module" ]]; then
+            autofix_log "ERROR" "$script_name: Missing calling module in dry-run mode"
+            echo "Usage: $script_name --dry-run <calling_module> [grace_period_seconds] [additional_args...]"
+            echo "Example: $script_name --dry-run thermal 45 emergency"
+            return 1
+        fi
+    else
+        export DRY_RUN=false
+    fi
+    
     if [[ -z "$calling_module" ]]; then
         autofix_log "ERROR" "$script_name: Missing required argument - calling module"
-        echo "Usage: $script_name <calling_module> <grace_period_seconds> [additional_args...]"
+        echo "Usage: $script_name [--dry-run] <calling_module> <grace_period_seconds> [additional_args...]"
         echo "Example: $script_name thermal 45 emergency"
+        echo "Example: $script_name --dry-run thermal 45 emergency"
         return 1
     fi
     
     if [[ -z "$grace_period" ]] || ! [[ "$grace_period" =~ ^[0-9]+$ ]]; then
         autofix_log "ERROR" "$script_name: Invalid grace period '$grace_period' (must be numeric seconds)"
-        echo "Usage: $script_name <calling_module> <grace_period_seconds> [additional_args...]"
+        echo "Usage: $script_name [--dry-run] <calling_module> <grace_period_seconds> [additional_args...]"
         echo "Example: $script_name thermal 45 emergency"
+        echo "Example: $script_name --dry-run thermal 45 emergency"
         return 1
     fi
     
-    autofix_log "DEBUG" "$script_name: Valid arguments - module=$calling_module, grace=${grace_period}s"
+    # SECURITY: Validate calling_module format to prevent injection
+    if [[ ! "$calling_module" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        autofix_log "ERROR" "$script_name: Invalid calling module name '$calling_module' - security violation"
+        return 1
+    fi
+    
+    local mode_info="LIVE MODE"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        mode_info="DRY-RUN MODE"
+    fi
+    
+    autofix_log "DEBUG" "$script_name: Valid arguments - module=$calling_module, grace=${grace_period}s, mode=$mode_info"
     return 0
+}
+
+# =============================================================================
+# dry_run_execute() - Execute command only if not in dry-run mode
+# =============================================================================
+#
+# PURPOSE:
+#   Performs all analysis and detection in both modes, but only executes the
+#   actual corrective action in live mode. In dry-run mode, reports exactly
+#   what corrective action would be taken and why.
+#
+# PARAMETERS:
+#   $1 - description: Human-readable description of the operation
+#   $@ - command and arguments that would be executed
+#
+# RETURNS:
+#   0 - Command executed successfully (or dry-run completed)
+#   1 - Command failed (only in live mode)
+#
+# DRY-RUN BEHAVIOR:
+#   - Performs all diagnostic checks and analysis
+#   - Reports detected issues and their severity
+#   - Shows exactly what corrective action would be taken
+#   - Explains why this action is needed
+#   - Does NOT execute the actual corrective command
+#
+# EXAMPLES:
+#   dry_run_execute "Kill greedy process firefox (PID 1234) using 4GB RAM" kill -TERM 1234
+#   dry_run_execute "Emergency shutdown due to thermal overload (CPU: 95°C)" shutdown -h now
+#
+dry_run_execute() {
+    local description="$1"
+    shift  # Remove description, leaving only the command
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN ANALYSIS COMPLETE"
+        echo "================================"
+        echo "DETECTED ISSUE: Analysis performed successfully"
+        echo "RECOMMENDED ACTION: $description"
+        echo "COMMAND THAT WOULD BE EXECUTED: $*"
+        echo "STATUS: Action NOT executed (dry-run mode)"
+        echo "================================"
+        autofix_log "INFO" "DRY-RUN: Analysis complete - would execute: $description"
+        autofix_log "DEBUG" "DRY-RUN: Command would be: $*"
+        return 0
+    else
+        autofix_log "INFO" "Analysis complete - executing: $description"
+        autofix_log "DEBUG" "Command: $*"
+        "$@"
+        return $?
+    fi
+}
+
+# =============================================================================
+# dry_run_file_operation() - Safely perform file operations in dry-run mode
+# =============================================================================
+#
+# PURPOSE:
+#   Handles file operations (create, modify, delete) safely in dry-run mode.
+#   Shows what would happen without actually modifying files.
+#
+# PARAMETERS:
+#   $1 - operation: "create", "modify", "delete", "backup"
+#   $2 - target_file: File that would be affected
+#   $3 - description: Human-readable description
+#
+# EXAMPLES:
+#   dry_run_file_operation "delete" "/tmp/cache" "Clear temporary cache"
+#   dry_run_file_operation "modify" "/etc/default/grub" "Update GRUB parameters"
+#
+# =============================================================================
+# dry_run_report_analysis() - Report analysis results in structured format
+# =============================================================================
+#
+# PURPOSE:
+#   Provides structured reporting of what the autofix script discovered and
+#   what actions it would take. Should be called after all analysis is complete
+#   but before any corrective actions.
+#
+# PARAMETERS:
+#   $1 - issue_type: Type of issue detected (e.g., "HIGH_CPU", "DISK_FULL")
+#   $2 - severity: "LOW", "MEDIUM", "HIGH", "CRITICAL"  
+#   $3 - details: Specific details about what was detected
+#   $4 - proposed_action: What action would be taken
+#   $5 - reasoning: Why this action is recommended
+#
+# EXAMPLE:
+#   dry_run_report_analysis "HIGH_MEMORY" "HIGH" "firefox using 4.2GB RAM (85% of system)" \
+#                           "kill -TERM 1234" "Process exceeds 2GB threshold and is non-critical"
+#
+dry_run_report_analysis() {
+    local issue_type="$1"
+    local severity="$2" 
+    local details="$3"
+    local proposed_action="$4"
+    local reasoning="$5"
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🔍 AUTOFIX ANALYSIS RESULTS"
+        echo "============================"
+        echo "ISSUE TYPE: $issue_type"
+        echo "SEVERITY: $severity"
+        echo "DETAILS: $details"
+        echo "PROPOSED ACTION: $proposed_action"
+        echo "REASONING: $reasoning"
+        echo "STATUS: Analysis only - no action taken (dry-run mode)"
+        echo "============================"
+        echo ""
+        autofix_log "INFO" "DRY-RUN Analysis: $issue_type ($severity) - $details"
+        autofix_log "INFO" "DRY-RUN Proposed: $proposed_action - $reasoning"
+    else
+        autofix_log "INFO" "Analysis: $issue_type ($severity) - $details"
+        autofix_log "INFO" "Action needed: $proposed_action - $reasoning"
+    fi
+}
+
+dry_run_file_operation() {
+    local operation="$1"
+    local target_file="$2"
+    local description="$3"
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo "📁 FILE OPERATION ANALYSIS:"
+        echo "  Operation: $operation"
+        echo "  Target: $target_file"
+        echo "  Purpose: $description"
+        case "$operation" in
+            "delete")
+                if [[ -f "$target_file" ]]; then
+                    local file_size=$(du -sh "$target_file" 2>/dev/null | cut -f1 || echo "unknown")
+                    echo "  Current state: File exists ($file_size)"
+                    echo "  Result: File would be deleted"
+                else
+                    echo "  Current state: File does not exist"
+                    echo "  Result: No operation needed"
+                fi
+                ;;
+            "create"|"modify")
+                if [[ -f "$target_file" ]]; then
+                    echo "  Current state: File exists, would be modified"
+                else
+                    echo "  Current state: File does not exist, would be created"
+                fi
+                ;;
+            "backup")
+                echo "  Current state: Backup would be created as ${target_file}.backup"
+                ;;
+        esac
+        echo ""
+        autofix_log "INFO" "DRY-RUN: Would $operation file: $target_file ($description)"
+        return 0
+    else
+        autofix_log "INFO" "File operation: $operation $target_file ($description)"
+        return 0  # Actual file operations handled by calling script
+    fi
 }
 
 # Initialize autofix logging

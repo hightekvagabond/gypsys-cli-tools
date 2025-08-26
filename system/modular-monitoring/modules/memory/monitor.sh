@@ -1,6 +1,58 @@
 #!/bin/bash
-# Memory usage monitoring module
-
+#
+# MEMORY MONITORING MODULE
+#
+# PURPOSE:
+#   Monitors system memory usage, swap activity, and out-of-memory (OOM) conditions
+#   to prevent system freezes and ensure stable operation. Memory exhaustion can
+#   cause system instability, process termination, and unresponsive desktop environments.
+#
+# CRITICAL SAFETY FEATURES:
+#   - Early warning for high memory usage
+#   - Intelligent process management (throttle before kill)
+#   - OOM condition detection and prevention
+#   - Swap usage monitoring and alerts
+#   - Grace period management for memory spikes
+#
+# MONITORING CAPABILITIES:
+#   - Real-time memory usage tracking (/proc/meminfo)
+#   - Process-level memory consumption analysis
+#   - Swap space utilization monitoring
+#   - Memory leak detection patterns
+#   - Available memory calculations and thresholds
+#   - Historical memory usage trends
+#
+# EMERGENCY RESPONSE:
+#   - High memory usage: Warning alerts and monitoring
+#   - Critical memory: Process analysis and selective throttling
+#   - Near-OOM conditions: Intelligent process management
+#   - Configurable thresholds based on total system memory
+#
+# PROCESS MANAGEMENT:
+#   - Identifies memory-greedy processes
+#   - Throttles high-memory processes before killing
+#   - Protects critical system processes
+#   - User notification for process management actions
+#
+# USAGE:
+#   ./monitor.sh [--no-auto-fix] [--status] [--start-time TIME] [--end-time TIME]
+#   ./monitor.sh --help
+#   ./monitor.sh --description
+#   ./monitor.sh --list-autofixes
+#
+# SECURITY CONSIDERATIONS:
+#   - Read-only memory statistics access
+#   - Safe process analysis methods
+#   - Validated process management operations
+#   - No direct memory manipulation
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - /proc/meminfo: Linux memory statistics interface
+#   - MemAvailable: Real available memory (includes reclaimable cache)
+#   - SwapTotal/SwapFree: Virtual memory space usage
+#   - OOM killer: Kernel mechanism for handling memory exhaustion
+#   - Process memory mapping: Understanding RSS, VSZ, and memory types
+#
 MODULE_NAME="memory"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"
@@ -45,8 +97,7 @@ parse_args() {
                 exit 0
                 ;;
             --list-autofixes)
-                echo "memory-cleanup"
-                echo "emergency-process-kill"
+                echo "manage-greedy-process"
                 exit 0
                 ;;
             *)

@@ -1,5 +1,49 @@
 #!/bin/bash
-# Modular Monitor Status Checker - Restructured Version
+# =============================================================================
+# MODULAR MONITOR STATUS CHECKER
+# =============================================================================
+#
+# PURPOSE:
+#   Provides comprehensive system health status reporting by querying all
+#   monitoring modules and presenting a unified view of system condition.
+#   Essential for diagnosing issues and understanding system behavior.
+#
+# STATUS REPORTING FEATURES:
+#   ✅ Current system readings (temperature, memory, disk usage)
+#   ✅ Recent monitoring events and alerts
+#   ✅ Module health and error status
+#   ✅ Autofix actions taken (emergency responses)
+#   ✅ Historical analysis and trends
+#   ✅ Pre-shutdown diagnostics
+#
+# USAGE:
+#   status.sh [--since "time"] [--pre-shutdown] [--verbose] [--help]
+#
+# EXAMPLES:
+#   status.sh                          # Current status
+#   status.sh --since "1 hour ago"     # Events since specified time  
+#   status.sh --pre-shutdown           # What happened before last shutdown
+#   status.sh --verbose                # Detailed diagnostic output
+#
+# MODULE INTEGRATION:
+#   - Calls each module's status.sh script
+#   - Aggregates readings and alerts
+#   - Correlates events across modules
+#   - Identifies patterns and trends
+#
+# SECURITY CONSIDERATIONS:
+#   - All module paths validated before execution
+#   - Time parameters sanitized to prevent injection
+#   - No user input passed directly to system commands
+#   - Read-only operations (no system modifications)
+#
+# BASH CONCEPTS FOR BEGINNERS:
+#   - Status aggregation pattern collects data from multiple sources
+#   - Time-based filtering helps focus on relevant events
+#   - Module pattern allows extensible status reporting
+#   - Structured output makes results easy to parse and understand
+#
+# =============================================================================
 
 set -euo pipefail
 
@@ -37,6 +81,181 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+
+# =============================================================================
+# perform_shutdown_analysis() - Analyze the previous system shutdown
+# =============================================================================
+#
+# PURPOSE:
+#   Analyzes how the system was shut down the last time to help users understand
+#   if it was a normal shutdown or if there was a problem that caused an
+#   unexpected shutdown, freeze, or emergency action.
+#
+# PARAMETERS:
+#   $1 - mode: "short" for quick yes/no, "full" for detailed analysis
+#
+# CHECKS PERFORMED:
+#   1. Clean shutdown record detection
+#   2. Kernel panic or crash detection  
+#   3. Monitoring system emergency actions
+#   4. Critical alerts before shutdown
+#   5. High system load or resource pressure
+#
+perform_shutdown_analysis() {
+    local mode="${1:-short}"
+    local shutdown_normal=true
+    local shutdown_issues=()
+    local shutdown_reason=""
+    local monitoring_action_detected=false
+    
+    log "INFO: Analyzing previous system shutdown (mode: $mode)"
+    
+    # Check for clean shutdown record in previous boot
+    if ! journalctl --boot=-1 --no-pager --quiet 2>/dev/null | grep -q "systemd.*Reached target.*Shutdown\|systemd.*Stopping\|systemd.*Stopped"; then
+        shutdown_normal=false
+        shutdown_issues+=("No clean shutdown record found - likely hard power-off or system freeze")
+    fi
+    
+    # Check for kernel panic or crash
+    if journalctl --boot=-1 --no-pager --quiet 2>/dev/null | grep -qi "kernel panic\|oops\|segfault\|call trace\|bug:\|rip:"; then
+        shutdown_normal=false
+        shutdown_issues+=("Kernel panic or crash detected")
+        shutdown_reason="System crashed due to kernel panic"
+    fi
+    
+    # Check for monitoring system actions in the timeframe around shutdown
+    local emergency_logs
+    emergency_logs=$(journalctl -t modular-monitor-autofix --boot=-1 --no-pager --quiet 2>/dev/null | grep -i "emergency\|shutdown\|kill.*process" || echo "")
+    
+    if [[ -n "$emergency_logs" ]]; then
+        monitoring_action_detected=true
+        shutdown_issues+=("Monitoring system emergency actions detected")
+        
+        if echo "$emergency_logs" | grep -qi "emergency shutdown"; then
+            shutdown_normal=false
+            shutdown_reason="Emergency shutdown triggered by monitoring system"
+        elif echo "$emergency_logs" | grep -qi "emergency.*kill"; then
+            shutdown_issues+=("Emergency process termination by monitoring system")
+        fi
+    fi
+    
+    # Check for critical system conditions before shutdown
+    local critical_alerts
+    critical_alerts=$(journalctl -t modular-monitor --boot=-1 --no-pager --quiet 2>/dev/null | grep -i "critical\|emergency" || echo "")
+    
+    if [[ -n "$critical_alerts" ]]; then
+        if echo "$critical_alerts" | grep -qi "thermal.*critical\|temperature.*critical"; then
+            shutdown_issues+=("Critical thermal conditions detected")
+            if [[ -z "$shutdown_reason" ]]; then
+                shutdown_reason="Critical CPU temperature reached"
+            fi
+        fi
+        
+        if echo "$critical_alerts" | grep -qi "memory.*critical\|oom"; then
+            shutdown_issues+=("Critical memory pressure detected")
+            if [[ -z "$shutdown_reason" ]]; then
+                shutdown_reason="System ran out of memory"
+            fi
+        fi
+        
+        if echo "$critical_alerts" | grep -qi "disk.*critical\|space.*critical"; then
+            shutdown_issues+=("Critical disk space detected")
+            if [[ -z "$shutdown_reason" ]]; then
+                shutdown_reason="System ran out of disk space"
+            fi
+        fi
+    fi
+    
+    # Output results based on mode
+    if [[ "$mode" == "short" ]]; then
+        # Short version - just normal/abnormal
+        if [[ "$shutdown_normal" == "true" ]]; then
+            echo "✅ Previous shutdown: NORMAL"
+            log "INFO: Previous shutdown was normal"
+        else
+            echo "❌ Previous shutdown: ABNORMAL"
+            if [[ -n "$shutdown_reason" ]]; then
+                echo "   Reason: $shutdown_reason"
+            fi
+            echo "   Run './status.sh --shutdown-analysis-full' for details"
+            log "INFO: Previous shutdown was abnormal: ${shutdown_issues[*]}"
+        fi
+    else
+        # Full version - detailed analysis
+        echo ""
+        echo "🔍 ==============================================="
+        echo "   PREVIOUS SHUTDOWN ANALYSIS"
+        echo "==============================================="
+        echo ""
+        
+        if [[ "$shutdown_normal" == "true" ]]; then
+            echo "✅ RESULT: Normal shutdown detected"
+            echo ""
+            echo "The system was shut down cleanly using normal shutdown"
+            echo "procedures (shutdown command, systemctl, or GUI logout)."
+            echo ""
+            echo "No issues detected with the previous shutdown."
+        else
+            echo "❌ RESULT: Abnormal shutdown detected"
+            echo ""
+            
+            if [[ -n "$shutdown_reason" ]]; then
+                echo "🔸 PRIMARY CAUSE: $shutdown_reason"
+                echo ""
+            fi
+            
+            echo "🔸 ISSUES DETECTED:"
+            for issue in "${shutdown_issues[@]}"; do
+                echo "   • $issue"
+            done
+            echo ""
+            
+            echo "🔸 WHAT THIS MEANS:"
+            if [[ "${shutdown_issues[*]}" =~ "No clean shutdown record" ]]; then
+                echo "   • System was likely powered off forcibly (power button held,"
+                echo "     power loss, or system freeze requiring hard reset)"
+            fi
+            
+            if [[ "${shutdown_issues[*]}" =~ "Kernel panic" ]]; then
+                echo "   • System crashed due to a serious kernel error"
+                echo "   • This can be caused by hardware issues, driver problems,"
+                echo "     or memory corruption"
+            fi
+            
+            if [[ "$monitoring_action_detected" == "true" ]]; then
+                echo "   • The monitoring system detected a critical condition"
+                echo "     and took emergency action to protect the system"
+            fi
+            
+            echo ""
+            echo "🔸 RECOMMENDED ACTIONS:"
+            echo "   • Run './status.sh' to check current system health"
+            echo "   • Check end of previous session logs: 'journalctl --boot=-1 | tail -50'"
+            echo "   • Search for shutdown events: 'journalctl --boot=-1 | grep -i \"shutdown\\|stop\\|error\\|panic\"'"
+            
+            if [[ "${shutdown_issues[*]}" =~ "thermal" ]]; then
+                echo "   • Check cooling system and clean dust from fans/vents"
+                echo "   • Monitor CPU temperature: 'sensors'"
+            fi
+            
+            if [[ "${shutdown_issues[*]}" =~ "memory" ]]; then
+                echo "   • Check memory usage: 'free -h'"
+                echo "   • Consider running memory test: 'memtest86+'"
+            fi
+            
+            if [[ "${shutdown_issues[*]}" =~ "disk" ]]; then
+                echo "   • Check disk space: 'df -h'"
+                echo "   • Clean up unnecessary files"
+            fi
+        fi
+        
+        echo ""
+        echo "==============================================="
+        echo ""
+    fi
+    
+    return 0
+}
 
 print_header() {
     echo -e "${BLUE}🛡️  MODULAR MONITOR STATUS (Restructured)${NC}"
@@ -256,6 +475,8 @@ OPTIONS:
     --summary-only          Show only system summary (no individual modules)
     --list-modules          List enabled modules and their configuration
     --all                   Generate complete historical report (all available logs)
+    --shutdown-analysis     Quick check: was previous shutdown normal or abnormal?
+    --shutdown-analysis-full    Detailed analysis of previous shutdown
 
 EXAMPLES:
     ./status.sh                           # Full status report
@@ -264,6 +485,8 @@ EXAMPLES:
     ./status.sh --modules-only            # Show only module-specific status
     ./status.sh --list-modules            # List all enabled modules
     ./status.sh --all                     # Complete historical analysis
+    ./status.sh --shutdown-analysis        # Quick: normal or abnormal shutdown?
+    ./status.sh --shutdown-analysis-full   # Detailed shutdown analysis
 
 COMPLETE HISTORY REPORT (--all):
     Generates comprehensive analysis including:
@@ -701,6 +924,14 @@ main() {
             --all)
                 complete_history=true
                 shift
+                ;;
+            --shutdown-analysis)
+                perform_shutdown_analysis "short"
+                exit 0
+                ;;
+            --shutdown-analysis-full)
+                perform_shutdown_analysis "full"
+                exit 0
                 ;;
             *)
                 echo "Unknown option: $1"

@@ -35,22 +35,24 @@ Each module follows a standardized structure:
 ```
 modules/MODULE_NAME/
 ├── exists.sh           # Hardware/software existence check (REQUIRED)
-├── monitor.sh          # Main monitoring script
-├── status.sh           # Status reporting script
-├── test.sh             # Module testing script
-├── config.conf         # Module-specific configuration
-├── README.md           # Module documentation
-└── autofix/            # Automated fix scripts directory
-    ├── action1.sh
-    ├── action2.sh
+├── monitor.sh          # Main monitoring script (REQUIRED)
+├── status.sh           # Status reporting script (REQUIRED)
+├── test.sh             # Module testing script (REQUIRED)
+├── scan.sh             # Hardware detection and configuration (REQUIRED)
+├── config.conf         # Module-specific configuration (REQUIRED)
+├── README.md           # Module documentation (REQUIRED)
+└── helpers/            # Module-specific helper scripts (optional)
+    ├── chipset1.sh     # Hardware/vendor-specific implementations
+    ├── chipset2.sh
     └── ...
 ```
 
 ### Script Execution Flow
 1. **`exists.sh`** - First check: Does required hardware/software exist?
-2. **`monitor.sh`** - Main monitoring: Check status, apply fixes if needed
-3. **`status.sh`** - Reporting: Show detailed status information
-4. **`test.sh`** - Validation: Test module functionality
+2. **`scan.sh`** - Hardware detection: Identify specific hardware and generate config
+3. **`monitor.sh`** - Main monitoring: Check status, apply fixes if needed
+4. **`status.sh`** - Reporting: Show detailed status information
+5. **`test.sh`** - Validation: Test module functionality
 
 ## 🔧 Creating New Modules
 
@@ -331,6 +333,11 @@ Module-specific configuration:
 
 ```bash
 # NEW_MODULE_NAME Module Configuration
+# 
+# ⚠️  IMPORTANT: DO NOT MAKE SYSTEM-SPECIFIC CHANGES HERE!
+# This file contains MODULE DEFAULTS only.
+# To override settings for this system, edit config/SYSTEM.conf instead.
+# System config takes precedence over module defaults.
 
 # Enable/disable autofix for this module
 ENABLE_NEW_MODULE_AUTOFIX=true
@@ -344,7 +351,111 @@ DEFAULT_STATUS_START_TIME="1 hour ago"
 DEFAULT_STATUS_END_TIME="now"
 ```
 
-### Step 7: Create README.md
+### Step 7: Create scan.sh
+Hardware detection and configuration generation:
+
+```bash
+#!/bin/bash
+# Hardware detection and configuration for NEW_MODULE_NAME monitoring module
+
+MODULE_NAME="new_module_name"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+show_help() {
+    cat << 'EOF'
+NEW_MODULE_NAME HARDWARE SCAN SCRIPT
+
+PURPOSE:
+    Detect NEW_MODULE_NAME hardware and generate configuration for monitoring
+    and autofix systems.
+
+USAGE:
+    ./scan.sh                    # Human-readable scan results
+    ./scan.sh --config          # Machine-readable config format for SYSTEM.conf
+    ./scan.sh --help            # Show this help information
+
+OUTPUT MODES:
+    Default Mode:
+        Human-readable hardware detection results with explanations
+        
+    Config Mode (--config):
+        Shell variable assignments suitable for SYSTEM.conf
+        
+EXIT CODES:
+    0 - Hardware detected and configuration generated
+    1 - No hardware detected or scan failed
+EOF
+}
+
+# Check for help request
+if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+    show_help
+    exit 0
+fi
+
+# Hardware detection function
+detect_hardware() {
+    local config_mode=false
+    if [[ "${1:-}" == "--config" ]]; then
+        config_mode=true
+    fi
+    
+    # Add your hardware detection logic here
+    # Examples:
+    # - Check for specific devices: lspci | grep -i "device_name"
+    # - Check for kernel modules: lsmod | grep "module_name"
+    # - Check for system interfaces: [[ -d "/sys/class/something" ]]
+    # - Check for vendor/model: dmidecode, cat /proc/cpuinfo, etc.
+    
+    local detected_hardware="unknown"
+    local vendor="unknown"
+    local model="unknown"
+    
+    # Your detection logic here
+    # if some_detection_check; then
+    #     detected_hardware="specific_hardware"
+    #     vendor="vendor_name"
+    #     model="model_name"
+    # fi
+    
+    if [[ "$config_mode" == "true" ]]; then
+        # Machine-readable config format
+        if [[ "$detected_hardware" != "unknown" ]]; then
+            echo "NEW_MODULE_HARDWARE=\"$detected_hardware\""
+            echo "NEW_MODULE_VENDOR=\"$vendor\""
+            if [[ "$model" != "unknown" ]]; then
+                echo "NEW_MODULE_MODEL=\"$model\""
+            fi
+            exit 0
+        else
+            exit 1
+        fi
+    else
+        # Human-readable format
+        if [[ "$detected_hardware" == "unknown" ]]; then
+            echo "❌ No NEW_MODULE_NAME hardware detected"
+            exit 1
+        fi
+        
+        echo "✅ NEW_MODULE_NAME hardware detected:"
+        echo ""
+        echo "🔧 Hardware Details:"
+        echo "  Type: $detected_hardware"
+        echo "  Vendor: $vendor"
+        echo "  Model: $model"
+        echo ""
+        echo "⚙️  Configuration Recommendations:"
+        echo "  NEW_MODULE_HARDWARE=\"$detected_hardware\""
+        echo "  NEW_MODULE_VENDOR=\"$vendor\""
+        exit 0
+    fi
+}
+
+# Execute detection
+detect_hardware "$@"
+```
+
+### Step 8: Create README.md
 Document your module:
 
 ```markdown
@@ -368,7 +479,7 @@ How to run and test the module.
 What hardware/software must be present.
 ```
 
-### Step 8: Enable the Module
+### Step 9: Enable the Module
 ```bash
 # Create symlink to enable the module
 cd ../../config

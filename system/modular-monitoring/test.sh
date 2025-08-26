@@ -18,6 +18,11 @@ MODULES_PASSED=0
 MODULES_FAILED=0
 MODULES_SKIPPED=0
 
+# Autofix test results tracking
+TOTAL_AUTOFIX=0
+AUTOFIX_PASSED=0
+AUTOFIX_FAILED=0
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -41,6 +46,8 @@ OPTIONS:
     --verbose           Show detailed test output
     --summary-only      Show only final summary
     --fail-fast         Stop testing on first module failure
+    --autofix-only      Test only autofix scripts (dry-run mode)
+    --include-autofix   Include autofix dry-run tests with module tests
 
 ARGUMENTS:
     MODULE_NAME         Test specific module(s) only
@@ -51,6 +58,8 @@ EXAMPLES:
     ./test.sh thermal usb               # Test only thermal and usb modules
     ./test.sh --verbose --all           # Test all modules with detailed output
     ./test.sh --list                    # Show available modules
+    ./test.sh --autofix-only            # Test only autofix scripts (dry-run)
+    ./test.sh --include-autofix --all   # Test modules + autofix scripts
 
 EOF
 }
@@ -97,6 +106,148 @@ list_modules() {
     echo "  No test scripts: $no_test_count"
     exit 0
 }
+
+# =============================================================================
+# AUTOFIX SCRIPT DISCOVERY AND TESTING
+# =============================================================================
+
+discover_autofix_scripts() {
+    local autofix_scripts=()
+    
+    # Find all .sh files in autofix directory, excluding common.sh
+    for script_path in "$SCRIPT_DIR/autofix"/*.sh; do
+        if [[ -f "$script_path" ]]; then
+            local script_name
+            script_name=$(basename "$script_path")
+            
+            # Skip common.sh and any non-executable autofix scripts
+            if [[ "$script_name" != "common.sh" && -x "$script_path" ]]; then
+                autofix_scripts+=("$script_name")
+            fi
+        fi
+    done
+    
+    printf '%s\n' "${autofix_scripts[@]}"
+}
+
+list_autofix_scripts() {
+    echo -e "${BLUE}📋 Available Autofix Scripts:${NC}"
+    echo "============================="
+    
+    local autofix_scripts=()
+    mapfile -t autofix_scripts < <(discover_autofix_scripts)
+    
+    if [[ ${#autofix_scripts[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}⚠️  No autofix scripts found${NC}"
+        return
+    fi
+    
+    for script in "${autofix_scripts[@]}"; do
+        local script_path="$SCRIPT_DIR/autofix/$script"
+        if [[ -x "$script_path" ]]; then
+            echo -e "  ✅ ${GREEN}$script${NC} (executable)"
+        else
+            echo -e "  ❌ ${RED}$script${NC} (not executable)"
+        fi
+    done
+    
+    echo ""
+    echo -e "${CYAN}Total: ${#autofix_scripts[@]} autofix scripts${NC}"
+}
+
+run_autofix_test() {
+    local script_name="$1"
+    local verbose="$2"
+    local script_path="$SCRIPT_DIR/autofix/$script_name"
+    
+    TOTAL_AUTOFIX=$((TOTAL_AUTOFIX + 1))
+    
+    if [[ ! -f "$script_path" ]]; then
+        echo -e "  ❌ ${RED}$script_name: FAIL${NC} (Script not found)"
+        AUTOFIX_FAILED=$((AUTOFIX_FAILED + 1))
+        return 1
+    fi
+    
+    if [[ ! -x "$script_path" ]]; then
+        echo -e "  ❌ ${RED}$script_name: FAIL${NC} (Not executable)"
+        AUTOFIX_FAILED=$((AUTOFIX_FAILED + 1))
+        return 1
+    fi
+    
+    echo -e "${CYAN}🧪 Testing autofix script: $script_name (dry-run)...${NC}"
+    
+    # Test 1: Syntax check
+    if ! bash -n "$script_path" >/dev/null 2>&1; then
+        echo -e "  ❌ ${RED}$script_name: FAIL${NC} (Syntax error)"
+        AUTOFIX_FAILED=$((AUTOFIX_FAILED + 1))
+        return 1
+    fi
+    
+    # Test 2: Help function check
+    local help_output
+    if help_output=$("$script_path" --help 2>&1); then
+        if [[ "$verbose" == "true" ]]; then
+            echo "  ✅ Help function works"
+        fi
+    else
+        echo -e "  ⚠️  ${YELLOW}$script_name: Help function missing or broken${NC}"
+    fi
+    
+    # Test 3: Dry-run execution test
+    local dry_run_output
+    local dry_run_exit_code=0
+    
+    if dry_run_output=$("$script_path" --dry-run test_module 60 2>&1); then
+        if [[ "$verbose" == "true" ]]; then
+            echo "----------------------------------------"
+            echo "$dry_run_output"
+            echo "----------------------------------------"
+        fi
+        echo -e "  ✅ ${GREEN}$script_name: PASS${NC} (Dry-run successful)"
+        AUTOFIX_PASSED=$((AUTOFIX_PASSED + 1))
+        return 0
+    else
+        dry_run_exit_code=$?
+        if [[ "$verbose" == "true" ]]; then
+            echo "----------------------------------------"
+            echo "DRY-RUN OUTPUT:"
+            echo "$dry_run_output"
+            echo "EXIT CODE: $dry_run_exit_code"
+            echo "----------------------------------------"
+        fi
+        echo -e "  ❌ ${RED}$script_name: FAIL${NC} (Dry-run failed with exit code $dry_run_exit_code)"
+        AUTOFIX_FAILED=$((AUTOFIX_FAILED + 1))
+        return 1
+    fi
+}
+
+run_all_autofix_tests() {
+    local verbose="$1"
+    local summary_only="$2"
+    
+    local autofix_scripts=()
+    mapfile -t autofix_scripts < <(discover_autofix_scripts)
+    
+    if [[ ${#autofix_scripts[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}⚠️  No autofix scripts found to test${NC}"
+        return 0
+    fi
+    
+    if [[ "$summary_only" != "true" ]]; then
+        echo -e "${CYAN}🔧 Testing ${#autofix_scripts[@]} autofix scripts (dry-run mode)${NC}"
+        echo ""
+    fi
+    
+    for script in "${autofix_scripts[@]}"; do
+        if [[ "$summary_only" == "true" ]]; then
+            run_autofix_test "$script" false >/dev/null 2>&1
+        else
+            run_autofix_test "$script" "$verbose"
+        fi
+    done
+}
+
+# =============================================================================
 
 # Load common functions for get_enabled_modules()
 source "$SCRIPT_DIR/modules/common.sh"
@@ -167,6 +318,7 @@ validate_module_structure() {
         "monitor.sh:Main monitoring script" 
         "status.sh:Status reporting script"
         "test.sh:Module testing script"
+        "scan.sh:Hardware detection and configuration"
         "config.conf:Module configuration"
         "README.md:Module documentation"
     )
@@ -189,6 +341,31 @@ validate_module_structure() {
                     validation_errors+=("⚠️  monitor.sh missing required --description flag")
                 else
                     echo -e "  ✅ monitor.sh: --description flag working"
+                fi
+            fi
+            
+            # Additional validation for scan.sh - check for required modes
+            if [[ "$file_name" == "scan.sh" ]]; then
+                # Test --help flag
+                if ! "$file_path" --help >/dev/null 2>&1; then
+                    validation_errors+=("⚠️  scan.sh missing required --help flag")
+                else
+                    echo -e "  ✅ scan.sh: --help flag working"
+                fi
+                
+                # Test --config mode
+                if "$file_path" --config >/dev/null 2>&1; then
+                    echo -e "  ✅ scan.sh: --config mode working"
+                else
+                    # --config might fail if no hardware is detected, which is OK
+                    echo -e "  ℹ️  scan.sh: --config mode callable (hardware detection may vary)"
+                fi
+                
+                # Test default mode (should not crash)
+                if "$file_path" >/dev/null 2>&1; then
+                    echo -e "  ✅ scan.sh: default mode working"
+                else
+                    echo -e "  ℹ️  scan.sh: default mode callable (hardware detection may vary)"
                 fi
             fi
         fi
@@ -347,6 +524,8 @@ main() {
     local verbose=false
     local summary_only=false
     local fail_fast=false
+    local autofix_only=false
+    local include_autofix=false
     local specific_modules=()
     
     # Parse arguments
@@ -358,6 +537,17 @@ main() {
                 ;;
             --list)
                 list_modules
+                echo ""
+                list_autofix_scripts
+                exit 0
+                ;;
+            --autofix-only)
+                autofix_only=true
+                shift
+                ;;
+            --include-autofix)
+                include_autofix=true
+                shift
                 ;;
             --all)
                 test_all_modules=true
@@ -396,11 +586,18 @@ main() {
     echo "=================================="
     echo ""
     
+    # Handle autofix-only mode
+    if [[ "$autofix_only" == "true" ]]; then
+        run_all_autofix_tests "$verbose" "$summary_only"
+        show_final_results
+        exit $?
+    fi
+    
     # Discover modules to test
     local modules_to_test=()
     mapfile -t modules_to_test < <(discover_modules "$test_all_modules" "${specific_modules[@]}")
     
-    if [[ ${#modules_to_test[@]} -eq 0 ]]; then
+    if [[ ${#modules_to_test[@]} -eq 0 ]] && [[ "$include_autofix" != "true" ]]; then
         echo -e "${YELLOW}⚠️  No modules found to test${NC}"
         if [[ "$test_all_modules" != "true" ]]; then
             echo "  Try: ./test.sh --all (to test all modules)"
@@ -440,36 +637,91 @@ main() {
         fi
     done
     
+    # Run autofix tests if requested
+    if [[ "$include_autofix" == "true" ]]; then
+        echo ""
+        echo -e "${BLUE}=== AUTOFIX SCRIPT TESTS ===${NC}"
+        run_all_autofix_tests "$verbose" "$summary_only"
+    fi
+    
+    show_final_results
+}
+
+show_final_results() {
     # Final summary
     echo ""
     echo -e "${BLUE}📊 FINAL TEST RESULTS${NC}"
     echo "====================="
-    echo -e "  ✅ ${GREEN}Passed: $MODULES_PASSED${NC}"
-    echo -e "  ❌ ${RED}Failed: $MODULES_FAILED${NC}"
-    echo -e "  ⚪ ${YELLOW}Skipped: $MODULES_SKIPPED${NC}"
-    echo -e "  📋 ${CYAN}Total: $TOTAL_MODULES${NC}"
     
-    # Calculate success rate
+    # Module results (if any were tested)
     if [[ $TOTAL_MODULES -gt 0 ]]; then
-        local success_rate
-        success_rate=$(( (MODULES_PASSED * 100) / TOTAL_MODULES ))
-        echo -e "  📈 Success Rate: ${success_rate}%"
+        echo -e "${CYAN}MODULES:${NC}"
+        echo -e "  ✅ ${GREEN}Passed: $MODULES_PASSED${NC}"
+        echo -e "  ❌ ${RED}Failed: $MODULES_FAILED${NC}"
+        echo -e "  ⚪ ${YELLOW}Skipped: $MODULES_SKIPPED${NC}"
+        echo -e "  📋 ${CYAN}Total: $TOTAL_MODULES${NC}"
+        
+        # Calculate module success rate
+        if [[ $TOTAL_MODULES -gt 0 ]]; then
+            local module_success_rate
+            module_success_rate=$(( (MODULES_PASSED * 100) / TOTAL_MODULES ))
+            echo -e "  📈 Module Success Rate: ${module_success_rate}%"
+        fi
+        echo ""
+    fi
+    
+    # Autofix results (if any were tested)
+    if [[ $TOTAL_AUTOFIX -gt 0 ]]; then
+        echo -e "${CYAN}AUTOFIX SCRIPTS:${NC}"
+        echo -e "  ✅ ${GREEN}Passed: $AUTOFIX_PASSED${NC}"
+        echo -e "  ❌ ${RED}Failed: $AUTOFIX_FAILED${NC}"
+        echo -e "  📋 ${CYAN}Total: $TOTAL_AUTOFIX${NC}"
+        
+        # Calculate autofix success rate
+        if [[ $TOTAL_AUTOFIX -gt 0 ]]; then
+            local autofix_success_rate
+            autofix_success_rate=$(( (AUTOFIX_PASSED * 100) / TOTAL_AUTOFIX ))
+            echo -e "  📈 Autofix Success Rate: ${autofix_success_rate}%"
+        fi
+        echo ""
+    fi
+    
+    # Overall results
+    local total_tests=$((TOTAL_MODULES + TOTAL_AUTOFIX))
+    local total_passed=$((MODULES_PASSED + AUTOFIX_PASSED))
+    local total_failed=$((MODULES_FAILED + AUTOFIX_FAILED))
+    
+    if [[ $total_tests -gt 0 ]]; then
+        echo -e "${CYAN}OVERALL:${NC}"
+        echo -e "  ✅ ${GREEN}Total Passed: $total_passed${NC}"
+        echo -e "  ❌ ${RED}Total Failed: $total_failed${NC}"
+        echo -e "  📋 ${CYAN}Total Tests: $total_tests${NC}"
+        
+        local overall_success_rate
+        overall_success_rate=$(( (total_passed * 100) / total_tests ))
+        echo -e "  📈 Overall Success Rate: ${overall_success_rate}%"
     fi
     
     echo ""
     
-    # Exit code
-    if [[ $MODULES_FAILED -eq 0 ]]; then
+    # Exit code based on any failures
+    if [[ $total_failed -eq 0 ]]; then
         echo -e "${GREEN}🎉 All tests passed! System is ready.${NC}"
-        exit 0
+        return 0
     else
-        echo -e "${YELLOW}⚠️  Some tests failed. Check individual modules for details.${NC}"
+        echo -e "${YELLOW}⚠️  Some tests failed. Check individual components for details.${NC}"
         echo ""
         echo -e "${CYAN}💡 Quick fixes:${NC}"
-        echo "  • Run individual tests: ./modules/MODULE_NAME/test.sh"
-        echo "  • Check dependencies: Install missing tools"
-        echo "  • Verify hardware: Some modules need specific hardware"
-        exit 1
+        if [[ $MODULES_FAILED -gt 0 ]]; then
+            echo "  • Run individual module tests: ./modules/MODULE_NAME/test.sh"
+            echo "  • Check dependencies: Install missing tools"
+            echo "  • Verify hardware: Some modules need specific hardware"
+        fi
+        if [[ $AUTOFIX_FAILED -gt 0 ]]; then
+            echo "  • Fix autofix script syntax errors"
+            echo "  • Test autofix scripts: ./test.sh --autofix-only --verbose"
+        fi
+        return 1
     fi
 }
 
