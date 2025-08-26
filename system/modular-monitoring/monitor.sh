@@ -29,7 +29,7 @@ monitor.sh - Modular Monitor Coordinator (Restructured)
 
 DESCRIPTION:
     Coordinates execution of individual monitoring modules using the new
-    modular structure. Modules are discovered via .enabled symlinks in
+    modular structure. Modules are discovered via USE_MODULES setting in
     the config directory and can have individual overrides.
 
 USAGE:
@@ -60,7 +60,7 @@ EXAMPLES:
     ./monitor.sh --no-auto-fix      # Run all modules without autofix
 
 CONFIGURATION:
-    - Enabled modules: config/*.enabled symlinks
+    - Enabled modules: USE_MODULES/IGNORE_MODULES in SYSTEM.conf
     - Module overrides: config/MODULE_NAME.conf files
     - System config: config/SYSTEM.conf
     - Module configs: modules/MODULE/config.conf
@@ -119,7 +119,7 @@ list_modules() {
     echo ""
     echo "Configuration Details:"
     echo "  System config: config/SYSTEM.conf"
-    echo "  Enabled modules: config/*.enabled symlinks"
+    echo "  Enabled modules: USE_MODULES/IGNORE_MODULES in SYSTEM.conf"
     echo "  Module overrides: config/MODULE_NAME.conf"
     echo "  Module defaults: modules/MODULE/config.conf"
 }
