@@ -1,6 +1,6 @@
 # SYSTEM Configuration
 # System-wide configuration for modular monitoring suite
-# This file contains core system settings and fallback defaults
+# This file contains defaults used by orchestrator and status.sh
 
 # ========================================
 # ORCHESTRATOR SETTINGS
@@ -14,12 +14,6 @@ MODULES_DIR="modules"
 
 # State directory for persistent data
 STATE_DIR="/var/tmp/modular-monitor-state"
-
-# Maximum number of modules to run concurrently
-MAX_CONCURRENT_MODULES=3
-
-# Timeout for individual module execution (seconds)
-MODULE_EXECUTION_TIMEOUT=60
 
 # ========================================
 # STATUS SCRIPT SETTINGS  
@@ -38,29 +32,22 @@ STATUS_SHOW_RECENT_ALERTS=true
 STATUS_SHOW_SYSTEM_INFO=true
 
 # ========================================
-# GLOBAL FALLBACK SETTINGS
+# LOGGING & ALERTING
 # ========================================
 
-# These settings serve as fallbacks for modules that don't specify their own values
+# Global log level (debug, info, warning, error)
+# Note: Individual modules now have their own LOG_LEVEL settings in config.conf
+# This serves as a fallback for modules that don't specify their own log level
+GLOBAL_LOG_LEVEL="info"
 
-# Process and memory thresholds
-PROCESS_CPU_THRESHOLD=10          # Minimum CPU % to consider for emergency killing
-MEMORY_KILL_THRESHOLD=15          # Minimum memory % to consider for emergency killing
-GRACE_PERIOD_SECONDS=60           # Grace period after system/process start before kills
-KILL_PROCESS_WAIT_TIME=2          # Seconds to wait after SIGTERM before SIGKILL
+# Global alert settings
+# Note: Individual modules now have their own notification settings in config.conf
+# These serve as fallbacks for modules that don't specify their own settings
+ENABLE_GLOBAL_NOTIFICATIONS=true
+GLOBAL_NOTIFICATION_TIMEOUT=10000  # milliseconds
 
-# Emergency actions
-ENABLE_EMERGENCY_SHUTDOWN=true    # Allow emergency shutdown autofix
-ENABLE_EMERGENCY_ACTIONS=true     # Enable emergency response system
-
-# Notifications (fallback for modules without specific settings)
-ENABLE_DESKTOP_NOTIFICATIONS=true   # Show desktop notifications during autofix
-ENABLE_WALL_MESSAGES=true          # Send wall messages to all users
-ENABLE_DIAGNOSTIC_DUMPS=true       # Create diagnostic dumps during emergencies
-
-# Logging (fallback for modules without specific settings)
-AUTOFIX_LOG_LEVEL=info            # Log level for autofix actions
-AUTOFIX_LOG_RETENTION_DAYS=30     # How long to keep autofix logs
+# Emergency response settings
+ENABLE_EMERGENCY_ACTIONS=true
 
 # ========================================
 # MODULE MANAGEMENT
@@ -72,27 +59,38 @@ ENABLED_MODULES_DIR="config"
 # Module override configs directory
 MODULE_OVERRIDES_DIR="config"
 
-# Auto-detect hardware and enable appropriate modules
-AUTO_DETECT_HARDWARE=true
-
 # ========================================
 # HARDWARE DETECTION & SYSTEM INFO
 # ========================================
 
-# Hardware-specific settings (detected during setup)
+# Auto-detect hardware and enable appropriate modules
+AUTO_DETECT_HARDWARE=true
+
+# Hardware-specific settings (detected during install)
 HARDWARE_TYPE="predator"  # Will be set by installer: "predator", "generic", etc.
 CPU_VENDOR="intel"     # Will be set by installer: "intel", "amd", etc.
 GPU_VENDOR="intel"     # Will be set by installer: "intel", "nvidia", "amd", etc.
 
 # ========================================
-# INSTALLATION & SETUP
+# INSTALLATION SETTINGS
 # ========================================
 
 # Whether this is the first run after installation
 FIRST_RUN_AFTER_INSTALL=false
 
 # Modules that need to run during installation
+# These will be identified by RUN_ON_INSTALL=true in their configs
 RUN_ON_INSTALL_MODULES_DETECTED=true
+
+# ========================================
+# PERFORMANCE & RESOURCE LIMITS
+# ========================================
+
+# Maximum number of modules to run concurrently
+MAX_CONCURRENT_MODULES=3
+
+# Timeout for individual module execution (seconds)
+MODULE_EXECUTION_TIMEOUT=60
 
 # ========================================
 # DEBUG & DEVELOPMENT
@@ -126,11 +124,12 @@ LEGACY_THRESHOLDS_CONFIG="config/thresholds.conf"
 
 # This file is sourced by:
 # - monitor.sh (for module management and execution)
-# - status.sh (for display preferences and defaults)  
+# - status.sh (for display preferences and defaults)
 # - setup.sh (for system detection and configuration)
 #
-# Module-specific settings should be placed in individual
-# config files: modules/<MODULE_NAME>/config.conf
+# Module-specific overrides should be placed in individual
+# config files in the config/ directory following the pattern:
+# MODULE_NAME.conf (e.g., thermal.conf, i915.conf)
 #
-# The setup script will detect hardware and update the hardware
-# detection variables above during initial configuration.
+# The installer will detect hardware and update the hardware
+# detection variables above during initial setup.
