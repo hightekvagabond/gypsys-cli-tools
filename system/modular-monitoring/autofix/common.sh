@@ -10,6 +10,35 @@ DEFAULT_MONITOR_FREQUENCY_SECONDS=120  # 2 minutes default
 # Ensure grace tracking directory exists
 mkdir -p "$GRACE_TRACKING_DIR"
 
+# Initialize autofix script with common setup
+# Usage: init_autofix_script "$@" (pass all arguments)
+# Sets: CALLING_MODULE, GRACE_PERIOD, and additional arguments as needed
+init_autofix_script() {
+    local script_name
+    script_name="$(basename "${BASH_SOURCE[1]}")"  # Get calling script name
+    
+    # Load modules common.sh for helper functions
+    local project_root
+    project_root="$(dirname "$SCRIPT_DIR")"
+    if [[ -f "$project_root/modules/common.sh" ]]; then
+        source "$project_root/modules/common.sh"
+    fi
+    
+    # Validate arguments
+    if ! validate_autofix_args "$script_name" "$1" "$2"; then
+        exit 1
+    fi
+    
+    # Set standard autofix variables
+    CALLING_MODULE="$1"
+    GRACE_PERIOD="$2"
+    
+    # Export for use by autofix script
+    export CALLING_MODULE GRACE_PERIOD
+    
+    autofix_log "INFO" "Initialized $script_name: module=$CALLING_MODULE, grace=$GRACE_PERIOD"
+}
+
 # Logging function
 autofix_log() {
     local level="$1"

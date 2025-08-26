@@ -8,25 +8,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
-# Load modules common.sh for helper functions
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-source "$PROJECT_ROOT/modules/common.sh"
+# Initialize autofix script with common setup
+init_autofix_script "$@"
 
-# Validate arguments
-if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
-    exit 1
-fi
-
-CALLING_MODULE="$1"
-GRACE_PERIOD="$2"
+# Additional arguments specific to this script
 TRIGGER_REASON="${3:-emergency}"
 TRIGGER_VALUE="${4:-unknown}"
 
-# Load autofix configuration
-AUTOFIX_CONFIG="$PROJECT_ROOT/config/autofix.conf"
-if [[ -f "$AUTOFIX_CONFIG" ]]; then
-    source "$AUTOFIX_CONFIG"
-fi
+# Configuration loaded automatically via modules/common.sh
 
 # Create emergency diagnostic dump
 create_emergency_dump() {
