@@ -31,10 +31,11 @@ modular-monitoring/
 ├── status.sh                  # System-wide status reporter
 ├── README.md                  # This file
 ├── FUTURE_SCOPE.md           # Roadmap and AI integration plans
-├── config/                    # Configuration management
-│   ├── SYSTEM.conf           # Global system configuration
+├── system_default.conf        # Default system configuration
+├── config/                    # Machine-specific configuration (placeholder)
 │   ├── README.md             # Configuration system guide
-│   └── *.enabled            # Symlinks to enable modules
+│   └── SYSTEM.conf           # Machine-specific overrides (optional)
+│                             # NOTE: In production, this will be /etc/modular-monitor/ or similar
 ├── modules/                   # Modular monitoring components
 │   ├── MODULE_BEST_PRACTICES.md  # Development guide
 │   ├── common.sh             # Shared framework functions
@@ -63,25 +64,63 @@ Each module in the `modules/` directory has its own README.md explaining its pur
 
 ## ⚙️ **Configuration System**
 
-### **Hierarchical Configuration**
-1. **System-wide**: `config/SYSTEM.conf` - Global defaults and orchestrator settings
-2. **Module defaults**: `modules/MODULE_NAME/config.conf` - Module-specific settings  
-3. **Module overrides**: `config/MODULE_NAME.conf` - User customizations
+### **4-Tier Configuration Hierarchy** 
+The system uses a sophisticated configuration precedence system (most → least important):
+
+1. **🌍 Environment Variables** - Runtime overrides
+   ```bash
+   export USE_MODULES="thermal memory"
+   export TEMP_EMERGENCY=75
+   ./monitor.sh
+   ```
+
+2. **🖥️ Machine-Specific Config** - Per-machine overrides
+   ```bash
+   # config/SYSTEM.conf (when it exists)
+   USE_MODULES="thermal memory i915 usb"
+   DEFAULT_MONITOR_INTERVAL=180
+   ```
+
+3. **📦 Module-Specific Config** - Module settings
+   ```bash
+   # modules/thermal/config.conf
+   TEMP_WARNING=85
+   TEMP_CRITICAL=90
+   ```
+
+4. **🎯 System Default Config** - Project defaults
+   ```bash
+   # system_default.conf
+   USE_MODULES="ALL"
+   IGNORE_MODULES="nonexistent"
+   ```
 
 ### **Module Management**
-```bash
-# Enable a module (create symlink)
-cd config/
-ln -sf ../modules/MODULE_NAME/config.conf MODULE_NAME.enabled
+Modules are controlled via configuration, not symlinks:
 
-# Disable a module (remove symlink)
-rm MODULE_NAME.enabled
+```bash
+# Enable specific modules
+USE_MODULES="thermal memory i915 usb"
+
+# Enable all except some
+USE_MODULES="ALL"
+IGNORE_MODULES="nonexistent kernel"
+
+# Disable all modules  
+USE_MODULES="NONE"
 
 # List enabled modules
 ./monitor.sh --list
 ```
 
-See `config/README.md` for detailed configuration documentation.
+### **Configuration Deployment**
+- **Development**: `config/` directory serves as a placeholder
+- **Production**: Machine-specific configs will be deployed to:
+  - `/etc/modular-monitor/` (system-wide)
+  - `~/.config/modular-monitor/` (user-specific)
+  - Or other appropriate system configuration location
+
+See `config/README.md` for detailed configuration documentation and deployment scenarios.
 
 ## 📊 **Usage Patterns**
 
@@ -172,7 +211,7 @@ journalctl -u modular-monitor.service --no-pager
 2. Create module directory: `modules/new_module/`
 3. Implement required files: `monitor.sh`, `config.conf`, `status.sh`, `README.md`
 4. Add autofix scripts in `autofix/` subdirectory
-5. Enable module: `ln -sf ../modules/new_module/config.conf config/new_module.enabled`
+5. Enable module: Add to `USE_MODULES` in `system_default.conf` or machine config
 
 ### **Module Standards**
 - **Standardized interface**: All modules support `--help`, `--status`, `--no-auto-fix`, `--start-time`, `--end-time`
