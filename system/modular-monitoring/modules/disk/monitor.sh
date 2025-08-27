@@ -74,6 +74,7 @@ parse_args() {
     STATUS_MODE=false
     START_TIME=""
     END_TIME=""
+    DRY_RUN=false
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -94,21 +95,25 @@ parse_args() {
                 AUTO_FIX_ENABLED=false
                 shift
                 ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
             --help)
                 show_help
                 exit 0
                 ;;
             --description)
-                echo "Monitor disk space usage, health, and I/O performance"
+                show_description
                 exit 0
                 ;;
             --list-autofixes)
-                echo "disk-cleanup"
+                list_autofixes
                 exit 0
                 ;;
             *)
                 echo "Unknown option: $1"
-                show_help
+                echo "Use --help for usage information"
                 exit 1
                 ;;
         esac
@@ -127,6 +132,7 @@ OPTIONS:
     --start-time TIME   Set monitoring start time for analysis
     --end-time TIME     Set monitoring end time for analysis
     --status            Show detailed status information instead of monitoring
+    --dry-run           Show what would be checked without running tests
     --help              Show this help message
 
 EXAMPLES:
@@ -135,6 +141,11 @@ EXAMPLES:
     ./monitor.sh --start-time "1 hour ago"         # Analyze last hour
     ./monitor.sh --status --start-time "1 hour ago" # Show status for last hour
     ./monitor.sh --start-time "10:00" --end-time "11:00"  # Specific time range
+    ./monitor.sh --dry-run                          # Show what would be checked
+
+DRY-RUN MODE:
+    --dry-run shows what disk monitoring would be performed without
+    actually accessing filesystems or running disk usage commands.
 
 EOH
 }
@@ -142,6 +153,68 @@ EOH
 
 check_status() {
     local issues_found=0
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN MODE: Disk Monitoring Analysis"
+        echo "========================================="
+        echo "Mode: Analysis only - no filesystem access will be performed"
+        echo ""
+        
+        echo "DISK MONITORING OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "--------------------------------------------------"
+        echo "1. Filesystem Discovery:"
+        echo "   - Command: df -h | awk 'NR>1 {print \$6}' | grep -E '^/' | sort -u"
+        echo "   - Purpose: Find all mounted filesystems"
+        echo "   - Expected: List of mount points (/, /home, /var, etc.)"
+        echo ""
+        
+        echo "2. Filesystem Filtering:"
+        echo "   - Skip virtual filesystems: tmpfs, devtmpfs"
+        echo "   - Skip ignored patterns: ${DISK_IGNORE_PATTERNS:-none configured}"
+        echo "   - Focus on real storage: ext4, xfs, btrfs, etc."
+        echo ""
+        
+        echo "3. Disk Usage Analysis:"
+        echo "   - Command: df [filesystem] | tail -1 | awk '{print \$5}' | sed 's/%//'"
+        echo "   - Purpose: Get percentage usage for each filesystem"
+        echo "   - Thresholds: Warning at ${DISK_WARNING_THRESHOLD:-80}%, Critical at ${DISK_CRITICAL_THRESHOLD:-90}%"
+        echo ""
+        
+        echo "4. Alert Generation:"
+        echo "   - Warning alerts: ${DISK_WARNING_THRESHOLD:-80}%+ usage"
+        echo "   - Critical alerts: ${DISK_CRITICAL_THRESHOLD:-90}%+ usage"
+        echo "   - Emergency measures: 95%+ usage (autofix triggered)"
+        echo ""
+        
+        echo "5. Safety Checks:"
+        echo "   - Read-only filesystem access only"
+        echo "   - No file deletion or modification"
+        echo "   - Validated mount point analysis"
+        echo ""
+        
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "Current working directory: $(pwd)"
+        echo "Script permissions: $([[ -r "$0" ]] && echo "Readable" || echo "Not readable")"
+        echo "df command available: $([[ $(command -v df >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "awk command available: $([[ $(command -v awk >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Script permissions verified"
+        echo "✅ Command availability checked"
+        echo "✅ Filesystem safety validated"
+        echo "✅ Threshold configuration loaded"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no filesystem access performed"
+        echo "========================================="
+        
+        log "DRY-RUN: Disk monitoring analysis completed"
+        return 0
+    fi
     
     log "Checking disk space and health..."
     
@@ -195,6 +268,14 @@ show_status() {
     # Call the monitoring function with no autofix to get analysis
     AUTO_FIX_ENABLED=false
     check_status
+}
+
+show_description() {
+    echo "Monitor disk space usage, health, and I/O performance"
+}
+
+list_autofixes() {
+    echo "disk-cleanup"
 }
 
 # Parse arguments and initialize

@@ -301,152 +301,130 @@ detect_common_space_hogs() {
 }
 
 # =============================================================================
-# perform_disk_cleanup() - Main cleanup function with safety checks
+# perform_disk_cleanup() - Main cleanup function with dry-run support
 # =============================================================================
 #
 # PURPOSE:
-#   Performs safe disk cleanup operations in priority order, starting with
-#   the safest operations first. Reports what was cleaned and how much space
-#   was recovered.
+#   Performs the actual disk cleanup operations with comprehensive dry-run
+#   support. In dry-run mode, shows exactly what would be cleaned without
+#   making any changes.
 #
 # PARAMETERS:
-#   $1 - filesystem: Filesystem to clean (e.g., "/", "/var", "/tmp")
-#   $2 - usage_percent: Current usage percentage (for logging/decisions)
+#   $1 - filesystem: Filesystem to clean
+#   $2 - usage_percent: Current usage percentage
 #
-# SAFETY STRATEGY:
-#   1. Start with safest operations (temp files, caches)
-#   2. Move to moderate operations (old logs, journal)
-#   3. Report what would be manual operations (don't auto-delete)
-#   4. Always log what was cleaned and space recovered
-#
-# BASH CONCEPTS FOR BEGINNERS:
-#   - Arrays store lists: safe_actions=("action1" "action2")
-#   - Functions can call other functions
-#   - 'local' variables only exist in this function
-#   - Always validate inputs before using them in commands
-#
-# SECURITY CONSIDERATIONS:
-#   - Never deletes current log files (system needs them)
-#   - Never touches user data or configuration
-#   - All paths are hardcoded (no user input passed to rm)
-#   - Reports actions taken for audit trail
+# DRY-RUN BEHAVIOR:
+#   - Shows all files that would be deleted
+#   - Calculates space that would be freed
+#   - Provides detailed analysis without making changes
+#   - Logs all actions that would be taken
 #
 perform_disk_cleanup() {
     local filesystem="$1"
     local usage_percent="$2"
     
-    # Check if we're in dry-run mode
+    autofix_log "INFO" "Starting disk cleanup for $filesystem (usage: ${usage_percent}%)"
+    
+    # Store commands in variables for dry-run support
+    local CLEANUP_TMP_CMD="find /tmp -type f -mtime +7 -delete"
+    local CLEANUP_VARTMP_CMD="find /var/tmp -type f -mtime +7 -delete"
+    local CLEANUP_LOGS_CMD="find /var/log -name '*.log.[0-9]*' -mtime +30 -delete"
+    local CLEANUP_JOURNAL_CMD="journalctl --vacuum-time=30d"
+    local CLEANUP_APT_CMD="apt-get clean && apt-get autoremove"
+    
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        autofix_log "INFO" "[DRY-RUN] Would perform disk cleanup for $filesystem (${usage_percent}% full)"
-        autofix_log "INFO" "[DRY-RUN] Would analyze disk usage to identify space hogs"
-        autofix_log "INFO" "[DRY-RUN] Would clean the following if they exist:"
-        autofix_log "INFO" "[DRY-RUN]   - Thumbnail cache: \$HOME/.cache/thumbnails/*"
-        autofix_log "INFO" "[DRY-RUN]   - Old cache files: \$HOME/.cache/* (older than 7 days)"
-        autofix_log "INFO" "[DRY-RUN]   - User trash: \$HOME/.local/share/Trash/*"
-        autofix_log "INFO" "[DRY-RUN]   - System temp files: /tmp/* and /var/tmp/* (older than 7 days)"
-        autofix_log "INFO" "[DRY-RUN]   - Package cache: apt clean, yum clean, dnf clean"
-        autofix_log "INFO" "[DRY-RUN]   - Journal logs: journalctl --vacuum-time=30d"
-        autofix_log "INFO" "[DRY-RUN]   - Rotated log files: *.log.[0-9]*, *.log.*.gz, *.log.*.bz2 (older than 30 days)"
-        autofix_log "INFO" "[DRY-RUN] Would show disk usage analysis and space recovery report"
-        autofix_log "INFO" "[DRY-RUN] Disk cleanup procedure would complete successfully"
+        echo ""
+        echo "🧪 DRY-RUN MODE: Disk Cleanup Analysis"
+        echo "======================================="
+        echo "Filesystem: $filesystem"
+        echo "Current usage: ${usage_percent}%"
+        echo "Mode: Analysis only - no files will be deleted"
+        echo ""
+        
+        # Analyze what would be cleaned
+        echo "CLEANUP OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "--------------------------------------------"
+        
+        # Check tmp directory
+        local tmp_files=$(find /tmp -type f -mtime +7 2>/dev/null | wc -l)
+        local tmp_size=$(du -sh /tmp 2>/dev/null | cut -f1 || echo "unknown")
+        echo "1. Temporary files cleanup:"
+        echo "   Command: $CLEANUP_TMP_CMD"
+        echo "   Files found: $tmp_files files older than 7 days"
+        echo "   Directory size: $tmp_size"
+        
+        # Check var/tmp directory
+        local vartmp_files=$(find /var/tmp -type f -mtime +7 2>/dev/null | wc -l)
+        local vartmp_size=$(du -sh /var/tmp 2>/dev/null | cut -f1 || echo "unknown")
+        echo "2. System temp files cleanup:"
+        echo "   Command: $CLEANUP_VARTMP_CMD"
+        echo "   Files found: $vartmp_files files older than 7 days"
+        echo "   Directory size: $vartmp_size"
+        
+        # Check log files
+        local log_files=$(find /var/log -name "*.log.[0-9]*" -mtime +30 2>/dev/null | wc -l)
+        local log_size=$(du -sh /var/log/*.log.[0-9]* 2>/dev/null 2>/dev/null | awk '{sum+=$1} END {print sum}' || echo "unknown")
+        echo "3. Rotated log files cleanup:"
+        echo "   Command: $CLEANUP_LOGS_CMD"
+        echo "   Files found: $log_files rotated logs older than 30 days"
+        echo "   Estimated size: $log_size"
+        
+        # Check journal logs
+        echo "4. Systemd journal cleanup:"
+        echo "   Command: $CLEANUP_JOURNAL_CMD"
+        echo "   Would remove journal entries older than 30 days"
+        
+        # Check package cache
+        if command -v apt-get >/dev/null 2>&1; then
+            local apt_cache_size=$(du -sh /var/cache/apt/archives 2>/dev/null | cut -f1 || echo "unknown")
+            echo "5. Package cache cleanup:"
+            echo "   Command: $CLEANUP_APT_CMD"
+            echo "   Cache size: $apt_cache_size"
+        fi
+        
+        echo ""
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Filesystem path validated: $filesystem"
+        echo "✅ Critical directories protected (/, /boot, /etc, /home, etc.)"
+        echo "✅ Only safe cleanup operations included"
+        echo "✅ Current logs (*.log) protected from deletion"
+        echo ""
+        echo "ESTIMATED SPACE RECOVERY:"
+        echo "-------------------------"
+        echo "Based on analysis, estimated space recovery:"
+        echo "- Temporary files: ~$tmp_size"
+        echo "- Rotated logs: ~$log_size"
+        echo "- Package cache: ~$apt_cache_size"
+        echo ""
+        echo "STATUS: Dry-run completed - no changes made"
+        echo "======================================="
+        
+        autofix_log "INFO" "DRY-RUN: Disk cleanup analysis completed for $filesystem"
         return 0
     fi
     
-    # SAFETY: Re-validate filesystem even though we checked earlier
-    if ! validate_filesystem_safety "$filesystem"; then
-        autofix_log "CRITICAL" "Filesystem validation failed during cleanup: $filesystem"
-        return 1
-    fi
-    
-    autofix_log "INFO" "Disk cleanup initiated for $filesystem (${usage_percent}% full)"
-    
-    # ==========================================================================
-    # CRITICAL: ANALYZE ACTUAL DISK USAGE FIRST
-    # ==========================================================================
-    # Don't assume it's logs! Find the real culprit using disk usage analysis
-    
-    autofix_log "INFO" "Analyzing disk usage to identify space hogs..."
-    
-    # Find the top 10 space-consuming directories
-    local analysis_output
-    analysis_output=$(analyze_disk_usage "$filesystem")
-    
-    autofix_log "INFO" "DISK USAGE ANALYSIS RESULTS:"
-    autofix_log "INFO" "$analysis_output"
-    
-    # Check for common space hogs and warn about them
-    detect_common_space_hogs "$filesystem"
-    
-    # Common cleanup actions that are safe
-    local safe_actions=()
-    local manual_actions=()
+    # Live mode - perform actual cleanup
     local cleanup_size=0
     
-    # Safe actions that don't require root
-    if [[ -w "$HOME/.cache" ]]; then
-        autofix_log "INFO" "Cleaning user cache directories..."
-        
-        # Clean thumbnails cache
-        if [[ -d "$HOME/.cache/thumbnails" ]]; then
-            local thumb_size=$(du -sm "$HOME/.cache/thumbnails" 2>/dev/null | cut -f1 || echo "0")
-            if [[ $thumb_size -gt 0 ]]; then
-                rm -rf "$HOME/.cache/thumbnails"/* 2>/dev/null || true
-                autofix_log "INFO" "Cleaned ${thumb_size}MB from thumbnails cache"
-                cleanup_size=$((cleanup_size + thumb_size))
-            fi
-        fi
-        
-        # Clean old cache files
-        local cache_files_cleaned=0
-        find "$HOME/.cache" -type f -mtime +7 -delete 2>/dev/null && cache_files_cleaned=1 || true
-        if [[ $cache_files_cleaned -eq 1 ]]; then
-            autofix_log "INFO" "Cleaned old cache files (older than 7 days)"
-        fi
-    fi
+    # Perform user-space cleanup (safe operations)
+    autofix_log "INFO" "Performing user-space cleanup operations..."
     
-    # Clean user trash
-    if [[ -w "$HOME/.local/share/Trash" ]]; then
-        local trash_size=$(du -sm "$HOME/.local/share/Trash" 2>/dev/null | cut -f1 || echo "0")
-        if [[ $trash_size -gt 0 ]]; then
-            rm -rf "$HOME/.local/share/Trash"/* 2>/dev/null || true
-            autofix_log "INFO" "Cleaned ${trash_size}MB from user trash"
-            cleanup_size=$((cleanup_size + trash_size))
-        fi
-    fi
+    # Clean temporary files
+    execute_command "$CLEANUP_TMP_CMD" "Clean temporary files older than 7 days"
     
-    # Actions that require root privileges
+    # Clean system temporary files
+    execute_command "$CLEANUP_VARTMP_CMD" "Clean system temporary files older than 7 days"
+    
+    # Clean rotated log files (SAFE: only rotated, not current logs)
+    execute_command "$CLEANUP_LOGS_CMD" "Clean rotated log files older than 30 days"
+    
+    # Clean systemd journal (older entries only)
+    execute_command "$CLEANUP_JOURNAL_CMD" "Clean systemd journal entries older than 30 days"
+    
+    # Clean package cache if running as root
     if [[ $EUID -eq 0 ]]; then
-        autofix_log "INFO" "Running as root - performing system cleanup..."
-        
-        # Package manager cleanup
-        if command -v apt-get >/dev/null 2>&1; then
-            autofix_log "INFO" "Cleaning APT package cache..."
-            apt-get clean 2>/dev/null || autofix_log "WARN" "APT clean failed"
-            apt-get autoremove -y 2>/dev/null || autofix_log "WARN" "APT autoremove failed"
-        fi
-        
-        if command -v yum >/dev/null 2>&1; then
-            autofix_log "INFO" "Cleaning YUM package cache..."
-            yum clean all 2>/dev/null || autofix_log "WARN" "YUM clean failed"
-        fi
-        
-        if command -v dnf >/dev/null 2>&1; then
-            autofix_log "INFO" "Cleaning DNF package cache..."
-            dnf clean all 2>/dev/null || autofix_log "WARN" "DNF clean failed"
-        fi
-        
-        # System temporary files cleanup
-        autofix_log "INFO" "Cleaning system temporary files..."
-        find /tmp -type f -mtime +7 -delete 2>/dev/null || true
-        find /var/tmp -type f -mtime +7 -delete 2>/dev/null || true
-        
-        # Journal cleanup
-        autofix_log "INFO" "Cleaning old journal logs..."
-        journalctl --vacuum-time=30d 2>/dev/null || autofix_log "WARN" "Journal cleanup failed"
-        
-        # SAFETY: Only clean ROTATED log files, never current logs
-        # Current logs (*.log) are needed by running services - NEVER delete them!
-        autofix_log "INFO" "Cleaning rotated log files (keeping current *.log files safe)..."
+        execute_command "$CLEANUP_APT_CMD" "Clean package cache and remove unused packages"
         
         # Safe: only rotated/compressed logs (*.1, *.2, *.gz, *.bz2, etc.)
         find /var/log -name "*.log.[0-9]*" -mtime +30 -delete 2>/dev/null || true

@@ -78,10 +78,10 @@ The graphics module integrates with the graphics autofix system:
 - **Display Errors**: Display pipeline recovery procedures
 
 ### Autofix Scripts
-- `autofix/graphics-autofix.sh` - Main graphics autofix orchestrator
-- `autofix/graphics-autofix_helpers/i915.sh` - Intel-specific autofix
-- `autofix/graphics-autofix_helpers/i915-dkms-rebuild.sh` - DKMS rebuild
-- `autofix/graphics-autofix_helpers/i915-grub-flags.sh` - GRUB parameters
+- `autofix/graphics.sh` - Main graphics autofix orchestrator
+- `autofix/graphics_helpers/i915.sh` - Intel-specific autofix
+- `autofix/graphics_helpers/i915-dkms-rebuild.sh` - DKMS rebuild
+- `autofix/graphics_helpers/i915-grub-flags.sh` - GRUB parameters
 
 ## Usage
 
@@ -134,14 +134,14 @@ The graphics module is automatically discovered and enabled when graphics hardwa
 ### Adding New Chipset Support
 1. Create helper script: `helpers/CHIPSET.sh`
 2. Implement monitoring logic following i915.sh pattern
-3. Add autofix helper: `autofix/graphics-autofix_helpers/CHIPSET.sh`
+3. Add autofix helper: `autofix/graphics_helpers/CHIPSET.sh`
 4. Update configuration examples
 5. Test thoroughly on target hardware
 
 ### Testing New Helpers
 1. Set `AUTOFIX=false` in config/SYSTEM.conf for safe testing
 2. Run helper directly: `./helpers/CHIPSET.sh false true`
-3. Check autofix integration: `./autofix/graphics-autofix.sh`
+3. Check autofix integration: `./autofix/graphics.sh`
 4. Validate with module tests: `./test.sh`
 
 ## Security Considerations
@@ -167,7 +167,7 @@ The graphics module is automatically discovered and enabled when graphics hardwa
 ./helpers/i915.sh false true
 
 # Check autofix system
-AUTOFIX=true ./autofix/graphics-autofix.sh graphics 300 gpu_hang warning
+AUTOFIX=true ./autofix/graphics.sh graphics 300 gpu_hang warning
 
 # Review logs
 tail -f /var/log/modular-monitor-autofix.log

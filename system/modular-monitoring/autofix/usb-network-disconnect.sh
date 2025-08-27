@@ -27,17 +27,19 @@
 #   - Comprehensive logging of all actions
 #
 # USAGE:
-#   ./usb-network-disconnect.sh <calling_module> <grace_period_seconds> [dock_failures]
+#   ./usb-network-disconnect.sh <calling_module> <grace_period_seconds> [dock_failures] [device_info]
 #
 #   Examples:
 #     ./usb-network-disconnect.sh thermal 300 5
-#     ./usb-network-disconnect.sh --dry-run thermal 300 5
+#     ./usb-network-disconnect.sh thermal 300 5 "USB Ethernet: Realtek Adapter"
+#     ./usb-network-disconnect.sh --dry-run thermal 300 5 "USB Ethernet: Realtek Adapter"
 #     ./usb-network-disconnect.sh --help
 #
 # ARGUMENTS:
 #   calling_module     - Module requesting the action (e.g., "thermal", "usb")
 #   grace_period       - Seconds to wait before allowing this action again
 #   dock_failures      - Optional: Number of dock failures detected (for logging)
+#   device_info        - Optional: Information about problematic devices for better logging
 #
 # SECURITY CONSIDERATIONS:
 #   - Uses nmcli with safe parameters only
@@ -120,7 +122,14 @@ EOF
 init_autofix_script "$@"
 
 # Additional arguments specific to this script
-DOCK_FAILURES="${3:-0}"
+# In dry-run mode, arguments are shifted, so we need to access them correctly
+if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    DOCK_FAILURES="${4:-0}"
+    DEVICE_INFO="${5:-}"
+else
+    DOCK_FAILURES="${3:-0}"
+    DEVICE_INFO="${4:-}"
+fi
 
 # ============================================================================
 # NETWORK DISCONNECT FUNCTION
@@ -283,5 +292,10 @@ perform_network_disconnect() {
 }
 
 # Execute with grace period management
-autofix_log "INFO" "USB network disconnect requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
-run_autofix_with_grace "usb-network-disconnect" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_network_disconnect" "$DOCK_FAILURES"
+if [[ -n "$DEVICE_INFO" ]]; then
+    autofix_log "INFO" "USB network disconnect requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period for devices: $DEVICE_INFO"
+    run_autofix_with_grace "usb-network-disconnect" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_network_disconnect" "$DOCK_FAILURES" "$DEVICE_INFO"
+else
+    autofix_log "INFO" "USB network disconnect requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
+    run_autofix_with_grace "usb-network-disconnect" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_network_disconnect" "$DOCK_FAILURES"
+fi

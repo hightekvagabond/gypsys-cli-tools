@@ -55,7 +55,7 @@ if [[ -d "$SCRIPT_DIR/helpers" ]]; then
 fi
 
 # Test autofix integration
-run_test "Graphics autofix availability" "[[ -x '$(dirname $(dirname $SCRIPT_DIR))/autofix/graphics-autofix.sh' ]]"
+run_test "Graphics autofix availability" "[[ -x '$(dirname $(dirname $SCRIPT_DIR))/autofix/graphics.sh' ]]"
 
 # Summary
 echo ""

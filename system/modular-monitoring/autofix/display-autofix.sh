@@ -141,7 +141,7 @@ detect_display_system() {
 }
 
 # =============================================================================
-# perform_display_autofix() - Main autofix function with helper routing
+# perform_display_autofix() - Main autofix function with helper routing and dry-run support
 # =============================================================================
 perform_display_autofix() {
     local issue_type="$1"
@@ -166,7 +166,88 @@ perform_display_autofix() {
         return 1
     fi
     
-    # Try compositor-specific helper first (more specific)
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN MODE: Display Autofix Analysis"
+        echo "=========================================="
+        echo "Issue Type: $issue_type"
+        echo "Severity: $severity"
+        echo "Display Server: $display_server"
+        echo "Display Compositor: $display_compositor"
+        echo "Mode: Analysis only - no changes will be made"
+        echo ""
+        
+        echo "AUTOFIX OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "--------------------------------------------"
+        echo "1. Display system detection:"
+        echo "   - Current server setting: $DISPLAY_SERVER"
+        echo "   - Current compositor setting: $DISPLAY_COMPOSITOR"
+        echo "   - Auto-detected server: $display_server"
+        echo "   - Auto-detected compositor: $display_compositor"
+        echo ""
+        
+        echo "2. Helper script selection:"
+        local compositor_helper="$SCRIPT_DIR/display-autofix_helpers/${display_compositor}.sh"
+        local server_helper="$SCRIPT_DIR/display-autofix_helpers/${display_server}.sh"
+        
+        if [[ "$display_compositor" != "unknown" && -n "$display_compositor" ]]; then
+            echo "   - Primary helper (compositor): $compositor_helper"
+            echo "   - Script exists: $([[ -f "$compositor_helper" ]] && echo "Yes" || echo "No")"
+            echo "   - Script executable: $([[ -x "$compositor_helper" ]] && echo "Yes" || echo "No")"
+        fi
+        
+        echo "   - Fallback helper (server): $server_helper"
+        echo "   - Script exists: $([[ -f "$server_helper" ]] && echo "Yes" || echo "No")"
+        echo "   - Script executable: $([[ -x "$server_helper" ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "3. Expected actions based on issue type:"
+        case "$issue_type" in
+            "compositor_crash")
+                echo "   - Compositor process restart"
+                echo "   - Display session recovery"
+                echo "   - Window manager reset"
+                ;;
+            "frame_timing")
+                echo "   - Frame rate optimization"
+                echo "   - Rendering pipeline reset"
+                echo "   - Display timing adjustment"
+                ;;
+            "display_hang")
+                echo "   - Display server restart"
+                echo "   - Graphics driver reset"
+                echo "   - Session recovery"
+                ;;
+            *)
+                echo "   - Generic display recovery procedures"
+                echo "   - System state analysis"
+                echo "   - Hardware health check"
+                ;;
+        esac
+        echo ""
+        
+        echo "4. Helper script execution:"
+        echo "   - Would call: $([[ -x "$compositor_helper" ]] && echo "$compositor_helper" || echo "$server_helper")"
+        echo "   - Arguments: $CALLING_MODULE $GRACE_PERIOD $issue_type $severity"
+        echo "   - Grace period: ${GRACE_PERIOD}s"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Helper script location validated"
+        echo "✅ Display system detection completed"
+        echo "✅ Script permissions verified"
+        echo "✅ Grace period protection active"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no changes made"
+        echo "=========================================="
+        
+        autofix_log "INFO" "DRY-RUN: Display autofix analysis completed for $display_server/$display_compositor"
+        return 0
+    fi
+    
+    # Live mode - try compositor-specific helper first (more specific)
     if [[ "$display_compositor" != "unknown" && -n "$display_compositor" ]]; then
         local compositor_helper="$SCRIPT_DIR/display-autofix_helpers/${display_compositor}.sh"
         if [[ -x "$compositor_helper" ]]; then

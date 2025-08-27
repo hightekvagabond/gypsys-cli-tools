@@ -203,9 +203,9 @@ trigger_i915_autofix() {
     fi
     
     # Use the new graphics autofix system with helper architecture
-    if [[ -x "$autofix_dir/graphics-autofix.sh" ]]; then
+    if [[ -x "$autofix_dir/graphics.sh" ]]; then
         helper_log "INFO" "Calling graphics autofix: issue=$issue_type, severity=$severity"
-        "$autofix_dir/graphics-autofix.sh" "graphics" 300 "$issue_type" "$severity" || \
+        "$autofix_dir/graphics.sh" "graphics" 300 "$issue_type" "$severity" || \
             helper_log "ERROR" "Graphics autofix failed"
     else
         # Fallback to old direct calls if new system not available
@@ -270,8 +270,41 @@ show_i915_status() {
     echo ""
 }
 
+show_help() {
+    cat << 'EOF'
+INTEL I915 GRAPHICS HELPER SCRIPT
+
+PURPOSE:
+    Helper script for monitoring Intel i915 graphics driver health.
+    Provides Intel-specific graphics monitoring and diagnostics.
+
+USAGE:
+    ./i915.sh                      # Run Intel GPU monitoring
+    ./i915.sh true                 # Show Intel GPU status
+    ./i915.sh --help               # Show this help information
+
+CAPABILITIES:
+    • i915 driver error detection (dmesg, sysfs)
+    • GPU temperature and power monitoring
+    • VRAM usage tracking
+    • Driver version compatibility checking
+    • Intel GPU hang detection and recovery
+
+INTEL TOOLS/INTERFACES:
+    • /sys/class/drm/card*/device/* (sysfs interfaces)
+    • intel_gpu_top (optional, for GPU monitoring)
+    • i915 drivers properly installed
+EOF
+}
+
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check for help request
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_help
+        exit 0
+    fi
+    
     if [[ "$STATUS_MODE" == "true" ]]; then
         show_i915_status
     else

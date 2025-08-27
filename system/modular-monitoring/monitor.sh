@@ -46,12 +46,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load system configuration
-if [[ -f "$SCRIPT_DIR/config/SYSTEM.conf" ]]; then
-    source "$SCRIPT_DIR/config/SYSTEM.conf"
-fi
+# Source centralized configuration management
+source "$SCRIPT_DIR/common.sh"
 
-# Set defaults if not loaded from config
+# Set defaults if not loaded from config (now using centralized config)
 MODULES_DIR="${MODULES_DIR:-modules}"
 ENABLED_MODULES_DIR="${ENABLED_MODULES_DIR:-config}"
 MODULE_OVERRIDES_DIR="${MODULE_OVERRIDES_DIR:-config}"
@@ -167,18 +165,8 @@ list_modules() {
 load_module_config() {
     local module_name="$1"
     
-    # Load module's default config first
-    local module_config="$SCRIPT_DIR/$MODULES_DIR/$module_name/config.conf"
-    if [[ -f "$module_config" ]]; then
-        source "$module_config"
-    fi
-    
-    # Load any override config
-    local override_config="$SCRIPT_DIR/$MODULE_OVERRIDES_DIR/${module_name}.conf"
-    if [[ -f "$override_config" ]]; then
-        source "$override_config"
-        log "Applied override config for $module_name"
-    fi
+    # Use centralized config loading function
+    load_all_configs "$module_name"
 }
 
 run_module() {

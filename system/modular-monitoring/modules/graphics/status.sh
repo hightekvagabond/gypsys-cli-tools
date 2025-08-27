@@ -8,6 +8,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Load common functions
 source "$(dirname "$SCRIPT_DIR")/common.sh"
 
+show_help() {
+    cat << 'EOF'
+GRAPHICS MODULE STATUS SCRIPT
+
+PURPOSE:
+    Provides detailed status information for graphics hardware monitoring.
+
+USAGE:
+    ./status.sh                    # Show status for last hour
+    ./status.sh [start_time]       # Show status from start_time to now
+    ./status.sh [start] [end]      # Show status for specific time range
+    ./status.sh --help             # Show this help information
+
+EXAMPLES:
+    ./status.sh                    # Last hour
+    ./status.sh "2 hours ago"      # Last 2 hours
+    ./status.sh "10:00" "11:00"   # Specific time range
+
+TIME FORMATS:
+    • "1 hour ago", "2 days ago"
+    • "10:00", "14:30"
+    • "yesterday", "today"
+EOF
+}
+
+# Check for help request
+if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+    show_help
+    exit 0
+fi
+
 # Load module configuration
 if [[ -f "$SCRIPT_DIR/config.conf" ]]; then
     source "$SCRIPT_DIR/config.conf"

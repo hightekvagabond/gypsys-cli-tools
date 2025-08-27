@@ -54,7 +54,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/../common.sh"
 
 # =============================================================================
 # show_help() - Display usage and safety information
@@ -118,18 +118,73 @@ GRACE_PERIOD="$2"
 
 # The actual DKMS rebuild action
 perform_dkms_rebuild() {
-    # Check if we're in dry-run mode
+    # Store commands in variables for dry-run support
+    local DKMS_STATUS_CMD="dkms status | grep -i \"i915\\|intel\""
+    local DKMS_AUTOINSTALL_CMD="dkms autoinstall"
+    local MANUAL_DKMS_CMD="sudo dkms autoinstall"
+    
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        autofix_log "INFO" "[DRY-RUN] Would start i915 DKMS rebuild process"
-        autofix_log "INFO" "[DRY-RUN] Would check if DKMS is available on system"
-        autofix_log "INFO" "[DRY-RUN] Would list i915-related DKMS modules: dkms status | grep -i \"i915\\|intel\""
-        autofix_log "INFO" "[DRY-RUN] Would execute DKMS autoinstall if running as root: dkms autoinstall"
-        autofix_log "INFO" "[DRY-RUN] Would recommend manual DKMS rebuild if not running as root: sudo dkms autoinstall"
-        autofix_log "INFO" "[DRY-RUN] Would recommend system reboot after successful rebuild"
-        autofix_log "INFO" "[DRY-RUN] i915 DKMS rebuild process would complete successfully"
+        echo ""
+        echo "🧪 DRY-RUN MODE: i915 DKMS Rebuild Analysis"
+        echo "============================================="
+        echo "Mode: Analysis only - no DKMS modules will be rebuilt"
+        echo "Grace Period: ${GRACE_PERIOD}s"
+        echo ""
+        
+        echo "DKMS REBUILD OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "------------------------------------------------"
+        echo "1. DKMS availability check:"
+        echo "   - Command: command -v dkms"
+        echo "   - Purpose: Verify DKMS package is installed"
+        echo ""
+        
+        echo "2. i915 DKMS modules discovery:"
+        echo "   - Command: $DKMS_STATUS_CMD"
+        echo "   - Purpose: Find Intel graphics DKMS modules"
+        echo "   - Expected: List of i915/intel DKMS modules"
+        echo ""
+        
+        echo "3. DKMS rebuild execution:"
+        if [[ $EUID -eq 0 ]]; then
+            echo "   - Running as root: Yes"
+            echo "   - Command: $DKMS_AUTOINSTALL_CMD"
+            echo "   - Purpose: Automatically rebuild all DKMS modules"
+        else
+            echo "   - Running as root: No"
+            echo "   - Command: $MANUAL_DKMS_CMD"
+            echo "   - Purpose: Manual DKMS rebuild (requires root)"
+        fi
+        echo ""
+        
+        echo "4. Post-rebuild actions:"
+        echo "   - System reboot recommendation"
+        echo "   - Desktop notification to user"
+        echo "   - Log completion status"
+        echo ""
+        
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "DKMS package available: $([[ $(command -v dkms >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "Running as root: $([[ $EUID -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "i915 DKMS modules found: $([[ -n "$(dkms status 2>/dev/null | grep -i "i915\|intel")" ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Grace period protection active"
+        echo "✅ DKMS availability verified"
+        echo "✅ Module discovery completed"
+        echo "✅ Root privilege check performed"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no DKMS modules rebuilt"
+        echo "============================================="
+        
+        autofix_log "INFO" "DRY-RUN: i915 DKMS rebuild analysis completed"
         return 0
     fi
     
+    # Live mode - perform actual DKMS rebuild
     autofix_log "INFO" "Starting i915 DKMS rebuild process"
     
     # Check if DKMS is available

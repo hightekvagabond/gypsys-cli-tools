@@ -107,8 +107,46 @@ show_amdgpu_status() {
     echo ""
 }
 
+show_help() {
+    cat << 'EOF'
+AMD GRAPHICS HELPER SCRIPT - STUB
+
+PURPOSE:
+    Helper script for monitoring AMD graphics (amdgpu/radeon) driver health.
+    This is currently a STUB implementation that needs development.
+
+USAGE:
+    ./amdgpu.sh                    # Run AMD GPU monitoring (stub)
+    ./amdgpu.sh true               # Show AMD GPU status (stub)
+    ./amdgpu.sh --help             # Show this help information
+
+WARNING:
+    This is an UNTESTED STUB IMPLEMENTATION that needs development
+    by someone running actual AMD graphics hardware.
+
+NEEDED CAPABILITIES:
+    • amdgpu driver error detection (dmesg, sysfs)
+    • GPU temperature and power monitoring
+    • VRAM usage tracking
+    • Driver version compatibility checking
+    • OpenCL/ROCm functionality verification
+
+TO IMPLEMENT:
+    1. Replace stub functions with real AMD monitoring
+    2. Test on actual AMD hardware (RX/Radeon series)
+    3. Validate sysfs interfaces work correctly
+    4. Remove STUB warnings
+EOF
+}
+
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check for help request
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_help
+        exit 0
+    fi
+    
     if [[ "$STATUS_MODE" == "true" ]]; then
         show_amdgpu_status
     else

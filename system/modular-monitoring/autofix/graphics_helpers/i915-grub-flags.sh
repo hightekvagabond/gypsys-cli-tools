@@ -56,9 +56,64 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/common.sh"
+source "$SCRIPT_DIR/../common.sh"
+
+# =============================================================================
+# show_help() - Display usage and safety information
+# =============================================================================
+show_help() {
+    cat << 'EOF'
+i915 DKMS REBUILD AUTOFIX SCRIPT
+
+⚠️  WARNING:
+    This script rebuilds kernel driver modules which can potentially break
+    graphics functionality if done incorrectly.
+
+PURPOSE:
+    Rebuilds DKMS modules for Intel i915 GPU when driver errors are detected.
+    Resolves GPU hangs, display corruption, and driver compatibility issues.
+
+USAGE:
+    i915-grub-flags.sh <calling_module> <grace_period_seconds>
+
+EXAMPLES:
+    i915-grub-flags.sh i915 7200    # 2-hour grace (rare operation)
+    i915-grub-flags.sh manual 3600  # Manual application
+
+WHEN TO USE:
+    - GPU hangs or system freezes
+    - Display flickering or corruption
+    - Screen tearing or artifacts
+    - Power management issues with display
+    - After hardware changes affecting GPU
+
+REQUIREMENTS:
+    - Root privileges for GRUB modification
+    - GRUB configuration file (/etc/default/grub)
+    - update-grub command available
+
+EXIT CODES:
+    0 - GRUB flags applied successfully
+    1 - Error occurred (check logs)
+    2 - Skipped due to grace period
+
+SAFETY FEATURES:
+    - Grace period prevents repeated modifications
+    - Creates backup of GRUB configuration
+    - Validates configuration before changes
+    - Comprehensive logging and error handling
+
+⚠️  CRITICAL: GRUB modification can make system unbootable
+    Always have recovery media ready and test parameters manually first.
+EOF
+}
 
 # Validate arguments
+if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+    show_help
+    exit 0
+fi
+
 if ! validate_autofix_args "$(basename "$0")" "$1" "$2"; then
     exit 1
 fi
@@ -68,19 +123,83 @@ GRACE_PERIOD="$2"
 
 # The actual GRUB flags application
 apply_i915_grub_flags() {
-    # Check if we're in dry-run mode
+    # Store commands in variables for dry-run support
+    local GRUB_CHECK_CMD="grep 'i915.enable_psr=0' /etc/default/grub"
+    local GRUB_BACKUP_CMD="cp /etc/default/grub /etc/default/grub.backup.\$(date +%Y%m%d-%H%M%S)"
+    local GRUB_UPDATE_CMD="update-grub"
+    local I915_FLAGS="i915.enable_psr=0 i915.enable_fbc=0"
+    
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        autofix_log "INFO" "[DRY-RUN] Would start i915 GRUB flags application"
-        autofix_log "INFO" "[DRY-RUN] Would check GRUB configuration at /etc/default/grub"
-        autofix_log "INFO" "[DRY-RUN] Would check if i915 flags are already present: grep 'i915.enable_psr=0'"
-        autofix_log "INFO" "[DRY-RUN] Would backup GRUB config: cp /etc/default/grub /etc/default/grub.backup.TIMESTAMP"
-        autofix_log "INFO" "[DRY-RUN] Would add i915 stability flags: 'i915.enable_psr=0 i915.enable_fbc=0'"
-        autofix_log "INFO" "[DRY-RUN] Would update GRUB configuration: update-grub"
-        autofix_log "INFO" "[DRY-RUN] Would recommend system reboot to apply kernel parameters"
-        autofix_log "INFO" "[DRY-RUN] i915 GRUB flags application would complete successfully"
+        echo ""
+        echo "🧪 DRY-RUN MODE: i915 GRUB Flags Application Analysis"
+        echo "====================================================="
+        echo "Mode: Analysis only - no GRUB configuration will be modified"
+        echo "Grace Period: ${GRACE_PERIOD}s"
+        echo ""
+        
+        echo "GRUB MODIFICATION OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "----------------------------------------------------"
+        echo "1. GRUB configuration validation:"
+        echo "   - File: /etc/default/grub"
+        echo "   - Command: ls -la /etc/default/grub"
+        echo "   - Purpose: Verify GRUB configuration exists"
+        echo ""
+        
+        echo "2. i915 flags presence check:"
+        echo "   - Command: $GRUB_CHECK_CMD"
+        echo "   - Purpose: Check if stability flags already exist"
+        echo "   - Expected: No output if flags not present"
+        echo ""
+        
+        echo "3. GRUB configuration backup:"
+        echo "   - Command: $GRUB_BACKUP_CMD"
+        echo "   - Purpose: Create backup before modification"
+        echo "   - Location: /etc/default/grub.backup.TIMESTAMP"
+        echo ""
+        
+        echo "4. i915 stability flags application:"
+        echo "   - Flags to add: $I915_FLAGS"
+        echo "   - Target: GRUB_CMDLINE_LINUX parameter"
+        echo "   - Purpose: Disable problematic i915 features"
+        echo ""
+        
+        echo "5. GRUB configuration update:"
+        echo "   - Command: $GRUB_UPDATE_CMD"
+        echo "   - Purpose: Apply changes to bootloader"
+        echo "   - Result: New kernel parameters available on next boot"
+        echo ""
+        
+        echo "6. Post-application actions:"
+        echo "   - System reboot recommendation"
+        echo "   - Desktop notification to user"
+        echo "   - Log completion status"
+        echo ""
+        
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "GRUB config exists: $([[ -f "/etc/default/grub" ]] && echo "Yes" || echo "No")"
+        echo "Running as root: $([[ $EUID -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "i915 flags present: $([[ -f "/etc/default/grub" && $(grep -q "i915.enable_psr=0" /etc/default/grub 2>/dev/null; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "update-grub available: $([[ $(command -v update-grub >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Grace period protection active"
+        echo "✅ GRUB configuration validation"
+        echo "✅ Backup creation planned"
+        echo "✅ Root privilege check performed"
+        echo "⚠️  CRITICAL: GRUB modification can make system unbootable"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no GRUB configuration modified"
+        echo "====================================================="
+        
+        autofix_log "INFO" "DRY-RUN: i915 GRUB flags application analysis completed"
         return 0
     fi
     
+    # Live mode - perform actual GRUB modification
     autofix_log "INFO" "Starting i915 GRUB flags application"
     
     # Check current GRUB configuration

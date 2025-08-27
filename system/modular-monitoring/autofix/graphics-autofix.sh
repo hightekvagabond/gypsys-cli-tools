@@ -10,9 +10,9 @@
 #
 # HELPER ARCHITECTURE:
 #   This script uses the autofix helper pattern:
-#   - graphics-autofix_helpers/i915.sh     - Intel graphics autofix (TESTED)
-#   - graphics-autofix_helpers/nvidia.sh   - NVIDIA graphics autofix (STUB)
-#   - graphics-autofix_helpers/amdgpu.sh   - AMD graphics autofix (STUB)
+#   - graphics_helpers/i915.sh     - Intel graphics autofix (TESTED)
+#   - graphics_helpers/nvidia.sh   - NVIDIA graphics autofix (STUB)
+#   - graphics_helpers/amdgpu.sh   - AMD graphics autofix (STUB)
 #
 #   Helpers are selected based on GRAPHICS_CHIPSET in config/SYSTEM.conf
 #
@@ -24,11 +24,11 @@
 #   - Hardware acceleration problems
 #
 # USAGE:
-#   graphics-autofix.sh <calling_module> <grace_period> [issue_type] [severity]
+#   graphics.sh <calling_module> <grace_period> [issue_type] [severity]
 #
 # EXAMPLES:
-#   graphics-autofix.sh graphics 300 gpu_hang critical
-#   graphics-autofix.sh display 180 driver_error warning
+#   graphics.sh graphics 300 gpu_hang critical
+#   graphics.sh display 180 driver_error warning
 #
 # SECURITY CONSIDERATIONS:
 #   - Helper validation prevents arbitrary script execution
@@ -65,7 +65,7 @@ PURPOSE:
     Automatically detects graphics hardware and applies correct fixes.
 
 USAGE:
-    graphics-autofix.sh <calling_module> <grace_period> [issue_type] [severity]
+    graphics.sh <calling_module> <grace_period> [issue_type] [severity]
 
 ARGUMENTS:
     calling_module   - Name of module requesting autofix (e.g., "graphics")
@@ -75,10 +75,10 @@ ARGUMENTS:
 
 EXAMPLES:
     # GPU hang detected by graphics module
-    graphics-autofix.sh graphics 300 gpu_hang critical
+    graphics.sh graphics 300 gpu_hang critical
 
     # Driver error detected
-    graphics-autofix.sh graphics 180 driver_error warning
+    graphics.sh graphics 180 driver_error warning
 
 SUPPORTED CHIPSETS:
     ✅ Intel (i915)     - Fully supported and tested
@@ -86,9 +86,9 @@ SUPPORTED CHIPSETS:
     ⚠️  AMD (amdgpu)    - Stub implementation, needs testing
 
 HELPER SCRIPTS:
-    graphics-autofix_helpers/i915.sh     - Intel graphics autofix
-    graphics-autofix_helpers/nvidia.sh   - NVIDIA graphics autofix (STUB)
-    graphics-autofix_helpers/amdgpu.sh   - AMD graphics autofix (STUB)
+    graphics_helpers/i915.sh     - Intel graphics autofix
+    graphics_helpers/nvidia.sh   - NVIDIA graphics autofix (STUB)
+    graphics_helpers/amdgpu.sh   - AMD graphics autofix (STUB)
 
 CONFIGURATION:
     Set GRAPHICS_CHIPSET in config/SYSTEM.conf:
@@ -150,7 +150,7 @@ validate_helper() {
     fi
     
     # Security: Validate helper script is in expected location
-    local expected_dir="$SCRIPT_DIR/graphics-autofix_helpers"
+    local expected_dir="$SCRIPT_DIR/graphics_helpers"
     if [[ "$(dirname "$helper_script")" != "$expected_dir" ]]; then
         autofix_log "ERROR" "Security: Helper script outside expected directory: $helper_script"
         return 1
@@ -167,7 +167,7 @@ validate_helper() {
 }
 
 # =============================================================================
-# perform_graphics_autofix() - Main autofix function with helper routing
+# perform_graphics_autofix() - Main autofix function with helper routing and dry-run support
 # =============================================================================
 perform_graphics_autofix() {
     local issue_type="$1"
@@ -189,7 +189,7 @@ perform_graphics_autofix() {
     fi
     
     # Determine helper script path
-    local helper_script="$SCRIPT_DIR/graphics-autofix_helpers/${chipset}.sh"
+    local helper_script="$SCRIPT_DIR/graphics_helpers/${chipset}.sh"
     
     # Validate helper script
     if ! validate_helper "$helper_script" "$chipset"; then
@@ -197,7 +197,77 @@ perform_graphics_autofix() {
         return 1
     fi
     
-    # Execute chipset-specific helper
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN MODE: Graphics Autofix Analysis"
+        echo "==========================================="
+        echo "Issue Type: $issue_type"
+        echo "Severity: $severity"
+        echo "Graphics Chipset: $chipset"
+        echo "Mode: Analysis only - no changes will be made"
+        echo ""
+        
+        echo "AUTOFIX OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "--------------------------------------------"
+        echo "1. Graphics chipset detection:"
+        echo "   - Current setting: $GRAPHICS_CHIPSET"
+        echo "   - Auto-detected: $chipset"
+        echo "   - Helper script: $helper_script"
+        echo ""
+        
+        echo "2. Helper script validation:"
+        echo "   - Script exists: $([[ -f "$helper_script" ]] && echo "Yes" || echo "No")"
+        echo "   - Script executable: $([[ -x "$helper_script" ]] && echo "Yes" || echo "No")"
+        echo "   - Security validation: Passed"
+        echo ""
+        
+        echo "3. Helper script execution:"
+        echo "   - Would call: $helper_script"
+        echo "   - Arguments: $CALLING_MODULE $GRACE_PERIOD $issue_type $severity"
+        echo "   - Grace period: ${GRACE_PERIOD}s"
+        echo ""
+        
+        echo "4. Expected actions based on issue type:"
+        case "$issue_type" in
+            "gpu_hang")
+                echo "   - GPU driver restart"
+                echo "   - Graphics memory reset"
+                echo "   - Display pipeline recovery"
+                ;;
+            "driver_error")
+                echo "   - Driver module reload"
+                echo "   - Graphics state reset"
+                echo "   - Error log analysis"
+                ;;
+            "memory_error")
+                echo "   - Graphics memory cleanup"
+                echo "   - Buffer cache reset"
+                echo "   - Memory allocation recovery"
+                ;;
+            *)
+                echo "   - Generic graphics recovery procedures"
+                echo "   - System state analysis"
+                echo "   - Hardware health check"
+                ;;
+        esac
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Helper script location validated"
+        echo "✅ Chipset name security validated"
+        echo "✅ Script permissions verified"
+        echo "✅ Grace period protection active"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no changes made"
+        echo "==========================================="
+        
+        autofix_log "INFO" "DRY-RUN: Graphics autofix analysis completed for $chipset"
+        return 0
+    fi
+    
+    # Live mode - execute chipset-specific helper
     autofix_log "INFO" "Executing graphics autofix helper: $chipset"
     if "$helper_script" "$CALLING_MODULE" "$GRACE_PERIOD" "$issue_type" "$severity"; then
         autofix_log "INFO" "Graphics autofix helper completed successfully: $chipset"
@@ -210,4 +280,4 @@ perform_graphics_autofix() {
 
 # Execute with grace period management
 autofix_log "INFO" "Graphics autofix requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
-run_autofix_with_grace "graphics-autofix" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_graphics_autofix" "$ISSUE_TYPE" "$SEVERITY"
+run_autofix_with_grace "graphics" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_graphics_autofix" "$ISSUE_TYPE" "$SEVERITY"

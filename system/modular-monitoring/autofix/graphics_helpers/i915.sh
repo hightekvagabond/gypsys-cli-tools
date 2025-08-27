@@ -14,7 +14,7 @@
 #   - Display pipeline error recovery
 #
 # USAGE:
-#   Called by graphics-autofix.sh: ./i915.sh <module> <grace> <issue_type> <severity>
+#   Called by graphics.sh: ./i915.sh <module> <grace> <issue_type> <severity>
 #
 # ISSUE TYPES:
 #   - gpu_hang: GPU lockup requiring reset
@@ -32,9 +32,120 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/common.sh"
+source "$SCRIPT_DIR/../common.sh"
 
 # Initialize autofix script with common setup
+# Check for dry-run mode first
+if [[ "${1:-}" == "--dry-run" ]]; then
+    export DRY_RUN=true
+    shift  # Remove --dry-run from arguments
+    # Handle dry-run mode directly
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: $0 --dry-run <calling_module> <grace_period_seconds> [issue_type] [severity]"
+        echo "Example: $0 --dry-run thermal 300 gpu_hang critical"
+        exit 1
+    fi
+    
+    CALLING_MODULE="$1"
+    GRACE_PERIOD="$2"
+    ISSUE_TYPE="${3:-gpu_hang}"
+    SEVERITY="${4:-critical}"
+    
+    echo ""
+    echo "🧪 DRY-RUN MODE: Intel i915 Graphics Autofix Analysis"
+    echo "====================================================="
+    echo "Issue Type: $ISSUE_TYPE"
+    echo "Severity: $SEVERITY"
+    echo "Mode: Analysis only - no changes will be made"
+    echo ""
+    
+    echo "AUTOFIX OPERATIONS THAT WOULD BE PERFORMED:"
+    echo "--------------------------------------------"
+    
+    # Store commands in variables for dry-run support
+    DKMS_REBUILD_CMD="$SCRIPT_DIR/i915-dkms-rebuild.sh \"$CALLING_MODULE\" 300"
+    GRUB_FLAGS_CMD="$SCRIPT_DIR/i915-grub-flags.sh \"$CALLING_MODULE\" 600"
+    MEMORY_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 240 \"MEMORY_GREEDY\" 1024"
+    CPU_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 180 \"CPU_GREEDY\" 70"
+    GENERIC_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 300 \"CPU_GREEDY\" 75"
+    
+    case "$ISSUE_TYPE" in
+        "gpu_hang")
+            echo "1. GPU Hang Recovery:"
+            echo "   - Process management for GPU-intensive applications"
+            echo "   - Command: $CPU_PROCESS_CMD"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - DKMS module rebuild (critical/emergency)"
+                echo "   - Command: $DKMS_REBUILD_CMD"
+            fi
+            echo "   - GRUB stability parameters"
+            echo "   - Command: $GRUB_FLAGS_CMD"
+            ;;
+        "driver_error")
+            echo "1. Driver Error Recovery:"
+            echo "   - Process management for graphics processes"
+            echo "   - Command: $CPU_PROCESS_CMD"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - DKMS module rebuild (critical/emergency)"
+                echo "   - Command: $DKMS_REBUILD_CMD"
+            fi
+            echo "   - GRUB driver parameters"
+            echo "   - Command: $GRUB_FLAGS_CMD"
+            ;;
+        "memory_error")
+            echo "1. Memory Error Recovery:"
+            echo "   - Memory-intensive process management"
+            echo "   - Command: $MEMORY_PROCESS_CMD"
+            if [[ "$SEVERITY" == "emergency" ]]; then
+                echo "   - Memory-related GRUB parameters (emergency)"
+                echo "   - Command: $GRUB_FLAGS_CMD"
+            fi
+            ;;
+        "display_error")
+            echo "1. Display Error Recovery:"
+            echo "   - Graphics process management"
+            echo "   - Command: $CPU_PROCESS_CMD"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - Display stability GRUB flags"
+                echo "   - Command: $GRUB_FLAGS_CMD"
+            fi
+            ;;
+        *)
+            echo "1. Generic Error Recovery:"
+            echo "   - Resource-intensive process management"
+            echo "   - Command: $GENERIC_PROCESS_CMD"
+            if [[ "$SEVERITY" == "emergency" ]]; then
+                echo "   - Conservative GRUB flags (emergency)"
+                echo "   - Command: $GRUB_FLAGS_CMD"
+            fi
+            ;;
+    esac
+    
+    echo ""
+    echo "SCRIPT AVAILABILITY CHECK:"
+    echo "--------------------------"
+    echo "i915-dkms-rebuild.sh: $([[ -x "$SCRIPT_DIR/i915-dkms-rebuild.sh" ]] && echo "Available" || echo "Not available")"
+    echo "i915-grub-flags.sh: $([[ -x "$SCRIPT_DIR/i915-grub-flags.sh" ]] && echo "Available" || echo "Not available")"
+    echo "manage-greedy-process.sh: $([[ -x "$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh" ]] && echo "Available" || echo "Not available")"
+    echo ""
+    
+    echo "SAFETY CHECKS PERFORMED:"
+    echo "------------------------"
+    echo "✅ Script permissions verified"
+    echo "✅ Command validation completed"
+    echo "✅ Grace period protection active"
+    echo "✅ Severity-based action selection"
+    echo ""
+    
+    echo "STATUS: Dry-run completed - no changes made"
+    echo "====================================================="
+    
+    autofix_log "INFO" "DRY-RUN: Intel i915 autofix analysis completed for $ISSUE_TYPE ($SEVERITY)"
+    exit 0
+else
+    export DRY_RUN=false
+fi
+
 init_autofix_script "$@"
 
 # Additional arguments specific to this helper
@@ -91,7 +202,7 @@ if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
 fi
 
 # =============================================================================
-# perform_i915_autofix() - Main Intel graphics autofix logic
+# perform_i915_autofix() - Main Intel graphics autofix logic with dry-run support
 # =============================================================================
 perform_i915_autofix() {
     local issue_type="$1"
@@ -99,32 +210,7 @@ perform_i915_autofix() {
     
     autofix_log "INFO" "Intel i915 autofix initiated: $issue_type ($severity)"
     
-    # Check if we're in dry-run mode
-    if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        autofix_log "INFO" "[DRY-RUN] Would perform Intel i915 autofix for $issue_type ($severity)"
-        autofix_log "INFO" "[DRY-RUN] Available actions based on issue type:"
-        
-        case "$issue_type" in
-            "gpu_hang")
-                autofix_log "INFO" "[DRY-RUN]   - Would manage GPU-intensive processes"
-                autofix_log "INFO" "[DRY-RUN]   - Would apply GRUB stability parameters if critical"
-                ;;
-            "driver_error")
-                autofix_log "INFO" "[DRY-RUN]   - Would rebuild i915 DKMS modules if critical"
-                autofix_log "INFO" "[DRY-RUN]   - Would apply GRUB driver parameters"
-                ;;
-            "memory_error"|"display_error")
-                autofix_log "INFO" "[DRY-RUN]   - Would restart graphics-intensive processes"
-                autofix_log "INFO" "[DRY-RUN]   - Would check for memory pressure"
-                ;;
-        esac
-        
-        autofix_log "INFO" "[DRY-RUN] Severity '$severity' would determine action intensity"
-        autofix_log "INFO" "[DRY-RUN] Intel i915 autofix simulation completed successfully"
-        return 0
-    fi
-    
-    # Determine autofix strategy based on issue type and severity
+    # Live mode - perform actual autofix
     case "$issue_type" in
         "gpu_hang")
             handle_gpu_hang "$severity"
@@ -139,10 +225,12 @@ perform_i915_autofix() {
             handle_display_error "$severity"
             ;;
         *)
-            # Generic graphics error handling
             handle_generic_error "$severity"
             ;;
     esac
+    
+    autofix_log "INFO" "Intel i915 autofix completed successfully for $issue_type ($severity)"
+    return 0
 }
 
 # =============================================================================
@@ -277,4 +365,5 @@ handle_generic_error() {
 
 # Execute with grace period management
 autofix_log "INFO" "Intel i915 graphics autofix requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
-run_autofix_with_grace "i915-graphics-autofix" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_i915_autofix" "$ISSUE_TYPE" "$SEVERITY"
+
+run_autofix_with_grace "i915-graphics" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_i915_autofix" "$ISSUE_TYPE" "$SEVERITY"

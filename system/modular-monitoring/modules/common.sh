@@ -2,6 +2,17 @@
 # =============================================================================
 # MODULES COMMON FUNCTIONS LIBRARY
 # =============================================================================
+
+# Source root common.sh for centralized configuration management
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/../common.sh" ]]; then
+    source "$SCRIPT_DIR/../common.sh"
+elif [[ -f "$(dirname "$SCRIPT_DIR")/common.sh" ]]; then
+    source "$(dirname "$SCRIPT_DIR")/common.sh"
+else
+    echo "ERROR: Cannot find root common.sh from modules/common.sh" >&2
+    exit 1
+fi
 #
 # PURPOSE:
 #   Foundation library providing essential functions shared across all monitoring
@@ -101,7 +112,8 @@ fi
 }
 
 # Load configuration immediately
-load_configuration
+# NOTE: Configuration now loaded by root common.sh - commenting out legacy loading to prevent overrides
+# load_configuration
 
 # Logging functions
 log() {

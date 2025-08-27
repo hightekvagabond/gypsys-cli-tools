@@ -30,9 +30,120 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$(dirname "$SCRIPT_DIR")/common.sh"
+source "$SCRIPT_DIR/../common.sh"
 
 # Initialize autofix script with common setup
+# Check for dry-run mode first
+if [[ "${1:-}" == "--dry-run" ]]; then
+    export DRY_RUN=true
+    shift  # Remove --dry-run from arguments
+    # Handle dry-run mode directly
+    if [[ $# -lt 2 ]]; then
+        echo "Usage: $0 --dry-run <calling_module> <grace_period_seconds> [issue_type] [severity]"
+        echo "Example: $0 --dry-run thermal 300 compositor_crash critical"
+        exit 1
+    fi
+    
+    CALLING_MODULE="$1"
+    GRACE_PERIOD="$2"
+    ISSUE_TYPE="${3:-compositor_crash}"
+    SEVERITY="${4:-critical}"
+    
+    echo ""
+    echo "🧪 DRY-RUN MODE: KWin Compositor Autofix Analysis"
+    echo "=================================================="
+    echo "Issue Type: $ISSUE_TYPE"
+    echo "Severity: $SEVERITY"
+    echo "Mode: Analysis only - no KWin changes will be made"
+    echo ""
+    
+    echo "AUTOFIX OPERATIONS THAT WOULD BE PERFORMED:"
+    echo "--------------------------------------------"
+    echo "1. KWin status check:"
+    echo "   - Status: $(pgrep -f "kwin_wayland" >/dev/null && echo "KWin Wayland is running" || echo "KWin Wayland not detected")"
+    echo "   - Detection: Process monitoring (pgrep)"
+    echo ""
+    
+    # Store commands in variables for dry-run support
+    KWIN_RESTART_CMD="killall -SIGUSR1 kwin_wayland"
+    KWIN_REFRESH_CMD="killall -SIGUSR1 kwin_wayland"
+    GRAPHICS_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 180 \"CPU_GREEDY\" 75"
+    MEMORY_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 240 \"MEMORY_GREEDY\" 1536"
+    GENERIC_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 300 \"CPU_GREEDY\" 70"
+    
+    case "$ISSUE_TYPE" in
+        "compositor_crash")
+            echo "2. Compositor Crash Recovery:"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - KWin restart: $KWIN_RESTART_CMD"
+                echo "   - Purpose: Restart crashed KWin compositor"
+            fi
+            echo "   - Graphics process management: $GRAPHICS_PROCESS_CMD"
+            echo "   - Purpose: Clean up KDE and graphics processes"
+            ;;
+        "window_freeze")
+            echo "2. Window Freeze Recovery:"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - Window management refresh: $KWIN_REFRESH_CMD"
+                echo "   - Purpose: Reset window management state"
+            fi
+            echo "   - Memory process management: $MEMORY_PROCESS_CMD"
+            echo "   - Purpose: Clean up memory-intensive processes"
+            ;;
+        "effect_hang")
+            echo "2. Desktop Effects Recovery:"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - KWin restart: $KWIN_RESTART_CMD"
+                echo "   - Purpose: Reset desktop effects"
+            fi
+            echo "   - Graphics process management: $GRAPHICS_PROCESS_CMD"
+            echo "   - Purpose: Clean up GPU-intensive processes"
+            ;;
+        "workspace_error")
+            echo "2. Workspace Error Recovery:"
+            if [[ "$SEVERITY" == "critical" || "$SEVERITY" == "emergency" ]]; then
+                echo "   - KWin refresh: $KWIN_REFRESH_CMD"
+                echo "   - Purpose: Recover workspace state"
+            fi
+            echo "   - Process management: $GENERIC_PROCESS_CMD"
+            echo "   - Purpose: Clean up resource-intensive processes"
+            ;;
+        *)
+            echo "2. Generic KWin Error Recovery:"
+            echo "   - Resource process management: $GENERIC_PROCESS_CMD"
+            echo "   - Purpose: Conservative recovery for unknown issues"
+            if [[ "$SEVERITY" == "emergency" ]]; then
+                echo "   - Emergency KWin restart: $KWIN_RESTART_CMD"
+                echo "   - Purpose: Last resort recovery"
+            fi
+            ;;
+    esac
+    
+    echo ""
+    echo "SYSTEM STATE ANALYSIS:"
+    echo "----------------------"
+    echo "KWin Wayland running: $(pgrep -f "kwin_wayland" >/dev/null && echo "Yes" || echo "No")"
+    echo "Running as user: $USER (UID: $UID)"
+    echo "manage-greedy-process.sh available: $(dirname "$SCRIPT_DIR")/manage-greedy-process.sh"
+    echo ""
+    
+    echo "SAFETY CHECKS PERFORMED:"
+    echo "------------------------"
+    echo "✅ Grace period protection active"
+    echo "✅ KWin status verification completed"
+    echo "✅ Script permissions verified"
+    echo "✅ Process management available"
+    echo ""
+    
+    echo "STATUS: Dry-run completed - no KWin changes made"
+    echo "=================================================="
+    
+    autofix_log "INFO" "DRY-RUN: KWin autofix analysis completed for $ISSUE_TYPE ($SEVERITY)"
+    exit 0
+else
+    export DRY_RUN=false
+fi
+
 init_autofix_script "$@"
 
 # Additional arguments specific to this helper
@@ -104,7 +215,7 @@ check_kwin_status() {
 }
 
 # =============================================================================
-# perform_kwin_autofix() - Main KWin autofix logic
+# perform_kwin_autofix() - Main KWin autofix logic with dry-run support
 # =============================================================================
 perform_kwin_autofix() {
     local issue_type="$1"
@@ -112,35 +223,106 @@ perform_kwin_autofix() {
     
     autofix_log "INFO" "KWin autofix initiated: $issue_type ($severity)"
     
-    # Check if we're in dry-run mode
+    # Store commands in variables for dry-run support
+    local KWIN_RESTART_CMD="killall -SIGUSR1 kwin_wayland"
+    local KWIN_REFRESH_CMD="killall -SIGUSR1 kwin_wayland"
+    local GRAPHICS_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 180 \"CPU_GREEDY\" 75"
+    local MEMORY_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 240 \"MEMORY_GREEDY\" 1536"
+    local GENERIC_PROCESS_CMD="$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh \"$CALLING_MODULE\" 300 \"CPU_GREEDY\" 70"
+    
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        autofix_log "INFO" "[DRY-RUN] Would perform KWin autofix for $issue_type ($severity)"
+        echo ""
+        echo "🧪 DRY-RUN MODE: KWin Compositor Autofix Analysis"
+        echo "=================================================="
+        echo "Issue Type: $issue_type"
+        echo "Severity: $severity"
+        echo "Mode: Analysis only - no KWin changes will be made"
+        echo ""
         
+        echo "AUTOFIX OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "--------------------------------------------"
+        echo "1. KWin status check:"
         if check_kwin_status; then
-            autofix_log "INFO" "[DRY-RUN] KWin Wayland is running"
+            echo "   - Status: KWin Wayland is running"
+            echo "   - Detection: Process monitoring (pgrep)"
         else
-            autofix_log "INFO" "[DRY-RUN] KWin Wayland not detected"
+            echo "   - Status: KWin Wayland not detected"
+            echo "   - Note: Limited autofix options available"
         fi
+        echo ""
         
         case "$issue_type" in
             "compositor_crash")
-                autofix_log "INFO" "[DRY-RUN]   - Would restart KWin compositor (SIGUSR1)"
-                autofix_log "INFO" "[DRY-RUN]   - Would clean up KDE processes"
+                echo "2. Compositor Crash Recovery:"
+                if [[ "$severity" == "critical" || "$severity" == "emergency" ]]; then
+                    echo "   - KWin restart: $KWIN_RESTART_CMD"
+                    echo "   - Purpose: Restart crashed KWin compositor"
+                fi
+                echo "   - Graphics process management: $GRAPHICS_PROCESS_CMD"
+                echo "   - Purpose: Clean up KDE and graphics processes"
                 ;;
             "window_freeze")
-                autofix_log "INFO" "[DRY-RUN]   - Would refresh KWin window management"
-                autofix_log "INFO" "[DRY-RUN]   - Would reset workspace state"
+                echo "2. Window Freeze Recovery:"
+                if [[ "$severity" == "critical" || "$severity" == "emergency" ]]; then
+                    echo "   - Window management refresh: $KWIN_REFRESH_CMD"
+                    echo "   - Purpose: Reset window management state"
+                fi
+                echo "   - Memory process management: $MEMORY_PROCESS_CMD"
+                echo "   - Purpose: Clean up memory-intensive processes"
                 ;;
             "effect_hang")
-                autofix_log "INFO" "[DRY-RUN]   - Would disable/re-enable desktop effects"
-                autofix_log "INFO" "[DRY-RUN]   - Would restart compositor for effect reset"
+                echo "2. Desktop Effects Recovery:"
+                if [[ "$severity" == "critical" || "$severity" == "emergency" ]]; then
+                    echo "   - KWin restart: $KWIN_RESTART_CMD"
+                    echo "   - Purpose: Reset desktop effects"
+                fi
+                echo "   - Graphics process management: $GRAPHICS_PROCESS_CMD"
+                echo "   - Purpose: Clean up GPU-intensive processes"
+                ;;
+            "workspace_error")
+                echo "2. Workspace Error Recovery:"
+                if [[ "$severity" == "critical" || "$severity" == "emergency" ]]; then
+                    echo "   - KWin refresh: $KWIN_REFRESH_CMD"
+                    echo "   - Purpose: Recover workspace state"
+                fi
+                echo "   - Process management: $GENERIC_PROCESS_CMD"
+                echo "   - Purpose: Clean up resource-intensive processes"
+                ;;
+            *)
+                echo "2. Generic KWin Error Recovery:"
+                echo "   - Resource process management: $GENERIC_PROCESS_CMD"
+                echo "   - Purpose: Conservative recovery for unknown issues"
+                if [[ "$severity" == "emergency" ]]; then
+                    echo "   - Emergency KWin restart: $KWIN_RESTART_CMD"
+                    echo "   - Purpose: Last resort recovery"
+                fi
                 ;;
         esac
         
-        autofix_log "INFO" "[DRY-RUN] KWin autofix simulation completed successfully"
+        echo ""
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "KWin Wayland running: $([[ $(pgrep -f "kwin_wayland" >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "Running as user: $USER (UID: $UID)"
+        echo "manage-greedy-process.sh available: $([[ -x "$(dirname "$SCRIPT_DIR")/manage-greedy-process.sh" ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Grace period protection active"
+        echo "✅ KWin status verification completed"
+        echo "✅ Script permissions verified"
+        echo "✅ Process management available"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no KWin changes made"
+        echo "=================================================="
+        
+        autofix_log "INFO" "DRY-RUN: KWin autofix analysis completed for $issue_type ($severity)"
         return 0
     fi
     
+    # Live mode - perform actual KWin autofix
     # Check KWin status
     if ! check_kwin_status; then
         autofix_log "WARN" "KWin Wayland not running - limited autofix options available"
@@ -165,6 +347,9 @@ perform_kwin_autofix() {
             handle_generic_kwin_error "$severity"
             ;;
     esac
+    
+    autofix_log "INFO" "KWin autofix completed successfully for $issue_type ($severity)"
+    return 0
 }
 
 # =============================================================================

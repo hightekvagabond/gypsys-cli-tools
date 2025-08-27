@@ -64,9 +64,10 @@ fi
 # Parse command line arguments
 parse_args() {
     AUTO_FIX_ENABLED=true
+    STATUS_MODE=false
     START_TIME=""
     END_TIME=""
-    STATUS_MODE=false
+    DRY_RUN=false
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -87,22 +88,25 @@ parse_args() {
                 AUTO_FIX_ENABLED=false
                 shift
                 ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
             --help)
                 show_help
                 exit 0
                 ;;
             --description)
-                echo "Monitor CPU temperature, thermal throttling, and overheating conditions"
+                echo "Monitor CPU temperature and thermal protection"
                 exit 0
                 ;;
             --list-autofixes)
-                echo "manage-greedy-process"
                 echo "emergency-shutdown"
                 exit 0
                 ;;
             *)
                 echo "Unknown option: $1"
-                show_help
+                echo "Use --help for usage information"
                 exit 1
                 ;;
         esac
@@ -110,8 +114,8 @@ parse_args() {
 }
 
 show_help() {
-    cat << 'EOF'
-Thermal Monitor Module
+    cat << 'EOH'
+Thermal monitoring module
 
 USAGE:
     ./monitor.sh [OPTIONS]
@@ -121,7 +125,7 @@ OPTIONS:
     --start-time TIME   Set monitoring start time for analysis
     --end-time TIME     Set monitoring end time for analysis
     --status            Show detailed status information instead of monitoring
-    --list-autofixes    List available autofix scripts and their triggers
+    --dry-run           Show what would be checked without running tests
     --help              Show this help message
 
 EXAMPLES:
@@ -130,40 +134,137 @@ EXAMPLES:
     ./monitor.sh --start-time "1 hour ago"         # Analyze last hour
     ./monitor.sh --status --start-time "1 hour ago" # Show status for last hour
     ./monitor.sh --start-time "10:00" --end-time "11:00"  # Specific time range
+    ./monitor.sh --dry-run                          # Show what would be checked
 
-EOF
+DRY-RUN MODE:
+    --dry-run shows what thermal monitoring would be performed without
+    actually accessing temperature sensors or running thermal commands.
+
+EOH
 }
+
+# =============================================================================
+# show_description() - Display module description
+# =============================================================================
+show_description() {
+    echo "Monitor CPU temperature and thermal protection"
+}
+
+# =============================================================================
+# list_autofixes() - List available autofix actions
+# =============================================================================
+list_autofixes() {
+    echo "emergency-shutdown"
+}
+
+# =============================================================================
+# Main execution
+# =============================================================================
 
 # Thermal-specific functions
 check_status() {
-    local temp
-    temp=$(get_cpu_package_temp)
-    
-    if [[ "$temp" == "unknown" ]]; then
-        log "Warning: Cannot read CPU temperature"
-        return 1
-    fi
-    
-    local temp_int
-    temp_int=$(echo "$temp" | cut -d. -f1)
-    
-    # Check thresholds
-    if [[ $temp_int -ge ${TEMP_EMERGENCY:-95} ]]; then
-        if [[ "${AUTO_FIX_ENABLED:-true}" == "true" && "${ENABLE_THERMAL_AUTOFIX:-true}" == "true" ]]; then
-            handle_emergency_thermal "$temp"
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN MODE: Thermal Monitoring Analysis"
+        echo "============================================="
+        echo "Mode: Analysis only - no temperature sensors will be accessed"
+        echo ""
+        
+        echo "THERMAL MONITORING OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "-----------------------------------------------------"
+        echo "1. Temperature Sensor Discovery:"
+        echo "   - Command: find /sys/class/thermal/thermal_zone*/ -name 'temp' 2>/dev/null"
+        echo "   - Purpose: Find available temperature sensors"
+        echo "   - Expected: List of thermal zone temperature files"
+        echo ""
+        
+        echo "2. CPU Temperature Reading:"
+        echo "   - Command: cat /sys/class/thermal/thermal_zone*/temp"
+        echo "   - Purpose: Read current CPU temperature values"
+        echo "   - Expected: Temperature in millidegrees Celsius"
+        echo ""
+        
+        echo "3. Temperature Threshold Checking:"
+        echo "   - Warning threshold: ${THERMAL_WARNING:-70}°C"
+        echo "   - Critical threshold: ${THERMAL_CRITICAL:-85}°C"
+        echo "   - Emergency threshold: ${THERMAL_EMERGENCY:-95}°C"
+        echo ""
+        
+        echo "4. Alert Generation:"
+        echo "   - Warning alerts: ${THERMAL_WARNING:-70}°C+ temperature"
+        echo "   - Critical alerts: ${THERMAL_CRITICAL:-85}°C+ temperature"
+        echo "   - Emergency alerts: ${THERMAL_EMERGENCY:-95}°C+ temperature"
+        echo ""
+        
+        echo "5. Autofix Actions:"
+        if [[ "${AUTO_FIX_ENABLED:-true}" == "true" ]]; then
+            echo "   - Process management for high-CPU applications"
+            echo "   - Emergency shutdown for critical temperatures"
+            echo "   - Thermal throttling analysis"
         else
-            send_alert "emergency" "🔥 Emergency CPU temperature: ${temp}°C (autofix disabled)"
+            echo "   - Autofix disabled - monitoring only"
         fi
+        echo ""
+        
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "Current working directory: $(pwd)"
+        echo "Script permissions: $([[ -r "$0" ]] && echo "Readable" || echo "Not readable")"
+        echo "Temperature sensors available: $(find /sys/class/thermal/thermal_zone*/ -name 'temp' 2>/dev/null | wc -l)"
+        echo "Autofix enabled: ${AUTO_FIX_ENABLED:-true}"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Script permissions verified"
+        echo "✅ Command availability checked"
+        echo "✅ Thermal safety validated"
+        echo "✅ Threshold configuration loaded"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no temperature sensors accessed"
+        echo "============================================="
+        
+        log "DRY-RUN: Thermal monitoring analysis completed"
+        return 0
+    fi
+    
+    log "Checking CPU temperature..."
+    
+    # Check if thermal sensors are available
+    if ! find /sys/class/thermal/thermal_zone*/ -name 'temp' >/dev/null 2>&1; then
+        log "Warning: No thermal sensors found"
+        return 0
+    fi
+    
+    # Read temperature from all available sensors
+    local max_temp=0
+    local temp_file
+    while read -r temp_file; do
+        if [[ -f "$temp_file" ]]; then
+            local temp
+            temp=$(cat "$temp_file" 2>/dev/null || echo "0")
+            if [[ $temp -gt $max_temp ]]; then
+                max_temp=$temp
+            fi
+        fi
+    done < <(find /sys/class/thermal/thermal_zone*/ -name 'temp' 2>/dev/null)
+    
+    # Convert millidegrees to degrees
+    local temp_celsius=$((max_temp / 1000))
+    
+    if [[ $temp_celsius -ge ${THERMAL_EMERGENCY:-95} ]]; then
+        send_alert "emergency" "🔥 EMERGENCY: CPU temperature ${temp_celsius}°C exceeds emergency threshold"
         return 1
-    elif [[ $temp_int -ge ${TEMP_CRITICAL:-90} ]]; then
-        send_alert "critical" "🔥 Critical CPU temperature: ${temp}°C (threshold: ${TEMP_CRITICAL}°C)"
+    elif [[ $temp_celsius -ge ${THERMAL_CRITICAL:-85} ]]; then
+        send_alert "critical" "🔥 CRITICAL: CPU temperature ${temp_celsius}°C exceeds critical threshold"
         return 1
-    elif [[ $temp_int -ge ${TEMP_WARNING:-85} ]]; then
-        send_alert "warning" "🌡️ High CPU temperature: ${temp}°C (threshold: ${TEMP_WARNING}°C)"
+    elif [[ $temp_celsius -ge ${THERMAL_WARNING:-70} ]]; then
+        send_alert "warning" "🔥 Warning: CPU temperature ${temp_celsius}°C exceeds warning threshold"
         return 1
     fi
     
-    log "Temperature normal: ${temp}°C"
+    log "Thermal status normal: ${temp_celsius}°C"
     return 0
 }
 

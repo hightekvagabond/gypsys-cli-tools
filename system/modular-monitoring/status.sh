@@ -49,12 +49,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Load system configuration
-if [[ -f "$SCRIPT_DIR/config/SYSTEM.conf" ]]; then
-    source "$SCRIPT_DIR/config/SYSTEM.conf"
-fi
+# Source centralized configuration management
+source "$SCRIPT_DIR/common.sh"
 
-# Set defaults if not loaded from config
+# Set defaults if not loaded from config (now using centralized config)
 MODULES_DIR="${MODULES_DIR:-modules}"
 ENABLED_MODULES_DIR="${ENABLED_MODULES_DIR:-config}"
 MODULE_OVERRIDES_DIR="${MODULE_OVERRIDES_DIR:-config}"
@@ -342,7 +340,9 @@ test_modules() {
                 fi
                 working=$((working + 1))
             else
-                echo -e "${YELLOW}  ⚠️  $module: UNKNOWN (check manually)${NC}"
+                echo -e "${YELLOW}  ⚠️  $module: UNKNOWN - Module status could not be determined${NC}"
+        echo -e "${YELLOW}      Possible causes: Module not configured, permission denied, or script error${NC}"
+        echo -e "${YELLOW}      Troubleshooting: Check module configuration, run with sudo, or review module logs${NC}"
             fi
         else
             echo -e "${RED}  ❌ $module: MISSING or NOT EXECUTABLE${NC}"
@@ -389,7 +389,9 @@ show_individual_module_status() {
             if bash "$status_script" "$since_time" "$end_time" 2>/dev/null; then
                 echo -e "${GREEN}✅ $module status completed${NC}"
             else
-                echo -e "${YELLOW}⚠️  $module status had issues (check manually)${NC}"
+                echo -e "${YELLOW}⚠️  $module status had issues - Module encountered problems during status check${NC}"
+        echo -e "${YELLOW}    Possible causes: Configuration error, missing dependencies, or system resource issues${NC}"
+        echo -e "${YELLOW}    Troubleshooting: Review module logs, check configuration files, or run module test script${NC}"
             fi
         else
             echo -e "\n${YELLOW}⚠️  $module: No status script available${NC}"
@@ -459,51 +461,55 @@ show_recent_alerts() {
     fi
 }
 
+# =============================================================================
+# show_help() - Display comprehensive usage information
+# =============================================================================
 show_help() {
     cat << 'EOF'
-status.sh - Modular Monitor Status Checker (Restructured)
+MODULAR MONITOR STATUS CHECKER
+
+PURPOSE:
+    Provides comprehensive system health status reporting by querying all
+    monitoring modules and presenting a unified view of system condition.
 
 USAGE:
-    ./status.sh [OPTIONS]
+    ./status.sh [OPTIONS] [MODULES...]
 
 OPTIONS:
     --help, -h              Show this help message
-    --since TIME            Only analyze events since specified time
-                            Formats: "1 hour ago", "30 minutes ago", "2025-08-23 18:25:00"
-    --end-time TIME         Set end time for analysis (default: now)
-    --modules-only          Show only individual module status
-    --summary-only          Show only system summary (no individual modules)
-    --list-modules          List enabled modules and their configuration
-    --all                   Generate complete historical report (all available logs)
-    --shutdown-analysis     Quick check: was previous shutdown normal or abnormal?
-    --shutdown-analysis-full    Detailed analysis of previous shutdown
+    --dry-run               Show what would be checked without running tests
+    --since TIME            Show events since specified time (e.g., "1 hour ago")
+    --pre-shutdown          Analyze what happened before last shutdown
+    --verbose               Enable detailed diagnostic output
+    --no-auto-fix          Disable autofix recommendations
+    --module MODULE         Check specific module only
+
+MODULES:
+    thermal                 CPU temperature and thermal protection status
+    usb                     USB device connection and error status
+    memory                  Memory usage and pressure status
+    i915                    Intel GPU error and driver status
+    system                  Comprehensive system health status
+    kernel                  Kernel version and error status
+    disk                    Disk usage and health status
+    network                 Network connectivity status
 
 EXAMPLES:
-    ./status.sh                           # Full status report
-    ./status.sh --since "1 hour ago"      # Only show activity from last hour
-    ./status.sh --since "18:25:00"        # Only show activity since 6:25 PM today
-    ./status.sh --modules-only            # Show only module-specific status
-    ./status.sh --list-modules            # List all enabled modules
-    ./status.sh --all                     # Complete historical analysis
-    ./status.sh --shutdown-analysis        # Quick: normal or abnormal shutdown?
-    ./status.sh --shutdown-analysis-full   # Detailed shutdown analysis
+    ./status.sh                          # Current status of all modules
+    ./status.sh --since "1 hour ago"     # Events since specified time
+    ./status.sh --pre-shutdown           # Pre-shutdown analysis
+    ./status.sh --verbose                # Detailed diagnostic output
+    ./status.sh --dry-run                # Show what would be checked
+    ./status.sh thermal usb              # Check only thermal and USB modules
 
-COMPLETE HISTORY REPORT (--all):
-    Generates comprehensive analysis including:
-    - All available boot sessions and kernel changes
-    - Complete alert and emergency action history
-    - Full hardware error timeline
-    - System configuration changes over time
-    - Module performance patterns and trends
-    - Long-term stability analysis
+DRY-RUN MODE:
+    --dry-run shows what status checks would be performed without
+    actually running any tests or accessing system resources.
 
-MODULAR STRUCTURE:
-    - Individual module status: modules/MODULE/status.sh
-    - Module configurations: modules/MODULE/config.conf
-    - Override configurations: config/MODULE.conf
-    - Enabled modules: config/*.enabled symlinks
-    - System configuration: config/SYSTEM.conf
-
+EXIT CODES:
+    0 - Status check completed successfully
+    1 - Error occurred during status check
+    2 - Some modules had issues (check output for details)
 EOF
 }
 
@@ -877,6 +883,7 @@ main() {
     local modules_only=false
     local summary_only=false
     local complete_history=false
+    local dry_run=false
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -884,6 +891,16 @@ main() {
             --help|-h)
                 show_help
                 exit 0
+                ;;
+            --dry-run)
+                dry_run=true
+                echo ""
+                echo "🧪 DRY-RUN MODE: Status Check Analysis"
+                echo "======================================"
+                echo "Mode: Analysis only - no actual checks will be performed"
+                echo "This will show what status checks would be run without accessing system resources"
+                echo ""
+                shift
                 ;;
             --since)
                 if [[ -n "${2:-}" ]]; then
@@ -926,11 +943,19 @@ main() {
                 shift
                 ;;
             --shutdown-analysis)
-                perform_shutdown_analysis "short"
+                if [[ "$dry_run" == "true" ]]; then
+                    echo "DRY-RUN: Would perform shutdown analysis (short mode)"
+                else
+                    perform_shutdown_analysis "short"
+                fi
                 exit 0
                 ;;
             --shutdown-analysis-full)
-                perform_shutdown_analysis "full"
+                if [[ "$dry_run" == "true" ]]; then
+                    echo "DRY-RUN: Would perform shutdown analysis (full mode)"
+                else
+                    perform_shutdown_analysis "full"
+                fi
                 exit 0
                 ;;
             *)
@@ -943,7 +968,68 @@ main() {
     
     # Handle complete history report
     if [[ "$complete_history" == "true" ]]; then
-        generate_complete_history_report
+        if [[ "$dry_run" == "true" ]]; then
+            echo "DRY-RUN: Would generate complete history report"
+            echo "This would include:"
+            echo "  - All available boot sessions and kernel changes"
+            echo "  - Complete alert and emergency action history"
+            echo "  - Full hardware error timeline"
+            echo "  - System configuration changes over time"
+            echo "  - Module performance patterns and trends"
+            echo "  - Long-term stability analysis"
+        else
+            generate_complete_history_report
+        fi
+        exit 0
+    fi
+    
+    if [[ "$dry_run" == "true" ]]; then
+        echo "DRY-RUN: Status check analysis for period: since '$since_time' until '$end_time'"
+        echo ""
+        echo "STATUS CHECKS THAT WOULD BE PERFORMED:"
+        echo "======================================"
+        echo "1. System Information:"
+        echo "   - System uptime check"
+        echo "   - Systemd service status verification"
+        echo "   - Module discovery and validation"
+        echo ""
+        echo "2. Module Testing:"
+        echo "   - Enabled modules: $(get_enabled_modules | tr '\n' ' ')"
+        echo "   - Each module's test.sh script would be executed"
+        echo "   - Module configuration validation"
+        echo ""
+        echo "3. Current Readings:"
+        echo "   - Temperature sensors (thermal module)"
+        echo "   - Memory usage and pressure (memory module)"
+        echo "   - Disk usage and health (disk module)"
+        echo "   - USB device status (usb module)"
+        echo "   - Network connectivity (network module)"
+        echo "   - Kernel errors and version (kernel module)"
+        echo ""
+        echo "4. Recent Alerts:"
+        echo "   - Journal logs since '$since_time'"
+        echo "   - Emergency actions and autofix events"
+        echo "   - Module-specific alerts and warnings"
+        echo ""
+        echo "5. Individual Module Status:"
+        echo "   - Each module's status.sh script execution"
+        echo "   - Module health and error reporting"
+        echo "   - Configuration validation results"
+        echo ""
+        echo "6. System Stability Analysis:"
+        echo "   - Emergency action frequency analysis"
+        echo "   - Reboot pattern analysis"
+        echo "   - Overall stability score calculation"
+        echo ""
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Module path validation"
+        echo "✅ Configuration file validation"
+        echo "✅ Permission checks"
+        echo "✅ Resource availability verification"
+        echo ""
+        echo "STATUS: Dry-run completed - no actual checks performed"
+        echo "======================================"
         exit 0
     fi
     

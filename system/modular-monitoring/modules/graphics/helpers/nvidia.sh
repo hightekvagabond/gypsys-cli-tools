@@ -103,8 +103,51 @@ show_nvidia_status() {
     echo ""
 }
 
+show_help() {
+    cat << 'EOF'
+NVIDIA GRAPHICS HELPER SCRIPT - STUB
+
+PURPOSE:
+    Helper script for monitoring NVIDIA graphics driver health.
+    This is currently a STUB implementation that needs development.
+
+USAGE:
+    ./nvidia.sh                    # Run NVIDIA GPU monitoring (stub)
+    ./nvidia.sh true               # Show NVIDIA GPU status (stub)
+    ./nvidia.sh --help             # Show this help information
+
+WARNING:
+    This is an UNTESTED STUB IMPLEMENTATION that needs development
+    by someone running actual NVIDIA graphics hardware.
+
+NEEDED CAPABILITIES:
+    • NVIDIA driver error detection (dmesg, sysfs)
+    • GPU temperature and power monitoring
+    • VRAM usage tracking
+    • Driver version compatibility checking
+    • CUDA functionality verification
+
+TO IMPLEMENT:
+    1. Replace stub functions with real NVIDIA monitoring
+    2. Test on actual NVIDIA hardware (GTX/RTX series)
+    3. Validate nvidia-smi interface usage
+    4. Remove STUB warnings
+
+NVIDIA TOOLS/INTERFACES:
+    • nvidia-smi (for GPU monitoring)
+    • /proc/driver/nvidia/* (procfs interfaces)
+    • nvidia drivers properly installed
+EOF
+}
+
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check for help request
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_help
+        exit 0
+    fi
+    
     if [[ "$STATUS_MODE" == "true" ]]; then
         show_nvidia_status
     else

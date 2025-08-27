@@ -163,8 +163,8 @@ autofix/
 ### **Example: Graphics Autofix with Helpers**
 ```
 autofix/
-├── graphics-autofix.sh                    # Main graphics autofix orchestrator
-├── graphics-autofix_helpers/              # Graphics chipset helpers
+├── graphics.sh                    # Main graphics autofix orchestrator
+├── graphics_helpers/              # Graphics chipset helpers
 │   ├── i915.sh                           # Intel graphics autofix (TESTED)
 │   ├── nvidia.sh                         # NVIDIA graphics autofix (STUB)
 │   └── amdgpu.sh                         # AMD graphics autofix (STUB)
@@ -216,7 +216,7 @@ Main autofix scripts detect hardware/configuration and route to helpers:
 
 ```bash
 #!/bin/bash
-# graphics-autofix.sh example
+# graphics.sh example
 
 # Auto-detect or use config
 GRAPHICS_CHIPSET="${GRAPHICS_CHIPSET:-auto}"
@@ -230,7 +230,7 @@ if [[ "$GRAPHICS_CHIPSET" == "auto" ]]; then
 fi
 
 # Route to appropriate helper
-helper_script="$SCRIPT_DIR/graphics-autofix_helpers/${GRAPHICS_CHIPSET}.sh"
+helper_script="$SCRIPT_DIR/graphics_helpers/${GRAPHICS_CHIPSET}.sh"
 if [[ -x "$helper_script" ]]; then
     "$helper_script" "$CALLING_MODULE" "$GRACE_PERIOD" "$ISSUE_TYPE" "$SEVERITY"
 else

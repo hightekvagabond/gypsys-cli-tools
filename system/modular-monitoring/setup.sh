@@ -49,8 +49,8 @@ print_info() {
 }
 
 check_requirements() {
-    # Skip root check for scan mode (read-only hardware detection)
-    if [[ $EUID -ne 0 && "${1:-}" != "scan" ]]; then
+    # Skip root check for scan mode (read-only hardware detection) or dry-run mode
+    if [[ $EUID -ne 0 && "${1:-}" != "scan" && "${1:-}" != "dry-run" ]]; then
         print_error "This script must be run as root (use sudo)"
         return 1
     fi
@@ -543,6 +543,7 @@ main() {
     # Parse command line arguments
     local reconfigure=false
     local scan_only=false
+    local dry_run=false
     while [[ $# -gt 0 ]]; do
         case $1 in
             --reconfigure)
@@ -553,22 +554,32 @@ main() {
                 scan_only=true
                 shift
                 ;;
+            --dry-run)
+                dry_run=true
+                shift
+                ;;
             --help|-h)
                 echo "Modular Monitor Setup Script"
                 echo ""
                 echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Options:"
+                echo ""
+                echo "Options:"
                 echo "  --scan           Scan hardware and display detected configuration"
                 echo "  --reconfigure    Reconfigure existing installation"
+                echo "  --dry-run        Show what would be done without making changes"
                 echo "  --help, -h       Show this help message"
-            exit 0
-            ;;
+                echo ""
+                echo "DRY-RUN MODE:"
+                echo "  When --dry-run is specified, the script will show all operations"
+                echo "  that would be performed without actually making any system changes."
+                echo "  This is useful for previewing the setup process."
+                exit 0
+                ;;
             *)
                 print_error "Unknown option: $1"
                 exit 1
-            ;;
-    esac
+                ;;
+        esac
     done
     
     if [[ "$scan_only" == "true" ]]; then
@@ -579,7 +590,44 @@ main() {
         run_hardware_scan
         exit 0
     else
-        check_requirements
+        if [[ "$dry_run" == "true" ]]; then
+            check_requirements "dry-run"
+        else
+            check_requirements
+        fi
+    fi
+    
+    # Handle dry-run mode
+    if [[ "$dry_run" == "true" ]]; then
+        print_header
+        echo -e "${CYAN}🔍 DRY-RUN MODE - No changes will be made${NC}"
+        echo ""
+        print_info "This is a dry-run. The following operations would be performed:"
+        echo ""
+        
+        if [[ "$reconfigure" == "true" ]]; then
+            echo "🔄 RECONFIGURATION OPERATIONS:"
+            echo "  • Reconfigure existing installation"
+            echo "  • Update module configurations"
+            echo "  • Apply new settings"
+            echo ""
+        else
+            echo "🚀 INSTALLATION OPERATIONS:"
+            echo "  • Run pre-flight module testing"
+            echo "  • Scan and detect hardware"
+            echo "  • Configure modules automatically"
+            echo "  • Apply system settings"
+            echo "  • Install systemd service files:"
+            echo "    - /etc/systemd/system/${SERVICE_NAME}.service"
+            echo "    - /etc/systemd/system/${SERVICE_NAME}.timer"
+            echo "  • Enable and start monitoring service"
+            echo "  • Create state directory: $STATE_DIR"
+            echo "  • Run final verification tests"
+            echo ""
+        fi
+        
+        echo "💡 To perform actual installation, run without --dry-run"
+        exit 0
     fi
     
     if [[ "$reconfigure" == "true" ]]; then

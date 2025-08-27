@@ -2,6 +2,17 @@
 # =============================================================================
 # AUTOFIX COMMON FUNCTIONS
 # =============================================================================
+
+# Source root common.sh for centralized configuration management
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/../common.sh" ]]; then
+    source "$SCRIPT_DIR/../common.sh"
+elif [[ -f "$(dirname "$SCRIPT_DIR")/common.sh" ]]; then
+    source "$(dirname "$SCRIPT_DIR")/common.sh"
+else
+    echo "ERROR: Cannot find root common.sh from autofix/common.sh" >&2
+    exit 1
+fi
 #
 # PURPOSE:
 #   Provides centralized grace period management, logging, and initialization
@@ -164,7 +175,9 @@ init_autofix_script() {
     local project_root
     project_root="$(dirname "$SCRIPT_DIR")"
     if [[ -f "$project_root/modules/common.sh" ]]; then
+        autofix_log "INFO" "About to source modules/common.sh - AUTOFIX='${AUTOFIX:-<unset>}'"
         source "$project_root/modules/common.sh"
+        autofix_log "INFO" "After sourcing modules/common.sh - AUTOFIX='${AUTOFIX:-<unset>}'"
     fi
     
     # Validate arguments (now safe since help was already handled)
@@ -172,9 +185,16 @@ init_autofix_script() {
         exit 1
     fi
     
-    # Set standard autofix variables
-    CALLING_MODULE="$1"
-    GRACE_PERIOD="$2"
+    # Set standard autofix variables - handle dry-run mode argument shifting
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        # In dry-run mode, arguments were shifted by validate_autofix_args
+        CALLING_MODULE="$2"  # Second argument after --dry-run
+        GRACE_PERIOD="$3"    # Third argument after --dry-run
+    else
+        # Normal mode
+        CALLING_MODULE="$1"
+        GRACE_PERIOD="$2"
+    fi
     
     # Export for use by autofix script
     export CALLING_MODULE GRACE_PERIOD
@@ -494,8 +514,9 @@ run_autofix_with_grace() {
     
     autofix_log "INFO" "Autofix request: $action_name from module $calling_module with ${grace_period_seconds}s grace period"
     
-    # Check global AUTOFIX flag - if disabled, log-only mode
-    if [[ "${AUTOFIX:-true}" == "false" ]]; then
+    # Check if autofix is enabled using centralized configuration logic
+    autofix_log "INFO" "About to call is_autofix_enabled() - AUTOFIX='${AUTOFIX:-<unset>}'"
+    if ! is_autofix_enabled; then
         autofix_log "INFO" "AUTOFIX DISABLED - Log-only mode active"
         autofix_log "INFO" "Would execute: $action_name"
         autofix_log "INFO" "Called by: $calling_module"
@@ -504,44 +525,62 @@ run_autofix_with_grace() {
         autofix_log "INFO" "Arguments: $*"
         autofix_log "INFO" "AUTOFIX is disabled in system configuration - no action taken"
         
-        # Send desktop notification
-        send_autofix_notification "🚫 Autofix Disabled" "Action '$action_name' was requested by '$calling_module' but autofix is globally disabled. Enable in config/SYSTEM.conf" "low"
+        # Extract device information from arguments for better visibility
+        local device_info
+        device_info=$(extract_device_info "$@")
+        
+        # Send desktop notification with device info if available
+        local notification_msg="Action '$action_name' was requested by '$calling_module'"
+        if [[ -n "$device_info" ]]; then
+            notification_msg="$notification_msg for device: $device_info"
+        fi
+        notification_msg="$notification_msg but autofix is globally disabled. Enable in config/SYSTEM.conf"
+        
+        send_autofix_notification "🚫 Autofix Disabled" "$notification_msg" "low"
         
         echo "🚫 AUTOFIX DISABLED: $action_name would be executed but AUTOFIX=false in configuration"
         echo "   Called by: $calling_module"
+        if [[ -n "$device_info" ]]; then
+            echo "   Device: $device_info"
+        fi
         echo "   Function: $action_function"
         echo "   Arguments: $*"
         echo "   To enable: Set AUTOFIX=true in config/SYSTEM.conf"
         return 0  # Success (logged the action)
     fi
     
-    # Check selective DISABLE_AUTOFIX list - if this action is in the list, log-only mode
-    local disable_list="${DISABLE_AUTOFIX:-}"
-    if [[ -n "$disable_list" ]]; then
-        # Convert action name to match common patterns (e.g., "emergency-shutdown" matches both "emergency-shutdown" and "emergency-shutdown.sh")
-        local action_basename="${action_name%.sh}"  # Remove .sh if present
+    # Check if this specific autofix action is enabled using centralized logic
+    autofix_log "INFO" "About to call is_autofix_enabled('$action_name') - AUTOFIX='${AUTOFIX:-<unset>}'"
+    if ! is_autofix_enabled "$action_name"; then
+        autofix_log "INFO" "AUTOFIX SELECTIVELY DISABLED - $action_name is disabled by configuration"
+        autofix_log "INFO" "Would execute: $action_name"
+        autofix_log "INFO" "Called by: $calling_module"
+        autofix_log "INFO" "Grace period: ${grace_period_seconds}s"
+        autofix_log "INFO" "Function: $action_function"
+        autofix_log "INFO" "Arguments: $*"
         
-        # Check if action is in the disable list (space-separated)
-        if [[ " $disable_list " =~ " $action_basename " ]] || [[ " $disable_list " =~ " ${action_basename}.sh " ]]; then
-            autofix_log "INFO" "AUTOFIX SELECTIVELY DISABLED - $action_name is in DISABLE_AUTOFIX list"
-            autofix_log "INFO" "Would execute: $action_name"
-            autofix_log "INFO" "Called by: $calling_module"
-            autofix_log "INFO" "Grace period: ${grace_period_seconds}s"
-            autofix_log "INFO" "Function: $action_function"
-            autofix_log "INFO" "Arguments: $*"
-            autofix_log "INFO" "Disabled by DISABLE_AUTOFIX list: $disable_list"
-            
-            # Send desktop notification
-            send_autofix_notification "🚫 Autofix Selectively Disabled" "Action '$action_name' was requested by '$calling_module' but is in DISABLE_AUTOFIX list. Remove from config/SYSTEM.conf to enable" "low"
-            
-            echo "🚫 AUTOFIX SELECTIVELY DISABLED: $action_name is in DISABLE_AUTOFIX list"
-            echo "   Called by: $calling_module"
-            echo "   Function: $action_function"
-            echo "   Arguments: $*"
-            echo "   Disabled list: $disable_list"
-            echo "   To enable: Remove '$action_basename' from DISABLE_AUTOFIX in config/SYSTEM.conf"
-            return 0  # Success (logged the action)
+        # Extract device information from arguments for better visibility
+        local device_info
+        device_info=$(extract_device_info "$@")
+        
+        # Send desktop notification with device info if available
+        local notification_msg="Action '$action_name' was requested by '$calling_module'"
+        if [[ -n "$device_info" ]]; then
+            notification_msg="$notification_msg for device: $device_info"
         fi
+        notification_msg="$notification_msg but is disabled by configuration. Set AUTOFIX=true environment variable to override"
+        
+        send_autofix_notification "🚫 Autofix Disabled" "$notification_msg" "low"
+        
+        echo "🚫 AUTOFIX DISABLED: $action_name is disabled by configuration"
+        echo "   Called by: $calling_module"
+        if [[ -n "$device_info" ]]; then
+            echo "   Device: $device_info"
+        fi
+        echo "   Function: $action_function"
+        echo "   Arguments: $*"
+        echo "   To enable: Set AUTOFIX=true environment variable or modify configuration"
+        return 0  # Success (logged the action)
     fi
     
     # Cleanup expired grace files
@@ -654,6 +693,33 @@ validate_autofix_args() {
     
     autofix_log "DEBUG" "$script_name: Valid arguments - module=$calling_module, grace=${grace_period}s, mode=$mode_info"
     return 0
+}
+
+# =============================================================================
+# extract_device_info() - Extract device information from autofix arguments
+# =============================================================================
+#
+# PURPOSE:
+#   Centralized function to extract device information from autofix arguments
+#   for better logging and notifications. Used by both globally disabled and
+#   selectively disabled message handlers.
+#
+# PARAMETERS:
+#   $@ - All arguments passed to the autofix function
+#
+# RETURNS:
+#   Device information string (empty if none found)
+#
+extract_device_info() {
+    local device_info=""
+    
+    # Simple approach: if arguments contain device-related keywords, use the full arguments
+    if [[ "$*" =~ Device|device|Mouse|Keyboard|Hub|Storage|Ethernet|Adapter|Camera|Audio|Controller|USB|usb ]]; then
+        # Just use the full arguments string as it contains the device information
+        device_info="$*"
+    fi
+    
+    echo "$device_info"
 }
 
 # =============================================================================
@@ -810,6 +876,68 @@ dry_run_file_operation() {
     else
         autofix_log "INFO" "File operation: $operation $target_file ($description)"
         return 0  # Actual file operations handled by calling script
+    fi
+}
+
+# =============================================================================
+# execute_command() - Execute command with dry-run support and logging
+# =============================================================================
+#
+# PURPOSE:
+#   Executes commands safely with comprehensive dry-run support. In dry-run mode,
+#   shows exactly what command would be executed. In live mode, executes the
+#   command and logs the result. This function ensures commands are stored in
+#   variables and echoed exactly as they would be executed.
+#
+# PARAMETERS:
+#   $1 - cmd: The command to execute (should be a variable containing the command)
+#   $2 - description: Human-readable description of what the command does
+#
+# RETURNS:
+#   0 - Command executed successfully (or dry-run completed)
+#   1 - Command failed (only in live mode)
+#
+# DRY-RUN BEHAVIOR:
+#   - Echoes the exact command that would be executed
+#   - Shows the description of what the command does
+#   - Logs the dry-run action for audit purposes
+#   - Does NOT execute the actual command
+#
+# IMPLEMENTATION NOTES:
+#   - Commands should be stored in variables before calling this function
+#   - The same variable is used for both display and execution
+#   - This prevents maintaining commands in two places
+#   - Ensures dry-run output shows exactly what would be executed
+#
+# EXAMPLES:
+#   SHUTDOWN_CMD="systemctl poweroff"
+#   execute_command "$SHUTDOWN_CMD" "Shutdown system"
+#
+#   CLEANUP_CMD="rm -rf /tmp/emergency-cache/*"
+#   execute_command "$CLEANUP_CMD" "Clean emergency cache files"
+#
+execute_command() {
+    local cmd="$1"
+    local description="$2"
+    
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo "[DRY-RUN] Would execute: $cmd"
+        echo "[DRY-RUN] Description: $description"
+        autofix_log "INFO" "DRY-RUN: Would execute command - $description"
+        autofix_log "DEBUG" "DRY-RUN: Command would be: $cmd"
+        return 0
+    else
+        echo "Executing: $cmd"
+        autofix_log "INFO" "Executing command: $description"
+        autofix_log "DEBUG" "Command: $cmd"
+        eval "$cmd"
+        local exit_code=$?
+        if [[ $exit_code -eq 0 ]]; then
+            autofix_log "INFO" "Command executed successfully: $description"
+        else
+            autofix_log "ERROR" "Command failed (exit code: $exit_code): $description"
+        fi
+        return $exit_code
     fi
 }
 

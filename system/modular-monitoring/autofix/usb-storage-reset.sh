@@ -32,16 +32,18 @@
 #   - Could affect external backup operations
 #
 # USAGE:
-#   ./usb-storage-reset.sh <calling_module> <grace_period_seconds>
+#   ./usb-storage-reset.sh <calling_module> <grace_period_seconds> [device_info]
 #
 #   Examples:
 #     ./usb-storage-reset.sh usb 600
-#     ./usb-storage-reset.sh --dry-run usb 600
+#     ./usb-storage-reset.sh usb 600 "USB Device: Logitech Mouse (1-1.2)"
+#     ./usb-storage-reset.sh --dry-run usb 600 "USB Device: Logitech Mouse (1-1.2)"
 #     ./usb-storage-reset.sh --help
 #
 # ARGUMENTS:
 #   calling_module     - Module requesting the action (e.g., "usb", "thermal")
 #   grace_period       - Seconds to wait before allowing this action again
+#   device_info        - Optional: Information about problematic devices for better logging
 #
 # SECURITY CONSIDERATIONS:
 #   - Requires root for kernel module operations
@@ -125,6 +127,14 @@ EOF
 
 # Initialize autofix script with common setup (handles help, validation, and argument shifting)
 init_autofix_script "$@"
+
+# Additional arguments specific to this script
+# In dry-run mode, arguments are shifted, so we need to access them correctly
+if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    DEVICE_INFO="${4:-}"
+else
+    DEVICE_INFO="${3:-}"
+fi
 
 # ============================================================================
 # USB STORAGE RESET FUNCTION
@@ -240,5 +250,10 @@ perform_usb_storage_reset() {
 }
 
 # Execute with grace period management
-autofix_log "INFO" "USB storage reset requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
-run_autofix_with_grace "usb-storage-reset" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_usb_storage_reset"
+if [[ -n "$DEVICE_INFO" ]]; then
+    autofix_log "INFO" "USB storage reset requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period for devices: $DEVICE_INFO"
+    run_autofix_with_grace "usb-storage-reset" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_usb_storage_reset" "$DEVICE_INFO"
+else
+    autofix_log "INFO" "USB storage reset requested by $CALLING_MODULE with ${GRACE_PERIOD}s grace period"
+    run_autofix_with_grace "usb-storage-reset" "$CALLING_MODULE" "$GRACE_PERIOD" "perform_usb_storage_reset"
+fi

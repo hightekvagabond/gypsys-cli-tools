@@ -34,8 +34,37 @@ check_hardware() {
     return 1  # No graphics hardware detected
 }
 
+show_help() {
+    cat << 'EOF'
+GRAPHICS MODULE HARDWARE EXISTENCE CHECK
+
+PURPOSE:
+    Check if graphics monitoring is available on this system.
+
+USAGE:
+    ./exists.sh                    # Check hardware and exit with status code
+    ./exists.sh --help            # Show this help information
+
+EXIT CODES:
+    0 - Graphics monitoring available
+    1 - Graphics monitoring not available
+
+HARDWARE DETECTION:
+    • Graphics hardware (via 'lspci' command)
+    • GPU drivers (/proc/modules)
+    • Graphics devices (/dev/dri)
+    • DRM subsystem (/sys/class/drm)
+EOF
+}
+
 # When run directly, check hardware and exit with appropriate code
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check for help request
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_help
+        exit 0
+    fi
+    
     if check_hardware; then
         echo "✅ Graphics hardware detected"
         exit 0

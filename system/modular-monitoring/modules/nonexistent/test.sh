@@ -5,6 +5,38 @@ MODULE_NAME="nonexistent"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../common.sh"
 
+show_help() {
+    cat << 'EOF'
+NONEXISTENT MODULE TEST SCRIPT
+
+PURPOSE:
+    This is a TEST MODULE that tests for hardware that doesn't exist.
+    Used for testing the monitoring framework's error handling.
+
+USAGE:
+    ./test.sh                      # Run all tests
+    ./test.sh --help               # Show this help information
+
+TEST DESCRIPTION:
+    This module tests the following scenarios:
+    • Quantum flux capacitor hardware detection (should fail)
+    • Quantum monitoring tools existence (should fail)
+    • Quantum kernel modules loading (should fail)
+    • Configuration loading (should pass)
+    • Temporal anomaly detection (should fail)
+
+NOTE:
+    This module is designed for testing purposes only.
+    Most tests are expected to fail since the hardware doesn't exist.
+EOF
+}
+
+# Check for help request
+if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+    show_help
+    exit 0
+fi
+
 # Test results
 TESTS_PASSED=0
 TESTS_FAILED=0

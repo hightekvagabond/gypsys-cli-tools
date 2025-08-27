@@ -28,8 +28,36 @@ check_hardware() {
     return 1
 }
 
+show_help() {
+    cat << 'EOF'
+NETWORK MODULE HARDWARE EXISTENCE CHECK
+
+PURPOSE:
+    Check if network monitoring is available on this system.
+
+USAGE:
+    ./exists.sh                    # Check hardware and exit with status code
+    ./exists.sh --help            # Show this help information
+
+EXIT CODES:
+    0 - Network monitoring available
+    1 - Network monitoring not available
+
+HARDWARE DETECTION:
+    • Network interfaces (via 'ip link' command)
+    • Network device files (/proc/net/dev)
+    • Network sysfs (/sys/class/net)
+EOF
+}
+
 # When run directly, check hardware and exit with appropriate code
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Check for help request
+    if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
+        show_help
+        exit 0
+    fi
+    
     if check_hardware; then
         echo "✅ Network interfaces detected"
         exit 0

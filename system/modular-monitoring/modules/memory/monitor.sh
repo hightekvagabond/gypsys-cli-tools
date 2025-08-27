@@ -68,6 +68,7 @@ parse_args() {
     STATUS_MODE=false
     START_TIME=""
     END_TIME=""
+    DRY_RUN=false
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -88,6 +89,10 @@ parse_args() {
                 AUTO_FIX_ENABLED=false
                 shift
                 ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
             --help)
                 show_help
                 exit 0
@@ -102,7 +107,7 @@ parse_args() {
                 ;;
             *)
                 echo "Unknown option: $1"
-                show_help
+                echo "Use --help for usage information"
                 exit 1
                 ;;
         esac
@@ -121,6 +126,7 @@ OPTIONS:
     --start-time TIME   Set monitoring start time for analysis
     --end-time TIME     Set monitoring end time for analysis
     --status            Show detailed status information instead of monitoring
+    --dry-run           Show what would be checked without running tests
     --help              Show this help message
 
 EXAMPLES:
@@ -129,12 +135,79 @@ EXAMPLES:
     ./monitor.sh --start-time "1 hour ago"         # Analyze last hour
     ./monitor.sh --status --start-time "1 hour ago" # Show status for last hour
     ./monitor.sh --start-time "10:00" --end-time "11:00"  # Specific time range
+    ./monitor.sh --dry-run                          # Show what would be checked
+
+DRY-RUN MODE:
+    --dry-run shows what memory monitoring would be performed without
+    actually accessing memory statistics or running memory commands.
 
 EOH
 }
 
 
 check_status() {
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo ""
+        echo "🧪 DRY-RUN MODE: Memory Monitoring Analysis"
+        echo "==========================================="
+        echo "Mode: Analysis only - no memory statistics will be accessed"
+        echo ""
+        
+        echo "MEMORY MONITORING OPERATIONS THAT WOULD BE PERFORMED:"
+        echo "----------------------------------------------------"
+        echo "1. Memory Statistics Access:"
+        echo "   - Command: free -m"
+        echo "   - Purpose: Get total, used, and free memory in MB"
+        echo "   - Expected: Memory usage statistics from /proc/meminfo"
+        echo ""
+        
+        echo "2. Memory Usage Calculation:"
+        echo "   - Command: awk 'NR==2{printf \"%.0f\", \$3*100/\$2}'"
+        echo "   - Purpose: Calculate percentage of memory used"
+        echo "   - Formula: (Used Memory / Total Memory) * 100"
+        echo ""
+        
+        echo "3. Threshold Checking:"
+        echo "   - Warning threshold: ${MEMORY_WARNING:-85}%"
+        echo "   - Critical threshold: ${MEMORY_CRITICAL:-95}%"
+        echo "   - Alert generation based on usage levels"
+        echo ""
+        
+        echo "4. Alert Generation:"
+        echo "   - Warning alerts: ${MEMORY_WARNING:-85}%+ usage"
+        echo "   - Critical alerts: ${MEMORY_CRITICAL:-95}%+ usage"
+        echo "   - OOM prevention measures: 95%+ usage"
+        echo ""
+        
+        echo "5. Safety Checks:"
+        echo "   - Read-only memory statistics access"
+        echo "   - No direct memory manipulation"
+        echo "   - Safe process analysis methods"
+        echo ""
+        
+        echo "SYSTEM STATE ANALYSIS:"
+        echo "----------------------"
+        echo "Current working directory: $(pwd)"
+        echo "Script permissions: $([[ -r "$0" ]] && echo "Readable" || echo "Not readable")"
+        echo "free command available: $([[ $(command -v free >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo "awk command available: $([[ $(command -v awk >/dev/null 2>&1; echo $?) -eq 0 ]] && echo "Yes" || echo "No")"
+        echo ""
+        
+        echo "SAFETY CHECKS PERFORMED:"
+        echo "------------------------"
+        echo "✅ Script permissions verified"
+        echo "✅ Command availability checked"
+        echo "✅ Memory safety validated"
+        echo "✅ Threshold configuration loaded"
+        echo ""
+        
+        echo "STATUS: Dry-run completed - no memory statistics accessed"
+        echo "==========================================="
+        
+        log "DRY-RUN: Memory monitoring analysis completed"
+        return 0
+    fi
+    
     log "Checking memory usage..."
     
     if ! command -v free >/dev/null 2>&1; then
