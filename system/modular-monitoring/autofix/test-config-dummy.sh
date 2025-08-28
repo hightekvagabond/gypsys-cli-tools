@@ -136,11 +136,24 @@ perform_test_config_actions() {
         
         echo "CONFIGURATION ANALYSIS:"
         echo "----------------------"
+        echo "OS: ${OS:-<not set>}"
         echo "AUTOFIX: ${AUTOFIX:-<not set>}"
         echo "DISABLE_AUTOFIX: ${DISABLE_AUTOFIX:-<not set>}"
         echo "PREFERRED_KERNEL_BRANCH: ${PREFERRED_KERNEL_BRANCH:-<not set>}"
+        echo "PREFERRED_KERNEL_TRACK: ${PREFERRED_KERNEL_TRACK:-<not set>}"
         echo "GRAPHICS_CHIPSET: ${GRAPHICS_CHIPSET:-<not set>}"
         echo "USE_MODULES: ${USE_MODULES:-<not set>}"
+        echo ""
+        
+        echo "MODULE CONFIGURATION (if called from module):"
+        echo "--------------------------------------------"
+        echo "Calling Module: ${CALLING_MODULE}"
+        if [[ "${CALLING_MODULE}" == "kernel" && "${OS:-}" == "ubuntu" ]]; then
+            echo "Helper Config Path: modules/kernel/helpers/ubuntu.conf"
+            echo "UBUNTU_RELEASE_DETECTION: ${UBUNTU_RELEASE_DETECTION:-<not set>}"
+            echo "ENFORCE_TRACK_COMPLIANCE: ${ENFORCE_TRACK_COMPLIANCE:-<not set>}"
+            echo "INTEL_GRAPHICS_PREFERRED_TRACK: ${INTEL_GRAPHICS_PREFERRED_TRACK:-<not set>}"
+        fi
         echo ""
         
         echo "ENVIRONMENT VARIABLE ANALYSIS:"
@@ -179,11 +192,18 @@ perform_test_config_actions() {
 # Grace Period: ${GRACE_PERIOD}s
 
 # Configuration Values
+OS=${OS:-<not set>}
 AUTOFIX=${AUTOFIX:-<not set>}
 DISABLE_AUTOFIX=${DISABLE_AUTOFIX:-<not set>}
 PREFERRED_KERNEL_BRANCH=${PREFERRED_KERNEL_BRANCH:-<not set>}
+PREFERRED_KERNEL_TRACK=${PREFERRED_KERNEL_TRACK:-<not set>}
 GRAPHICS_CHIPSET=${GRAPHICS_CHIPSET:-<not set>}
 USE_MODULES=${USE_MODULES:-<not set>}
+
+# Helper Configuration (if applicable)
+UBUNTU_RELEASE_DETECTION=${UBUNTU_RELEASE_DETECTION:-<not set>}
+ENFORCE_TRACK_COMPLIANCE=${ENFORCE_TRACK_COMPLIANCE:-<not set>}
+INTEL_GRAPHICS_PREFERRED_TRACK=${INTEL_GRAPHICS_PREFERRED_TRACK:-<not set>}
 
 # Environment Variable Overrides (if any)
 ENV_OVERRIDE_AUTOFIX=${ENV_OVERRIDE_AUTOFIX:-<not preserved>}

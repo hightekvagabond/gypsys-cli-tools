@@ -50,13 +50,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 # Set defaults if not loaded from config (now using centralized config)
-MODULES_DIR="${MODULES_DIR:-modules}"
 ENABLED_MODULES_DIR="${ENABLED_MODULES_DIR:-config}"
 MODULE_OVERRIDES_DIR="${MODULE_OVERRIDES_DIR:-config}"
-STATE_DIR="${STATE_DIR:-/var/tmp/modular-monitor-state}"
 
-# Source common functions
-source "$SCRIPT_DIR/$MODULES_DIR/common.sh"
+# Source modules common functions (MODULES_DIR is set by root common.sh)
+source "$MODULES_DIR/common.sh"
 
 # Override MODULE_NAME for orchestrator logs
 MODULE_NAME="orchestrator"
@@ -107,12 +105,12 @@ EOF
 }
 
 # Load common functions that include get_enabled_modules()
-source "$SCRIPT_DIR/modules/common.sh"
+# Note: MODULES_DIR is already set to absolute path by root common.sh
 
 get_available_modules() {
     local available_modules=()
     
-    for module_dir in "$SCRIPT_DIR/$MODULES_DIR"/*/; do
+    for module_dir in "$MODULES_DIR"/*/; do
         if [[ -d "$module_dir" && -f "$module_dir/monitor.sh" ]]; then
             local module_name
             module_name=$(basename "$module_dir")
@@ -146,7 +144,7 @@ list_modules() {
         fi
         
         # Check if monitor script exists
-        local monitor_file="$SCRIPT_DIR/$MODULES_DIR/$module/monitor.sh"
+        local monitor_file="$MODULES_DIR/$module/monitor.sh"
         if [[ -f "$monitor_file" && -x "$monitor_file" ]]; then
             echo "  $status  $module$config_status"
         else
@@ -174,7 +172,7 @@ run_module() {
     shift
     local module_args=("$@")
     
-    local module_dir="$SCRIPT_DIR/$MODULES_DIR/$module_name"
+    local module_dir="$MODULES_DIR/$module_name"
     local monitor_file="$module_dir/monitor.sh"
     
     if [[ ! -d "$module_dir" ]]; then
@@ -223,7 +221,7 @@ run_enabled_modules() {
     # Check hardware existence for all enabled modules first
     log "Checking hardware existence for enabled modules..."
     for module in "${enabled_modules[@]}"; do
-        local exists_script="$SCRIPT_DIR/$MODULES_DIR/$module/exists.sh"
+        local exists_script="$MODULES_DIR/$module/exists.sh"
         if [[ -f "$exists_script" && -x "$exists_script" ]]; then
             if ! "$exists_script" >/dev/null 2>&1; then
                 log "⚠️  Module '$module' is enabled but required hardware not detected - skipping"

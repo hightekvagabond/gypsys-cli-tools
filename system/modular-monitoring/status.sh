@@ -59,8 +59,8 @@ MODULE_OVERRIDES_DIR="${MODULE_OVERRIDES_DIR:-config}"
 DEFAULT_STATUS_TIMESPAN="${DEFAULT_STATUS_TIMESPAN:-1 hour ago}"
 DEFAULT_STATUS_END_TIME="${DEFAULT_STATUS_END_TIME:-now}"
 
-# Source common functions
-source "$SCRIPT_DIR/$MODULES_DIR/common.sh"
+# Source common functions (MODULES_DIR is set by root common.sh)
+source "$MODULES_DIR/common.sh"
 
 # Check if running as root for optimal monitoring tests [[memory:7056066]]
 check_sudo_recommendation() {
@@ -306,7 +306,7 @@ test_modules() {
     local skipped=0
     
     for module in "${enabled_modules[@]}"; do
-        local module_dir="$SCRIPT_DIR/$MODULES_DIR/$module"
+        local module_dir="$MODULES_DIR/$module"
         local exists_script="$module_dir/exists.sh"
         
         # Check if hardware exists first
@@ -383,7 +383,7 @@ show_individual_module_status() {
     mapfile -t enabled_modules < <(get_enabled_modules)
     
     for module in "${enabled_modules[@]}"; do
-        local status_script="$SCRIPT_DIR/$MODULES_DIR/$module/status.sh"
+        local status_script="$MODULES_DIR/$module/status.sh"
         if [[ -f "$status_script" && -x "$status_script" ]]; then
             echo -e "\n${BLUE}--- $module Module ---${NC}"
             if bash "$status_script" "$since_time" "$end_time" 2>/dev/null; then
@@ -635,9 +635,9 @@ generate_boot_history() {
 
 generate_kernel_timeline() {
     # Use kernel module if available, otherwise do basic analysis
-    if [[ -f "$SCRIPT_DIR/$MODULES_DIR/kernel/monitor.sh" ]]; then
+    if [[ -f "$MODULES_DIR/kernel/monitor.sh" ]]; then
         echo "Kernel change analysis (using kernel module):"
-        bash "$SCRIPT_DIR/$MODULES_DIR/kernel/monitor.sh" --start-time "$(journalctl --list-boots --no-pager 2>/dev/null | head -1 | awk '{print $3, $4}' || echo '30 days ago')" 2>/dev/null || echo "Kernel module analysis failed"
+        bash "$MODULES_DIR/kernel/monitor.sh" --start-time "$(journalctl --list-boots --no-pager 2>/dev/null | head -1 | awk '{print $3, $4}' || echo '30 days ago')" 2>/dev/null || echo "Kernel module analysis failed"
     else
         echo "Basic kernel timeline:"
         echo "  Current kernel: $(uname -r)"

@@ -4,14 +4,18 @@
 # =============================================================================
 
 # Source root common.sh for centralized configuration management
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "$SCRIPT_DIR/../common.sh" ]]; then
-    source "$SCRIPT_DIR/../common.sh"
-elif [[ -f "$(dirname "$SCRIPT_DIR")/common.sh" ]]; then
-    source "$(dirname "$SCRIPT_DIR")/common.sh"
-else
-    echo "ERROR: Cannot find root common.sh from modules/common.sh" >&2
-    exit 1
+# Use a different variable to avoid overriding the calling script's SCRIPT_DIR
+MODULES_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Only source root common.sh if it hasn't been loaded already
+if [[ -z "${CONFIG_LOADED:-}" ]]; then
+    if [[ -f "$MODULES_SCRIPT_DIR/../common.sh" ]]; then
+        source "$MODULES_SCRIPT_DIR/../common.sh"
+    elif [[ -f "$(dirname "$MODULES_SCRIPT_DIR")/common.sh" ]]; then
+        source "$(dirname "$MODULES_SCRIPT_DIR")/common.sh"
+    else
+        echo "ERROR: Cannot find root common.sh from modules/common.sh" >&2
+        exit 1
+    fi
 fi
 #
 # PURPOSE:
@@ -448,14 +452,14 @@ list_autofix_scripts() {
     
     # Get list of autofixes this module declares it uses
     local declared_autofixes
-    if declared_autofixes=$("$SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
+    if declared_autofixes=$("$MODULES_SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
         echo "Module declares the following autofixes:"
         while IFS= read -r autofix_name; do
             [[ -z "$autofix_name" ]] && continue
             echo "  📄 ${autofix_name}.sh"
             
             # Check if the autofix exists in global directory
-            local global_autofix_dir="$(dirname "$SCRIPT_DIR")/autofix"
+            local global_autofix_dir="$(dirname "$MODULES_SCRIPT_DIR")/autofix"
             local autofix_script="$global_autofix_dir/${autofix_name}.sh"
             if [[ -f "$autofix_script" && -x "$autofix_script" ]]; then
                 echo "     Status: ✅ Available in global autofix directory"
@@ -477,8 +481,8 @@ list_autofix_scripts() {
     
     # Check for configuration variables that might control autofixes
     echo "Configuration variables (from config.conf):"
-    if [[ -f "$SCRIPT_DIR/config.conf" ]]; then
-        grep -E "(AUTOFIX|THRESHOLD|ENABLE_.*)" "$SCRIPT_DIR/config.conf" 2>/dev/null | while IFS= read -r line; do
+    if [[ -f "$MODULES_SCRIPT_DIR/config.conf" ]]; then
+        grep -E "(AUTOFIX|THRESHOLD|ENABLE_.*)" "$MODULES_SCRIPT_DIR/config.conf" 2>/dev/null | while IFS= read -r line; do
             echo "  🔧 $line"
         done
     else
@@ -491,9 +495,9 @@ get_expected_autofix_scripts() {
     local expected_scripts=()
     
     # Get autofix scripts declared by the module
-    if [[ -f "$SCRIPT_DIR/monitor.sh" ]]; then
+    if [[ -f "$MODULES_SCRIPT_DIR/monitor.sh" ]]; then
         local declared_autofixes
-        if declared_autofixes=$("$SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
+        if declared_autofixes=$("$MODULES_SCRIPT_DIR/monitor.sh" --list-autofixes 2>/dev/null); then
             while IFS= read -r autofix_name; do
                 [[ -z "$autofix_name" ]] && continue
                 expected_scripts+=("${autofix_name}.sh")
@@ -684,7 +688,7 @@ show_module_help() {
     
     if [[ -z "$module_name" ]]; then
         echo "❌ Error: Module name required"
-        echo "Usage: show_module_help MODULE_NAME [CALLING_SCRIPT] [SCRIPT_DIR]"
+        echo "Usage: show_module_help MODULE_NAME [CALLING_SCRIPT] [MODULES_SCRIPT_DIR]"
         return 1
     fi
     

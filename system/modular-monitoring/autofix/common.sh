@@ -91,6 +91,7 @@ PURPOSE:
 USAGE:
     $script_name <calling_module> <grace_period_seconds> [additional_args...]
     $script_name --dry-run [additional_args...]
+    $script_name --force [additional_args...]
     $script_name --help
 
 ARGUMENTS:
@@ -100,6 +101,7 @@ ARGUMENTS:
 
 OPTIONS:
     --dry-run            Test mode - logs actions but doesn't execute them
+    --force              Bypass grace period checks (manual override)
     --help               Show this help information
 
 SAFETY FEATURES:
@@ -110,7 +112,8 @@ SAFETY FEATURES:
 
 EXAMPLES:
     $script_name thermal 300 cpu_temp 95C     # Called by thermal module
-    $script_name --dry-run                     # Test mode
+    $script_name --dry-run thermal 300        # Test mode
+    $script_name --force thermal 300          # Force execution (bypass grace)
     $script_name --help                        # Show help
 
 For script-specific usage and parameters, see the script's header comments.
@@ -194,6 +197,13 @@ init_autofix_script() {
         # Normal mode
         CALLING_MODULE="$1"
         GRACE_PERIOD="$2"
+    fi
+    
+    # Load module and helper configs if we know the calling module
+    if [[ -n "${CALLING_MODULE:-}" && "${CALLING_MODULE}" != "--dry-run" && "${CALLING_MODULE}" != "--force" ]]; then
+        autofix_log "DEBUG" "Loading module and helper configs for: $CALLING_MODULE"
+        load_all_configs "$CALLING_MODULE"
+        autofix_log "DEBUG" "Module and helper configs loaded for: $CALLING_MODULE"
     fi
     
     # Export for use by autofix script
@@ -586,8 +596,10 @@ run_autofix_with_grace() {
     # Cleanup expired grace files
     cleanup_expired_grace_files
     
-    # Check if we're in a grace period
-    if check_grace_period "$action_name" "$grace_period_seconds" "$calling_module"; then
+    # Check if we're in a grace period (unless force override is enabled)
+    if [[ "${OVERRIDE_GRACE:-false}" == "true" ]]; then
+        autofix_log "WARN" "Grace period check bypassed due to --force flag"
+    elif check_grace_period "$action_name" "$grace_period_seconds" "$calling_module"; then
         autofix_log "INFO" "Skipping $action_name - still in grace period"
         return 2  # Grace period active
     fi
@@ -614,25 +626,27 @@ run_autofix_with_grace() {
 # PURPOSE:
 #   Ensures autofix scripts receive properly formatted arguments before
 #   proceeding with potentially dangerous operations. Supports dry-run mode
-#   for safe testing of autofix operations.
+#   and grace period override for safe testing of autofix operations.
 #
 # PARAMETERS:
 #   $1 - script_name: Name of script for error messages
-#   $2 - calling_module: Module name (must not be empty, or "--dry-run")
+#   $2 - calling_module: Module name (must not be empty, or "--dry-run", or "--force")
 #   $3 - grace_period: Grace period in seconds (must be a positive number)
 #
 # RETURNS:
 #   0 - Arguments are valid
 #   1 - Arguments are invalid (error logged)
 #
-# DRY-RUN SUPPORT:
-#   If first argument is "--dry-run", sets DRY_RUN=true and adjusts parsing
-#   to allow testing autofix scripts without executing dangerous operations.
+# SPECIAL FLAGS SUPPORT:
+#   --dry-run: Sets DRY_RUN=true for safe testing without execution
+#   --force: Sets OVERRIDE_GRACE=true to bypass grace period checks
+#   --override-grace: Alternative syntax for --force
 #
 # SECURITY CONSIDERATIONS:
 #   - Should validate calling_module format to prevent injection
 #   - Grace period should be bounded to prevent DoS attacks
 #   - Dry-run mode must be clearly logged to prevent confusion
+#   - Grace override should be logged for security audit
 #
 validate_autofix_args() {
     local script_name="$1"
@@ -645,7 +659,7 @@ validate_autofix_args() {
         return 1  # Signal to exit
     fi
     
-    # Check for dry-run mode
+    # Check for special flags
     if [[ "$calling_module" == "--dry-run" ]]; then
         export DRY_RUN=true
         autofix_log "INFO" "$script_name: DRY-RUN MODE ENABLED - No dangerous operations will be performed"
@@ -660,23 +674,40 @@ validate_autofix_args() {
             echo "Example: $script_name --dry-run thermal 45 emergency"
             return 1
         fi
+    elif [[ "$calling_module" == "--force" ]]; then
+        export OVERRIDE_GRACE=true
+        autofix_log "WARN" "$script_name: FORCE MODE ENABLED - Bypassing grace period checks"
+        
+        # Shift arguments for force mode
+        calling_module="$grace_period"
+        grace_period="${4:-60}"  # Default grace period for force mode
+        
+        if [[ -z "$calling_module" ]]; then
+            autofix_log "ERROR" "$script_name: Missing calling module in force mode"
+            echo "Usage: $script_name --force <calling_module> [grace_period_seconds] [additional_args...]"
+            echo "Example: $script_name --force thermal 45 emergency"
+            return 1
+        fi
     else
         export DRY_RUN=false
+        export OVERRIDE_GRACE=false
     fi
     
     if [[ -z "$calling_module" ]]; then
         autofix_log "ERROR" "$script_name: Missing required argument - calling module"
-        echo "Usage: $script_name [--dry-run] <calling_module> <grace_period_seconds> [additional_args...]"
+        echo "Usage: $script_name [--dry-run|--force] <calling_module> <grace_period_seconds> [additional_args...]"
         echo "Example: $script_name thermal 45 emergency"
         echo "Example: $script_name --dry-run thermal 45 emergency"
+        echo "Example: $script_name --force thermal 45 emergency"
         return 1
     fi
     
     if [[ -z "$grace_period" ]] || ! [[ "$grace_period" =~ ^[0-9]+$ ]]; then
         autofix_log "ERROR" "$script_name: Invalid grace period '$grace_period' (must be numeric seconds)"
-        echo "Usage: $script_name [--dry-run] <calling_module> <grace_period_seconds> [additional_args...]"
+        echo "Usage: $script_name [--dry-run|--force] <calling_module> <grace_period_seconds> [additional_args...]"
         echo "Example: $script_name thermal 45 emergency"
         echo "Example: $script_name --dry-run thermal 45 emergency"
+        echo "Example: $script_name --force thermal 45 emergency"
         return 1
     fi
     

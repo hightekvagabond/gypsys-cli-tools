@@ -144,6 +144,31 @@ load_module_config() {
 }
 
 # =============================================================================
+# load_helper_config() - Load OS/helper-specific configuration
+# =============================================================================
+load_helper_config() {
+    local module_name="$1"
+    local helper_name="${2:-${OS:-}}"
+    
+    if [[ -z "$module_name" || -z "$helper_name" ]]; then
+        log_config "DEBUG" "No module ($module_name) or helper ($helper_name) name provided for helper config loading"
+        return 0
+    fi
+    
+    local helper_config="$PROJECT_ROOT/modules/$module_name/helpers/$helper_name.conf"
+    
+    if [[ -f "$helper_config" ]]; then
+        log_config "DEBUG" "Loading helper config from: $helper_config"
+        source "$helper_config"
+        log_config "DEBUG" "Helper config loaded for: $module_name/$helper_name"
+    else
+        log_config "DEBUG" "Helper config not found: $helper_config (this is optional)"
+    fi
+    
+    return 0
+}
+
+# =============================================================================
 # preserve_environment_vars() - Save environment variables before config loading
 # =============================================================================
 preserve_environment_vars() {
@@ -194,6 +219,7 @@ restore_environment_vars() {
 # 1. Preserve environment variables (highest priority)
 # 2. System defaults (lowest priority)
 # 3. Module-specific configs 
+# 3.5. Helper-specific configs (OS-specific, if module and OS provided)
 # 4. Machine-specific system config
 # 5. Restore environment variables (ensure they override everything)
 #
@@ -214,6 +240,11 @@ load_all_configs() {
     # Step 3: Load module-specific config (if provided)
     if [[ -n "$module_name" ]]; then
         load_module_config "$module_name"
+    fi
+    
+    # Step 3.5: Load helper-specific config (if module and OS provided)
+    if [[ -n "$module_name" && -n "${OS:-}" ]]; then
+        load_helper_config "$module_name" "${OS}"
     fi
     
     # Step 4: Load machine-specific system config (higher priority)

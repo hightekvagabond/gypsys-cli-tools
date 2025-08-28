@@ -1790,3 +1790,574 @@
 [2025-08-27 15:38:06] [INFO]   Configuration hierarchy working: YES
 [2025-08-27 15:38:06] [INFO]   Environment variable preservation: YES
 [2025-08-27 15:38:06] [INFO] Successfully executed test-config-dummy
+[2025-08-27 15:40:25] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:40:25] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:25] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:25] [INFO] kernel-branch-switch.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:40:25] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:40:25] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:40:25] [INFO] kernel-branch-switch.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:40:25] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:40:25] [INFO] Kernel branch switch requested by --dry-run with kernels grace period
+[2025-08-27 15:40:25] [INFO] Autofix request: kernel-branch-switch from module --dry-run with kernels grace period
+[2025-08-27 15:40:25] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:40:25] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:40:25] [DEBUG] Checking grace period for kernel-branch-switch (module: --dry-run, grace: kernels, freq: 120s)
+[2025-08-27 15:40:25] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 15:40:25] [INFO] Started kernels grace period for kernel-branch-switch (requested by --dry-run)
+[2025-08-27 15:40:25] [INFO] Executing kernel-branch-switch (called by --dry-run)
+[2025-08-27 15:40:25] [INFO] Kernel branch switch requested: target=7200, action=stable
+[2025-08-27 15:40:25] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:40:25] [ERROR] Invalid target branch: 7200
+[2025-08-27 15:40:25] [ERROR] Valid options: stable, longterm, mainline, linux-next
+[2025-08-27 15:40:25] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 15:40:36] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:40:36] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:36] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:36] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:40:36] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:40:36] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:40:36] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 15:40:36] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 15:40:36] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:40:36] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:40:36] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 15:40:36] [DEBUG] Grace period check: elapsed=11s, total_grace=7320s, recorded_module=--dry-run
+[2025-08-27 15:40:36] [INFO] Action kernel-branch-switch is in grace period (7309s remaining, originally requested by --dry-run)
+[2025-08-27 15:40:36] [INFO] Skipping kernel-branch-switch - still in grace period
+[2025-08-27 15:40:42] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:40:54] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:40:54] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:54] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:40:54] [INFO] kernel-branch-switch.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:40:54] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:40:54] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:40:54] [INFO] kernel-branch-switch.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:40:54] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:40:54] [INFO] Kernel branch switch requested by --dry-run with kernels grace period
+[2025-08-27 15:40:54] [INFO] Autofix request: kernel-branch-switch from module --dry-run with kernels grace period
+[2025-08-27 15:40:54] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:40:54] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:40:54] [DEBUG] Checking grace period for kernel-branch-switch (module: --dry-run, grace: kernels, freq: 120s)
+[2025-08-27 15:40:54] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 15:40:54] [INFO] Started kernels grace period for kernel-branch-switch (requested by --dry-run)
+[2025-08-27 15:40:54] [INFO] Executing kernel-branch-switch (called by --dry-run)
+[2025-08-27 15:40:54] [INFO] Kernel branch switch requested: target=7200, action=stable
+[2025-08-27 15:40:54] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:40:54] [ERROR] Invalid target branch: 7200
+[2025-08-27 15:40:54] [ERROR] Valid options: stable, longterm, mainline, linux-next
+[2025-08-27 15:40:54] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 15:41:04] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:41:04] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:04] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:04] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:04] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:41:04] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:04] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 15:41:04] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 15:41:04] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:41:04] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:41:04] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 15:41:04] [DEBUG] Grace period check: elapsed=10s, total_grace=7320s, recorded_module=--dry-run
+[2025-08-27 15:41:04] [INFO] Action kernel-branch-switch is in grace period (7310s remaining, originally requested by --dry-run)
+[2025-08-27 15:41:04] [INFO] Skipping kernel-branch-switch - still in grace period
+[2025-08-27 15:41:26] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:41:26] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:26] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:26] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:26] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:41:26] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:26] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 15:41:26] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 15:41:26] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:41:27] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:41:27] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 15:41:27] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 15:41:27] [INFO] Started 7200s grace period for kernel-branch-switch (requested by kernel)
+[2025-08-27 15:41:27] [INFO] Executing kernel-branch-switch (called by kernel)
+[2025-08-27 15:41:27] [INFO] Kernel branch switch requested: target=stable, action=check
+[2025-08-27 15:41:27] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:41:27] [INFO] Valid target branch: stable
+[2025-08-27 15:41:27] [INFO] Checking available kernels for branch: stable
+[2025-08-27 15:41:27] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:41:27] [INFO] Target package: linux-image-generic
+[2025-08-27 15:41:27] [INFO] Target kernel package 'linux-image-generic' is available
+[2025-08-27 15:41:27] [INFO] Target kernel package 'linux-image-generic' is available but not installed
+[2025-08-27 15:41:27] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 15:41:35] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:41:35] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:35] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:41:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:35] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:41:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:41:36] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 15:41:36] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 15:41:36] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:41:36] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:41:36] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 15:41:36] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 15:41:36] [INFO] Started 7200s grace period for kernel-branch-switch (requested by kernel)
+[2025-08-27 15:41:36] [INFO] Executing kernel-branch-switch (called by kernel)
+[2025-08-27 15:41:36] [INFO] Kernel branch switch requested: target=stable, action=recommend
+[2025-08-27 15:41:36] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:41:36] [INFO] Valid target branch: stable
+[2025-08-27 15:41:36] [INFO] Providing kernel branch switching recommendations
+[2025-08-27 15:41:36] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:41:36] [INFO] Target branch: stable
+[2025-08-27 15:41:36] [INFO] Checking available kernels for branch: stable
+[2025-08-27 15:41:36] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:41:36] [INFO] Target package: linux-image-generic
+[2025-08-27 15:41:36] [INFO] Target kernel package 'linux-image-generic' is available
+[2025-08-27 15:41:36] [INFO] Target kernel package 'linux-image-generic' is available but not installed
+[2025-08-27 15:41:36] [INFO] RECOMMENDATION: Install stable kernel branch
+[2025-08-27 15:41:36] [INFO] COMMAND: sudo apt update && sudo apt install linux-image-generic
+[2025-08-27 15:41:36] [INFO] COMMAND: sudo update-grub
+[2025-08-27 15:41:36] [INFO] RECOMMENDATION: Reboot after installation
+[2025-08-27 15:41:36] [INFO] STABLE BRANCH: Recommended for production environments
+[2025-08-27 15:41:36] [INFO] BENEFITS: Better hardware compatibility, fewer driver issues
+[2025-08-27 15:41:36] [INFO] HARDWARE NOTE: Intel i915 graphics work best with stable or longterm kernels
+[2025-08-27 15:41:36] [INFO] CURRENT ISSUE: Development kernels may cause HDMI detection problems
+[2025-08-27 15:41:36] [INFO] Successfully executed kernel-branch-switch
+[2025-08-27 15:43:25] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:43:25] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:43:25] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:43:25] [WARN] kernel-branch-switch.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:43:25] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:43:25] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:43:25] [WARN] kernel-branch-switch.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:43:25] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:43:25] [INFO] Kernel branch switch requested by --force with kernels grace period
+[2025-08-27 15:43:25] [INFO] Autofix request: kernel-branch-switch from module --force with kernels grace period
+[2025-08-27 15:43:25] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:43:25] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:43:25] [WARN] Grace period check bypassed due to --force flag
+[2025-08-27 15:43:25] [INFO] Started kernels grace period for kernel-branch-switch (requested by --force)
+[2025-08-27 15:43:25] [INFO] Executing kernel-branch-switch (called by --force)
+[2025-08-27 15:43:25] [INFO] Kernel branch switch requested: target=7200, action=stable
+[2025-08-27 15:43:25] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:43:25] [ERROR] Invalid target branch: 7200
+[2025-08-27 15:43:25] [ERROR] Valid options: stable, longterm, mainline, linux-next
+[2025-08-27 15:43:25] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 15:44:35] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:44:35] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:44:35] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:44:35] [WARN] kernel-branch-switch.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:44:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:44:35] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 15:44:35] [WARN] kernel-branch-switch.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:44:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:44:35] [INFO] Kernel branch switch requested by --force with kernels grace period
+[2025-08-27 15:44:35] [INFO] Autofix request: kernel-branch-switch from module --force with kernels grace period
+[2025-08-27 15:44:35] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:44:35] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:44:35] [WARN] Grace period check bypassed due to --force flag
+[2025-08-27 15:44:35] [INFO] Started kernels grace period for kernel-branch-switch (requested by --force)
+[2025-08-27 15:44:35] [INFO] Executing kernel-branch-switch (called by --force)
+[2025-08-27 15:44:35] [INFO] Kernel branch switch requested: target=7200, action=stable
+[2025-08-27 15:44:35] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:44:35] [ERROR] Invalid target branch: 7200
+[2025-08-27 15:44:35] [ERROR] Valid options: stable, longterm, mainline, linux-next
+[2025-08-27 15:44:35] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 15:57:30] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:57:30] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:57:30] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:57:30] [INFO] test-config-dummy.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:57:30] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:57:30] [INFO] Initialized test-config-dummy.sh: module=kernel, grace=60
+[2025-08-27 15:57:30] [INFO] test-config-dummy.sh: DRY-RUN MODE ENABLED - No dangerous operations will be performed
+[2025-08-27 15:57:30] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:57:30] [INFO] Test config dummy requested by --dry-run with kernels grace period
+[2025-08-27 15:57:30] [INFO] Autofix request: test-config-dummy from module --dry-run with kernels grace period
+[2025-08-27 15:57:30] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:57:30] [INFO] About to call is_autofix_enabled('test-config-dummy') - AUTOFIX='true'
+[2025-08-27 15:57:30] [DEBUG] Checking grace period for test-config-dummy (module: --dry-run, grace: kernels, freq: 120s)
+[2025-08-27 15:57:36] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:57:36] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:57:36] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:57:36] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:57:36] [INFO] Initialized test-config-dummy.sh: module=kernel, grace=60
+[2025-08-27 15:57:36] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:57:36] [INFO] Test config dummy requested by kernel with 60s grace period
+[2025-08-27 15:57:36] [INFO] Autofix request: test-config-dummy from module kernel with 60s grace period
+[2025-08-27 15:57:36] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:57:36] [INFO] About to call is_autofix_enabled('test-config-dummy') - AUTOFIX='true'
+[2025-08-27 15:57:36] [DEBUG] Checking grace period for test-config-dummy (module: kernel, grace: 60s, freq: 120s)
+[2025-08-27 15:57:36] [DEBUG] Grace period check: elapsed=1171s, total_grace=180s, recorded_module=test
+[2025-08-27 15:57:36] [DEBUG] Grace period expired for test-config-dummy - proceeding
+[2025-08-27 15:57:36] [INFO] Started 60s grace period for test-config-dummy (requested by kernel)
+[2025-08-27 15:57:36] [INFO] Executing test-config-dummy (called by kernel)
+[2025-08-27 15:57:36] [INFO] Starting configuration test: config
+[2025-08-27 15:57:36] [INFO] Test message: test ubuntu helper config loading
+[2025-08-27 15:57:36] [INFO] Called by: kernel
+[2025-08-27 15:57:36] [INFO] Grace period: 60s
+[2025-08-27 15:57:36] [INFO] Created test directory: /tmp/modular-monitor-test
+[2025-08-27 15:57:36] [INFO] Creating test file: /tmp/modular-monitor-test/config-test-1756335456.txt
+[2025-08-27 15:57:36] [INFO] Test file created successfully: /tmp/modular-monitor-test/config-test-1756335456.txt
+[2025-08-27 15:57:36] [INFO] File contents:
+[2025-08-27 15:57:36] [INFO]   # Modular Monitor Configuration Test
+[2025-08-27 15:57:36] [INFO]   # Generated: Wed Aug 27 03:57:36 PM PDT 2025
+[2025-08-27 15:57:36] [INFO]   # Epoch: 1756335456
+[2025-08-27 15:57:36] [INFO]   # Test Type: config
+[2025-08-27 15:57:36] [INFO]   # Test Message: test ubuntu helper config loading
+[2025-08-27 15:57:36] [INFO]   # Called By: kernel
+[2025-08-27 15:57:36] [INFO]   # Grace Period: 60s
+[2025-08-27 15:57:36] [INFO]   
+[2025-08-27 15:57:36] [INFO]   # Configuration Values
+[2025-08-27 15:57:36] [INFO]   OS=ubuntu
+[2025-08-27 15:57:36] [INFO]   AUTOFIX=true
+[2025-08-27 15:57:36] [INFO]   DISABLE_AUTOFIX=emergency-shutdown disk-cleanup graphics display-autofix
+[2025-08-27 15:57:36] [INFO]   PREFERRED_KERNEL_BRANCH=stable
+[2025-08-27 15:57:36] [INFO]   PREFERRED_KERNEL_TRACK=<not set>
+[2025-08-27 15:57:36] [INFO]   GRAPHICS_CHIPSET=i915
+[2025-08-27 15:57:36] [INFO]   USE_MODULES=ALL
+[2025-08-27 15:57:36] [INFO]   
+[2025-08-27 15:57:36] [INFO]   # Helper Configuration (if applicable)
+[2025-08-27 15:57:36] [INFO]   UBUNTU_RELEASE_DETECTION=<not set>
+[2025-08-27 15:57:36] [INFO]   ENFORCE_TRACK_COMPLIANCE=<not set>
+[2025-08-27 15:57:36] [INFO]   INTEL_GRAPHICS_PREFERRED_TRACK=<not set>
+[2025-08-27 15:57:36] [INFO]   
+[2025-08-27 15:57:36] [INFO]   # Environment Variable Overrides (if any)
+[2025-08-27 15:57:36] [INFO]   ENV_OVERRIDE_AUTOFIX=true
+[2025-08-27 15:57:36] [INFO]   ENV_OVERRIDE_DISABLE_AUTOFIX=<not preserved>
+[2025-08-27 15:57:36] [INFO]   
+[2025-08-27 15:57:36] [INFO]   # Test Results
+[2025-08-27 15:57:36] [INFO]   Test completed successfully at Wed Aug 27 03:57:36 PM PDT 2025
+[2025-08-27 15:57:36] [INFO]   Configuration hierarchy working: YES
+[2025-08-27 15:57:36] [INFO]   Environment variable preservation: YES
+[2025-08-27 15:57:36] [INFO] Successfully executed test-config-dummy
+[2025-08-27 15:58:03] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:58:03] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:03] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:03] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:58:03] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 15:58:03] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 15:58:03] [INFO] Initialized test-config-dummy.sh: module=kernel, grace=60
+[2025-08-27 15:58:03] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:58:03] [INFO] Test config dummy requested by kernel with 60s grace period
+[2025-08-27 15:58:03] [INFO] Autofix request: test-config-dummy from module kernel with 60s grace period
+[2025-08-27 15:58:03] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:58:03] [INFO] About to call is_autofix_enabled('test-config-dummy') - AUTOFIX='true'
+[2025-08-27 15:58:03] [DEBUG] Checking grace period for test-config-dummy (module: kernel, grace: 60s, freq: 120s)
+[2025-08-27 15:58:03] [DEBUG] Grace period check: elapsed=27s, total_grace=180s, recorded_module=kernel
+[2025-08-27 15:58:03] [INFO] Action test-config-dummy is in grace period (153s remaining, originally requested by kernel)
+[2025-08-27 15:58:03] [INFO] Skipping test-config-dummy - still in grace period
+[2025-08-27 15:58:13] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:58:13] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:13] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:13] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:58:13] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 15:58:13] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 15:58:13] [INFO] Initialized test-config-dummy.sh: module=kernel, grace=60
+[2025-08-27 15:58:13] [DEBUG] test-config-dummy.sh: Valid arguments - module=kernel, grace=60s, mode=LIVE MODE
+[2025-08-27 15:58:13] [INFO] Test config dummy requested by kernel with 60s grace period
+[2025-08-27 15:58:13] [INFO] Autofix request: test-config-dummy from module kernel with 60s grace period
+[2025-08-27 15:58:13] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:58:13] [INFO] About to call is_autofix_enabled('test-config-dummy') - AUTOFIX='true'
+[2025-08-27 15:58:13] [DEBUG] Checking grace period for test-config-dummy (module: kernel, grace: 60s, freq: 120s)
+[2025-08-27 15:58:13] [DEBUG] No existing grace file for test-config-dummy - proceeding
+[2025-08-27 15:58:13] [INFO] Started 60s grace period for test-config-dummy (requested by kernel)
+[2025-08-27 15:58:13] [INFO] Executing test-config-dummy (called by kernel)
+[2025-08-27 15:58:13] [INFO] Starting configuration test: config
+[2025-08-27 15:58:13] [INFO] Test message: test ubuntu helper config loading
+[2025-08-27 15:58:13] [INFO] Called by: kernel
+[2025-08-27 15:58:13] [INFO] Grace period: 60s
+[2025-08-27 15:58:13] [INFO] Created test directory: /tmp/modular-monitor-test
+[2025-08-27 15:58:13] [INFO] Creating test file: /tmp/modular-monitor-test/config-test-1756335493.txt
+[2025-08-27 15:58:13] [INFO] Test file created successfully: /tmp/modular-monitor-test/config-test-1756335493.txt
+[2025-08-27 15:58:13] [INFO] File contents:
+[2025-08-27 15:58:13] [INFO]   # Modular Monitor Configuration Test
+[2025-08-27 15:58:13] [INFO]   # Generated: Wed Aug 27 03:58:13 PM PDT 2025
+[2025-08-27 15:58:13] [INFO]   # Epoch: 1756335493
+[2025-08-27 15:58:13] [INFO]   # Test Type: config
+[2025-08-27 15:58:13] [INFO]   # Test Message: test ubuntu helper config loading
+[2025-08-27 15:58:13] [INFO]   # Called By: kernel
+[2025-08-27 15:58:13] [INFO]   # Grace Period: 60s
+[2025-08-27 15:58:13] [INFO]   
+[2025-08-27 15:58:13] [INFO]   # Configuration Values
+[2025-08-27 15:58:13] [INFO]   OS=ubuntu
+[2025-08-27 15:58:13] [INFO]   AUTOFIX=true
+[2025-08-27 15:58:13] [INFO]   DISABLE_AUTOFIX=emergency-shutdown disk-cleanup graphics display-autofix
+[2025-08-27 15:58:13] [INFO]   PREFERRED_KERNEL_BRANCH=stable
+[2025-08-27 15:58:13] [INFO]   PREFERRED_KERNEL_TRACK=LTS
+[2025-08-27 15:58:13] [INFO]   GRAPHICS_CHIPSET=i915
+[2025-08-27 15:58:13] [INFO]   USE_MODULES=ALL
+[2025-08-27 15:58:13] [INFO]   
+[2025-08-27 15:58:13] [INFO]   # Helper Configuration (if applicable)
+[2025-08-27 15:58:13] [INFO]   UBUNTU_RELEASE_DETECTION=true
+[2025-08-27 15:58:13] [INFO]   ENFORCE_TRACK_COMPLIANCE=true
+[2025-08-27 15:58:14] [INFO]   INTEL_GRAPHICS_PREFERRED_TRACK=LTS
+[2025-08-27 15:58:14] [INFO]   
+[2025-08-27 15:58:14] [INFO]   # Environment Variable Overrides (if any)
+[2025-08-27 15:58:14] [INFO]   ENV_OVERRIDE_AUTOFIX=true
+[2025-08-27 15:58:14] [INFO]   ENV_OVERRIDE_DISABLE_AUTOFIX=emergency-shutdown disk-cleanup graphics display-autofix
+[2025-08-27 15:58:14] [INFO]   
+[2025-08-27 15:58:14] [INFO]   # Test Results
+[2025-08-27 15:58:14] [INFO]   Test completed successfully at Wed Aug 27 03:58:13 PM PDT 2025
+[2025-08-27 15:58:14] [INFO]   Configuration hierarchy working: YES
+[2025-08-27 15:58:14] [INFO]   Environment variable preservation: YES
+[2025-08-27 15:58:14] [INFO] Successfully executed test-config-dummy
+[2025-08-27 15:58:47] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:58:47] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:47] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:47] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:58:47] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 15:58:48] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 15:58:48] [INFO] Initialized ubuntu.sh: module=kernel, grace=7200
+[2025-08-27 15:58:48] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 15:58:48] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 15:58:48] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 15:58:48] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:58:48] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:58:48] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 15:58:48] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 15:58:48] [INFO] Started 7200s grace period for kernel-branch-switch (requested by kernel)
+[2025-08-27 15:58:48] [INFO] Executing kernel-branch-switch (called by kernel)
+[2025-08-27 15:58:48] [INFO] Kernel branch switch requested: target=LTS, action=recommend
+[2025-08-27 15:58:48] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:58:48] [INFO] Valid Ubuntu kernel track: LTS
+[2025-08-27 15:58:48] [INFO] Providing kernel branch switching recommendations
+[2025-08-27 15:58:48] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:58:48] [INFO] Target branch: LTS
+[2025-08-27 15:58:48] [INFO] Checking available kernels for branch: LTS
+[2025-08-27 15:58:48] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:58:48] [INFO] Target package: linux-image-generic
+[2025-08-27 15:58:48] [INFO] Target kernel package 'linux-image-generic' is available
+[2025-08-27 15:58:48] [INFO] Target kernel package 'linux-image-generic' is available but not installed
+[2025-08-27 15:58:48] [INFO] RECOMMENDATION: Install LTS kernel branch
+[2025-08-27 15:58:48] [INFO] COMMAND: sudo apt update && sudo apt install linux-image-generic
+[2025-08-27 15:58:48] [INFO] COMMAND: sudo update-grub
+[2025-08-27 15:58:48] [INFO] RECOMMENDATION: Reboot after installation
+[2025-08-27 15:58:48] [INFO] HARDWARE NOTE: Intel i915 graphics work best with stable or longterm kernels
+[2025-08-27 15:58:48] [INFO] CURRENT ISSUE: Development kernels may cause HDMI detection problems
+[2025-08-27 15:58:48] [INFO] Successfully executed kernel-branch-switch
+[2025-08-27 15:58:55] [DEBUG] Autofix common functions loaded
+[2025-08-27 15:58:55] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:55] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 15:58:55] [WARN] ubuntu.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:58:55] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:58:55] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 15:58:55] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 15:58:55] [INFO] Initialized ubuntu.sh: module=kernel, grace=7200
+[2025-08-27 15:58:55] [WARN] ubuntu.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 15:58:55] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=60s, mode=DRY-RUN MODE
+[2025-08-27 15:58:55] [INFO] Kernel branch switch requested by --force with kernels grace period
+[2025-08-27 15:58:55] [INFO] Autofix request: kernel-branch-switch from module --force with kernels grace period
+[2025-08-27 15:58:55] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 15:58:55] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 15:58:55] [WARN] Grace period check bypassed due to --force flag
+[2025-08-27 15:58:55] [INFO] Started kernels grace period for kernel-branch-switch (requested by --force)
+[2025-08-27 15:58:55] [INFO] Executing kernel-branch-switch (called by --force)
+[2025-08-27 15:58:55] [INFO] Kernel branch switch requested: target=7200, action=LTS
+[2025-08-27 15:58:55] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 15:58:55] [ERROR] Invalid kernel track: 7200
+[2025-08-27 15:58:55] [ERROR] Valid Ubuntu tracks: GA, HWE, LTS, OEM, lowlatency, mainline
+[2025-08-27 15:58:55] [ERROR] Legacy tracks: stable, longterm, linux-next
+[2025-08-27 15:58:55] [ERROR] Failed to execute kernel-branch-switch (exit code: 1)
+[2025-08-27 16:39:58] [DEBUG] Autofix common functions loaded
+[2025-08-27 16:39:58] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 16:39:58] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 16:39:58] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 16:39:58] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 16:39:58] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 16:39:58] [INFO] Initialized ubuntu.sh: module=kernel, grace=7200
+[2025-08-27 16:39:58] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 16:39:58] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 16:39:58] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 16:39:58] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 16:39:58] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 16:39:58] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 16:39:58] [DEBUG] Grace period check: elapsed=2463s, total_grace=7320s, recorded_module=--force
+[2025-08-27 16:39:58] [INFO] Action kernel-branch-switch is in grace period (4857s remaining, originally requested by --force)
+[2025-08-27 16:39:58] [INFO] Skipping kernel-branch-switch - still in grace period
+[2025-08-27 16:40:04] [DEBUG] Autofix common functions loaded
+[2025-08-27 16:40:04] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 16:40:04] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 16:40:04] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 16:40:04] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 16:40:04] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 16:40:04] [INFO] Initialized ubuntu.sh: module=kernel, grace=7200
+[2025-08-27 16:40:04] [DEBUG] ubuntu.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 16:40:04] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 16:40:04] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 16:40:04] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 16:40:04] [INFO] About to call is_autofix_enabled('kernel-branch-switch') - AUTOFIX='true'
+[2025-08-27 16:40:05] [DEBUG] Checking grace period for kernel-branch-switch (module: kernel, grace: 7200s, freq: 120s)
+[2025-08-27 16:40:05] [DEBUG] No existing grace file for kernel-branch-switch - proceeding
+[2025-08-27 16:40:05] [INFO] Started 7200s grace period for kernel-branch-switch (requested by kernel)
+[2025-08-27 16:40:05] [INFO] Executing kernel-branch-switch (called by kernel)
+[2025-08-27 16:40:05] [INFO] Kernel branch switch requested: target=LTS, action=install
+[2025-08-27 16:40:05] [INFO] Current kernel: 6.14.0-29-generic
+[2025-08-27 16:40:05] [INFO] Valid Ubuntu kernel track: LTS
+[2025-08-27 16:40:05] [INFO] Installing kernel branch: LTS (package: linux-image-generic)
+[2025-08-27 16:40:05] [WARN] Kernel installation requires root privileges - providing recommendation
+[2025-08-27 16:40:05] [INFO] RECOMMENDATION: Install LTS kernel with: sudo apt install linux-image-generic
+[2025-08-27 16:40:05] [INFO] RECOMMENDATION: After installation, run: sudo update-grub
+[2025-08-27 16:40:05] [INFO] RECOMMENDATION: Reboot to activate new kernel
+[2025-08-27 16:40:05] [INFO] Successfully executed kernel-branch-switch
+[2025-08-27 17:07:46] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:07:58] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:07:58] [DEBUG] i915-grub-flags.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:07:58] [INFO] i915 GRUB flags requested by manual with 3600s grace period
+[2025-08-27 17:07:58] [INFO] Autofix request: i915-grub-flags from module manual with 3600s grace period
+[2025-08-27 17:07:58] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:07:58] [INFO] About to call is_autofix_enabled('i915-grub-flags') - AUTOFIX='true'
+[2025-08-27 17:07:58] [DEBUG] Checking grace period for i915-grub-flags (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:07:58] [DEBUG] No existing grace file for i915-grub-flags - proceeding
+[2025-08-27 17:07:58] [INFO] Started 3600s grace period for i915-grub-flags (requested by manual)
+[2025-08-27 17:07:58] [INFO] Executing i915-grub-flags (called by manual)
+[2025-08-27 17:07:58] [INFO] Starting i915 GRUB flags application
+[2025-08-27 17:07:58] [INFO] i915 GRUB flags already present in configuration
+[2025-08-27 17:07:58] [INFO] Successfully executed i915-grub-flags
+[2025-08-27 17:08:04] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:04] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:04] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:04] [ERROR] graphics-autofix.sh: Invalid grace period 'critical' (must be numeric seconds)
+[2025-08-27 17:08:10] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:10] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:10] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:10] [DEBUG] graphics-autofix.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:08:10] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:08:10] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:08:10] [INFO] Initialized graphics-autofix.sh: module=manual, grace=3600
+[2025-08-27 17:08:10] [INFO] Graphics autofix requested by manual with 3600s grace period
+[2025-08-27 17:08:10] [INFO] Autofix request: graphics from module manual with 3600s grace period
+[2025-08-27 17:08:10] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:08:10] [INFO] About to call is_autofix_enabled('graphics') - AUTOFIX='true'
+[2025-08-27 17:08:10] [INFO] AUTOFIX SELECTIVELY DISABLED - graphics is disabled by configuration
+[2025-08-27 17:08:10] [INFO] Would execute: graphics
+[2025-08-27 17:08:10] [INFO] Called by: manual
+[2025-08-27 17:08:10] [INFO] Grace period: 3600s
+[2025-08-27 17:08:10] [INFO] Function: perform_graphics_autofix
+[2025-08-27 17:08:10] [INFO] Arguments: driver_error critical
+[2025-08-27 17:08:10] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'graphics' was requested by 'manual' but is disabled by configuration. Set AUTOFIX=true environment variable to override
+[2025-08-27 17:08:19] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:19] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:19] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:19] [DEBUG] graphics-autofix.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:08:19] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:08:19] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:08:19] [INFO] Initialized graphics-autofix.sh: module=manual, grace=3600
+[2025-08-27 17:08:19] [INFO] Graphics autofix requested by manual with 3600s grace period
+[2025-08-27 17:08:19] [INFO] Autofix request: graphics from module manual with 3600s grace period
+[2025-08-27 17:08:19] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:08:20] [INFO] About to call is_autofix_enabled('graphics') - AUTOFIX='true'
+[2025-08-27 17:08:20] [DEBUG] Checking grace period for graphics (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:08:20] [DEBUG] No existing grace file for graphics - proceeding
+[2025-08-27 17:08:20] [INFO] Started 3600s grace period for graphics (requested by manual)
+[2025-08-27 17:08:20] [INFO] Executing graphics (called by manual)
+[2025-08-27 17:08:20] [INFO] Graphics autofix requested: driver_error (critical) for chipset: i915
+[2025-08-27 17:08:20] [ERROR] Graphics helper script not found: /home/gypsy/dev/gypsys-cli-tools/system/modular-monitoring/modules/graphics_helpers/i915.sh
+[2025-08-27 17:08:20] [ERROR] Graphics helper validation failed for chipset: i915
+[2025-08-27 17:08:20] [ERROR] Failed to execute graphics (exit code: 1)
+[2025-08-27 17:08:34] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:34] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:35] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:35] [DEBUG] graphics-autofix.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:08:35] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:08:35] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:08:35] [INFO] Initialized graphics-autofix.sh: module=manual, grace=3600
+[2025-08-27 17:08:35] [INFO] Graphics autofix requested by manual with 3600s grace period
+[2025-08-27 17:08:35] [INFO] Autofix request: graphics from module manual with 3600s grace period
+[2025-08-27 17:08:35] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:08:35] [INFO] About to call is_autofix_enabled('graphics') - AUTOFIX='true'
+[2025-08-27 17:08:35] [DEBUG] Checking grace period for graphics (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:08:35] [DEBUG] Grace period check: elapsed=15s, total_grace=3720s, recorded_module=manual
+[2025-08-27 17:08:35] [INFO] Action graphics is in grace period (3705s remaining, originally requested by manual)
+[2025-08-27 17:08:35] [INFO] Skipping graphics - still in grace period
+[2025-08-27 17:08:42] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:42] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:42] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:42] [WARN] graphics-autofix.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 17:08:47] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:47] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:47] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:47] [WARN] graphics-autofix.sh: FORCE MODE ENABLED - Bypassing grace period checks
+[2025-08-27 17:08:47] [DEBUG] graphics-autofix.sh: Valid arguments - module=manual, grace=60s, mode=LIVE MODE
+[2025-08-27 17:08:47] [INFO] Initialized graphics-autofix.sh: module=--force, grace=manual
+[2025-08-27 17:08:47] [INFO] Graphics autofix requested by --force with manuals grace period
+[2025-08-27 17:08:47] [INFO] Autofix request: graphics from module --force with manuals grace period
+[2025-08-27 17:08:47] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:08:47] [INFO] About to call is_autofix_enabled('graphics') - AUTOFIX='true'
+[2025-08-27 17:08:47] [WARN] Grace period check bypassed due to --force flag
+[2025-08-27 17:08:47] [INFO] Started manuals grace period for graphics (requested by --force)
+[2025-08-27 17:08:47] [INFO] Executing graphics (called by --force)
+[2025-08-27 17:08:47] [INFO] Graphics autofix requested: 3600 (driver_error) for chipset: i915
+[2025-08-27 17:08:47] [ERROR] Graphics helper script not found: /home/gypsy/dev/gypsys-cli-tools/system/modular-monitoring/modules/graphics_helpers/i915.sh
+[2025-08-27 17:08:47] [ERROR] Graphics helper validation failed for chipset: i915
+[2025-08-27 17:08:47] [ERROR] Failed to execute graphics (exit code: 1)
+[2025-08-27 17:08:52] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:08:52] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:52] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:08:52] [DEBUG] i915.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:08:52] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:08:52] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:08:52] [INFO] Initialized i915.sh: module=manual, grace=3600
+[2025-08-27 17:08:52] [INFO] Intel i915 graphics autofix requested by manual with 3600s grace period
+[2025-08-27 17:08:52] [INFO] Autofix request: i915-graphics from module manual with 3600s grace period
+[2025-08-27 17:08:52] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:08:52] [INFO] About to call is_autofix_enabled('i915-graphics') - AUTOFIX='true'
+[2025-08-27 17:08:52] [DEBUG] Checking grace period for i915-graphics (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:08:52] [DEBUG] No existing grace file for i915-graphics - proceeding
+[2025-08-27 17:08:52] [INFO] Started 3600s grace period for i915-graphics (requested by manual)
+[2025-08-27 17:08:52] [INFO] Executing i915-graphics (called by manual)
+[2025-08-27 17:08:52] [INFO] Intel i915 autofix initiated: driver_error (critical)
+[2025-08-27 17:08:52] [INFO] Handling Intel driver error (severity: critical)
+[2025-08-27 17:08:52] [INFO] Intel i915 autofix completed successfully for driver_error (critical)
+[2025-08-27 17:08:52] [INFO] Successfully executed i915-graphics
+[2025-08-27 17:09:53] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:09:53] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:09:53] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:09:53] [DEBUG] display-autofix.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:09:53] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:09:53] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:09:53] [INFO] Initialized display-autofix.sh: module=manual, grace=3600
+[2025-08-27 17:09:53] [INFO] Display autofix requested by manual with 3600s grace period
+[2025-08-27 17:09:53] [INFO] Autofix request: display-autofix from module manual with 3600s grace period
+[2025-08-27 17:09:53] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:09:53] [INFO] About to call is_autofix_enabled('display-autofix') - AUTOFIX='true'
+[2025-08-27 17:09:53] [DEBUG] Checking grace period for display-autofix (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:09:53] [DEBUG] No existing grace file for display-autofix - proceeding
+[2025-08-27 17:09:53] [INFO] Started 3600s grace period for display-autofix (requested by manual)
+[2025-08-27 17:09:53] [INFO] Executing display-autofix (called by manual)
+[2025-08-27 17:09:53] [INFO] Display autofix requested: multi_monitor (critical)
+[2025-08-27 17:09:53] [ERROR] No display autofix helper available for: wayland
+[2025-08-27 17:09:53] [ERROR] Failed to execute display-autofix (exit code: 1)
+[2025-08-27 17:10:01] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:10:01] [INFO] About to source modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:10:01] [INFO] After sourcing modules/common.sh - AUTOFIX='true'
+[2025-08-27 17:10:01] [DEBUG] wayland.sh: Valid arguments - module=manual, grace=3600s, mode=LIVE MODE
+[2025-08-27 17:10:01] [DEBUG] Loading module and helper configs for: manual
+[2025-08-27 17:10:01] [DEBUG] Module and helper configs loaded for: manual
+[2025-08-27 17:10:01] [INFO] Initialized wayland.sh: module=manual, grace=3600
+[2025-08-27 17:10:01] [INFO] Wayland display autofix requested by manual with 3600s grace period
+[2025-08-27 17:10:01] [INFO] Autofix request: wayland-display-autofix from module manual with 3600s grace period
+[2025-08-27 17:10:01] [INFO] About to call is_autofix_enabled() - AUTOFIX='true'
+[2025-08-27 17:10:01] [INFO] About to call is_autofix_enabled('wayland-display-autofix') - AUTOFIX='true'
+[2025-08-27 17:10:01] [DEBUG] Checking grace period for wayland-display-autofix (module: manual, grace: 3600s, freq: 120s)
+[2025-08-27 17:10:01] [DEBUG] No existing grace file for wayland-display-autofix - proceeding
+[2025-08-27 17:10:01] [INFO] Started 3600s grace period for wayland-display-autofix (requested by manual)
+[2025-08-27 17:10:01] [INFO] Executing wayland-display-autofix (called by manual)
+[2025-08-27 17:10:01] [INFO] Wayland autofix initiated: multi_monitor (critical)
+[2025-08-27 17:10:01] [INFO] Detected Wayland compositor: kwin
+[2025-08-27 17:10:01] [INFO] Handling generic Wayland display error (severity: critical)
+[2025-08-27 17:10:01] [INFO] Wayland autofix completed successfully for multi_monitor (critical)
+[2025-08-27 17:10:01] [INFO] Successfully executed wayland-display-autofix
+[2025-08-27 17:45:35] [DEBUG] Autofix common functions loaded
+[2025-08-27 17:45:35] [INFO] About to source modules/common.sh - AUTOFIX='<unset>'
+[2025-08-27 17:45:35] [INFO] After sourcing modules/common.sh - AUTOFIX='<unset>'
+[2025-08-27 17:45:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 17:45:35] [DEBUG] Loading module and helper configs for: kernel
+[2025-08-27 17:45:35] [DEBUG] Module and helper configs loaded for: kernel
+[2025-08-27 17:45:35] [INFO] Initialized kernel-branch-switch.sh: module=kernel, grace=7200
+[2025-08-27 17:45:35] [DEBUG] kernel-branch-switch.sh: Valid arguments - module=kernel, grace=7200s, mode=LIVE MODE
+[2025-08-27 17:45:35] [INFO] Kernel branch switch requested by kernel with 7200s grace period
+[2025-08-27 17:45:35] [INFO] Autofix request: kernel-branch-switch from module kernel with 7200s grace period
+[2025-08-27 17:45:35] [INFO] About to call is_autofix_enabled() - AUTOFIX='false'
+[2025-08-27 17:45:35] [INFO] AUTOFIX DISABLED - Log-only mode active
+[2025-08-27 17:45:35] [INFO] Would execute: kernel-branch-switch
+[2025-08-27 17:45:35] [INFO] Called by: kernel
+[2025-08-27 17:45:35] [INFO] Grace period: 7200s
+[2025-08-27 17:45:35] [INFO] Function: perform_kernel_branch_switch
+[2025-08-27 17:45:35] [INFO] Arguments: 
+[2025-08-27 17:45:35] [INFO] AUTOFIX is disabled in system configuration - no action taken
+[2025-08-27 17:45:36] [INFO] NOTIFICATION: 🚫 Autofix Disabled - Action 'kernel-branch-switch' was requested by 'kernel' but autofix is globally disabled. Enable in config/SYSTEM.conf
