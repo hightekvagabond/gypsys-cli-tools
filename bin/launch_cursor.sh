@@ -851,6 +851,55 @@ launch_missing_sessions() {
 }
 
 # =============================================================================
+# FUNCTION: is_current_directory_a_project
+# =============================================================================
+# PURPOSE: Check if the current directory appears to be a project folder
+# RETURNS: 0 if current directory is likely a project, 1 if not
+# LOGIC:
+#   1. Checks for common project indicators like .git, package.json, etc.
+#   2. Ensures we're not in a system directory
+# =============================================================================
+is_current_directory_a_project() {
+    local current_dir=$(pwd)
+    
+    # Don't consider system directories as projects
+    if [[ "$current_dir" == "/" || "$current_dir" == "/home" || "$current_dir" == "$HOME" || "$current_dir" == "/tmp" || "$current_dir" == "/usr" || "$current_dir" == "/var" ]]; then
+        return 1
+    fi
+    
+    # Check for common project indicators
+    if [[ -d ".git" ]] || \
+       [[ -f "package.json" ]] || \
+       [[ -f "requirements.txt" ]] || \
+       [[ -f "Cargo.toml" ]] || \
+       [[ -f "go.mod" ]] || \
+       [[ -f "pom.xml" ]] || \
+       [[ -f "build.gradle" ]] || \
+       [[ -f "Makefile" ]] || \
+       [[ -f "CMakeLists.txt" ]] || \
+       [[ -f ".project" ]] || \
+       [[ -f "composer.json" ]] || \
+       [[ -f "setup.py" ]] || \
+       [[ -f "pyproject.toml" ]] || \
+       [[ -f "Dockerfile" ]] || \
+       [[ -f ".gitignore" ]] || \
+       [[ -f "README.md" ]] || \
+       [[ -f "README.rst" ]] || \
+       [[ -f "LICENSE" ]] || \
+       [[ -d "src" ]] || \
+       [[ -d "lib" ]] || \
+       [[ -d "app" ]] || \
+       [[ -d "components" ]] || \
+       [[ -d "node_modules" ]] || \
+       [[ -d ".vscode" ]] || \
+       [[ -d ".idea" ]]; then
+        return 0
+    fi
+    
+    return 1
+}
+
+# =============================================================================
 # FUNCTION: open_cursor_for_workspace
 # =============================================================================
 # PURPOSE: Opens Cursor IDE for the current workspace's associated project
@@ -875,6 +924,58 @@ open_cursor_for_workspace() {
         echo "No project configured for '$workspace'. Opening blank..."
         launch_cursor_process
     fi
+}
+
+# =============================================================================
+# FUNCTION: open_cursor_with_smart_defaults
+# =============================================================================
+# PURPOSE: Opens Cursor with intelligent default behavior
+# LOGIC:
+#   1. Check if we have a project designated to this workspace
+#   2. If so, open that project
+#   3. Check if the current directory is a project folder, if so treat it as --here
+#   4. If none of those are true, treat it as --new
+# DEPENDENCIES: jq, cursor binary
+# =============================================================================
+open_cursor_with_smart_defaults() {
+    local workspace=$(get_current_workspace)
+    
+    # Step 1 & 2: Check if we have a project designated to this workspace
+    local project=""
+    if [[ -f "$CONFIG" ]]; then
+        project=$(jq -r --arg ws "$workspace" '.[$ws] // empty' "$CONFIG" 2>/dev/null)
+    fi
+    
+    if [[ -n "$project" && -d "$project" ]]; then
+        echo "🎯 Found configured project for workspace '$workspace': $project"
+        echo "🚀 Launching Cursor with configured project..."
+        launch_cursor_process "$project"
+        return 0
+    fi
+    
+    # Step 3: Check if the current directory is a project folder
+    if is_current_directory_a_project; then
+        local current_dir=$(pwd)
+        echo "📁 Current directory appears to be a project: $current_dir"
+        echo "🚀 Launching Cursor with current directory (--here behavior)..."
+        launch_cursor_process "$current_dir"
+        return 0
+    fi
+    
+    # Step 4: Default to --new behavior
+    echo "🆕 No workspace mapping found and current directory doesn't appear to be a project"
+    echo "🚀 Launching new Cursor instance (--new behavior)..."
+    echo "💡 Use Ctrl+R (or Cmd+R on macOS) to open recent projects"
+    echo "💡 Or use File > Open Folder to browse for a project"
+    
+    # Force Cursor to open a new window (may still show last session, but allows project selection)
+    local original_args="$ARGS"
+    ARGS="$ARGS --new-window"
+    
+    launch_cursor_process
+    
+    # Restore original ARGS
+    ARGS="$original_args"
 }
 
 # =============================================================================
@@ -1179,12 +1280,12 @@ show_help() {
 🚀 CURSOR WORKSPACE LAUNCHER
 
 USAGE:
-    $0                    # Launch Cursor for current workspace's mapped project (default)
+    $0                    # Smart default: Try workspace mapping, then current dir if it's a project, else new window
     $0 --here            # Launch Cursor with current working directory (pwd), ignoring workspace mappings
     $0 --all             # Restore Cursor sessions for all configured workspaces
     $0 --set             # Set Cursor mapping for current workspace only
     $0 --set-all         # Generate workspace-to-project mapping for all workspaces
-    $0 --new             # Launch new Cursor instance in current workspace
+    $0 --new             # Launch new Cursor window in current workspace (use Ctrl+R to pick project)
     $0 --new --init      # Launch new Cursor with current folder, then add to workspace mapping
     $0 --update           # Check for updates and prompt to restart if newer version available
     $0 --force-update     # Force check for updates and auto-restart if newer version available
@@ -1210,7 +1311,7 @@ EXAMPLES:
     # Launch Cursor for all configured workspaces (restore all sessions)
     $0 --all
     
-    # Launch new Cursor instance in current workspace (blank Cursor)
+    # Launch new Cursor window in current workspace (use Ctrl+R to pick project)
     $0 --new
     
     # Launch new Cursor with current folder, then add to workspace mapping
@@ -1307,7 +1408,10 @@ EOL
     to launch Cursor instances, wait for them to open, then return to your original workspace.
 
 BEHAVIOR:
-    - Default mode: Launches Cursor for the current workspace's mapped project
+    - Default mode: Smart defaults with 4-step logic:
+      1. Check if workspace has a mapped project - if so, open that project
+      2. Check if current directory is a project folder - if so, open current directory (--here behavior)
+      3. If neither, open new Cursor window for project selection (--new behavior)
     - --here mode: Launches Cursor with current working directory, ignoring workspace mappings
     - --all mode: Automatically checks for Cursor version updates first, then restores all sessions
     - If newer version available, offers to restart all Cursor instances with new version
@@ -1322,7 +1426,7 @@ BEHAVIOR:
     - Launches a new Cursor instance in the current workspace only
     - Does not affect other workspaces or existing Cursor instances
     - With --init: Opens Cursor with current directory, then adds to workspace mapping
-    - Without --init: Opens blank Cursor for project selection
+    - Without --init: Opens new Cursor window (use Ctrl+R to pick from recent projects)
 
 VERSION UPDATE FEATURE:
     ✨ SEAMLESS UPDATES: When updating Cursor versions, the script performs a "hot reload"
@@ -1421,13 +1525,25 @@ launch_new_cursor_instance() {
     else
         # Open blank Cursor for project selection
         echo "  📁 Opening blank Cursor for project selection in workspace '$current_workspace'..."
+        
+        # Force Cursor to open a new window (may still show last session, but allows project selection)
+        # This allows you to pick which project to open
+        local original_args="$ARGS"
+        ARGS="$ARGS --new-window"
+        
+        echo "  🔄 Opening new Cursor window..."
         launch_cursor_process
+        
+        # Restore original ARGS
+        ARGS="$original_args"
         
         # Wait for Cursor window to appear
         if wait_for_cursor_window "$current_workspace"; then
-            echo "  ✅ Blank Cursor opened successfully in workspace '$current_workspace'"
+            echo "  ✅ New Cursor window opened successfully in workspace '$current_workspace'"
+            echo "  💡 To pick a different project: Press Ctrl+R (or Cmd+R on macOS) to open recent projects"
+            echo "  💡 Or use File > Open Folder to browse for a project"
         else
-            echo "  ❌ Blank Cursor did not open in workspace '$current_workspace'"
+            echo "  ❌ New Cursor window did not open in workspace '$current_workspace'"
             exit 1
         fi
     fi
@@ -1992,7 +2108,7 @@ EOF
         launch_missing_sessions
         ;;
     "")
-        # Default: Launch Cursor for current workspace's mapped project
+        # Default: Launch Cursor with smart defaults
         if ! check_dependencies; then
             exit 1
         fi
@@ -2003,7 +2119,7 @@ EOF
             exit 1
         fi
         
-        open_cursor_for_workspace
+        open_cursor_with_smart_defaults
         ;;
     --new)
         # Launch new Cursor instance in current workspace
