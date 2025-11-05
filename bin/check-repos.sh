@@ -1,1 +1,0 @@
-../check-repos/check-repos.sh

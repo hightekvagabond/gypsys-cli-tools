@@ -1,1 +1,0 @@
-../git-private2public/git-private2public.sh
