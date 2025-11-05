@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Turtle Beach Stealth 600 Status Checker
+# Quickly check if the headset is connected and ready
+
+echo "=== Turtle Beach Stealth 600 Status ==="
+echo ""
+
+# Check USB dongle
+if lsusb | grep -q "10f5:2170"; then
+    echo "✅ USB Dongle: Detected"
+    USB_DEVICE=$(lsusb | grep "10f5:2170")
+    echo "   $USB_DEVICE"
+else
+    echo "❌ USB Dongle: Not detected"
+    echo "   Please plug in the USB dongle"
+    exit 1
+fi
+echo ""
+
+# Check if audio device exists
+if pactl list sinks short | grep -q "Turtle_Beach"; then
+    SINK_LINE=$(pactl list sinks short | grep "Turtle_Beach")
+    SINK_ID=$(echo "$SINK_LINE" | awk '{print $1}')
+    SINK_NAME=$(echo "$SINK_LINE" | awk '{print $2}')
+    STATUS=$(echo "$SINK_LINE" | awk '{print $NF}')  # Last field (NF = Number of Fields)
+    
+    echo "🔊 Audio Output Device:"
+    echo "   ID: $SINK_ID"
+    echo "   Name: $SINK_NAME"
+    echo "   Status: $STATUS"
+    
+    if [ "$STATUS" = "SUSPENDED" ]; then
+        echo "   ⚠️  Device is suspended"
+        echo ""
+        echo "   💡 To wake it up, run:"
+        echo "      turtle-beach-wake"
+        echo ""
+        echo "   Or simply play any audio - it should wake automatically"
+    elif [ "$STATUS" = "RUNNING" ]; then
+        echo "   ✅ Device is active and ready!"
+        
+        # Check if it's the default
+        DEFAULT=$(pactl info | grep "Default Sink" | awk '{print $3}')
+        if echo "$DEFAULT" | grep -q "Turtle_Beach"; then
+            echo "   ✅ Set as default output"
+        else
+            echo "   ⚠️  Not set as default (run: pactl set-default-sink $SINK_NAME)"
+        fi
+    fi
+else
+    echo "❌ Audio device not found"
+fi
+echo ""
+
+# Check microphone
+if pactl list sources short | grep -q "Turtle_Beach"; then
+    SOURCE=$(pactl list sources short | grep "Turtle_Beach" | grep "mono-fallback" | awk '{print $1" "$2}')
+    if [ -n "$SOURCE" ]; then
+        echo "🎤 Microphone Input:"
+        echo "   ID: $SOURCE"
+        
+        DEFAULT_SOURCE=$(pactl info | grep "Default Source" | awk '{print $3}')
+        if echo "$DEFAULT_SOURCE" | grep -q "Turtle_Beach"; then
+            echo "   ✅ Set as default input"
+        else
+            echo "   ⚠️  Not set as default (run: pactl set-default-source $SOURCE)"
+        fi
+    fi
+fi
+echo ""
+
+echo "=== Quick Setup Commands ==="
+TB_SINK="alsa_output.usb-Turtle_Beach_Stealth_600-00.analog-stereo"
+TB_SOURCE="alsa_input.usb-Turtle_Beach_Stealth_600-00.mono-fallback"
+echo "Set as default output:  pactl set-default-sink $TB_SINK"
+echo "Set as default input:   pactl set-default-source $TB_SOURCE"
+echo ""

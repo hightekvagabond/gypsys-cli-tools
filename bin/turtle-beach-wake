@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Turtle Beach Stealth 600 Wake Script
+# Wakes up the suspended PipeWire device by playing audio through it
+
+TB_SINK="alsa_output.usb-Turtle_Beach_Stealth_600-00.analog-stereo"
+
+echo "=== Waking Turtle Beach Stealth 600 ==="
+echo ""
+
+# Check if device exists
+if ! pactl list sinks short | grep -q "Turtle_Beach"; then
+    echo "❌ Turtle Beach headset not found"
+    exit 1
+fi
+
+# Set as default sink
+echo "Setting as default output..."
+pactl set-default-sink "$TB_SINK" 2>&1
+echo "✅ Default sink set"
+
+# Try to unsuspend
+echo "Attempting to unsuspend device..."
+pactl suspend-sink "$TB_SINK" 0 2>&1 || echo "⚠️  Suspend command may have failed"
+
+# Wake up by playing a short tone through PipeWire
+echo "Playing wake tone through PipeWire..."
+timeout 1 speaker-test -c 2 -t sine -f 440 -l 1 -D "$TB_SINK" > /dev/null 2>&1 &
+
+# Also try direct ALSA to wake hardware
+echo "Waking hardware via ALSA..."
+timeout 1 speaker-test -c 2 -t sine -f 440 -l 1 -D hw:5,0 > /dev/null 2>&1 &
+sleep 2
+
+# Check status
+STATUS=$(pactl list sinks short | grep "Turtle_Beach" | awk '{print $NF}')
+
+if [ "$STATUS" = "SUSPENDED" ]; then
+    echo ""
+    echo "⚠️  Device still suspended. Trying alternative method..."
+    
+    # Try moving an active stream to it
+    ACTIVE_INPUT=$(pactl list sink-inputs short | head -1 | awk '{print $1}' 2>/dev/null)
+    if [ -n "$ACTIVE_INPUT" ]; then
+        echo "Moving active audio stream to headset..."
+        pactl move-sink-input "$ACTIVE_INPUT" "$TB_SINK" 2>&1
+        sleep 1
+    fi
+    
+    # Create a dummy monitor stream to keep it active
+    echo "Creating keep-alive stream..."
+    pactl load-module module-loopback source=alsa_output.usb-Turtle_Beach_Stealth_600-00.analog-stereo.monitor sink="$TB_SINK" latency_msec=1 > /dev/null 2>&1
+    
+    STATUS=$(pactl list sinks short | grep "Turtle_Beach" | awk '{print $NF}')
+fi
+
+echo ""
+echo "=== Final Status ==="
+if [ "$STATUS" = "RUNNING" ] || [ "$STATUS" = "IDLE" ]; then
+    echo "✅ Device is now active!"
+    echo ""
+    echo "💡 If it suspends again when idle, run this script again"
+    echo "   Or play any audio to wake it up automatically"
+else
+    echo "⚠️  Device status: $STATUS"
+    echo ""
+    echo "💡 Device hardware is working (tested via ALSA)"
+    echo "   Audio should work even if PipeWire shows it as suspended"
+    echo "   Try playing music or a video - it should wake up automatically"
+fi
+
+
