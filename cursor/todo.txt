@@ -1,6 +1,0 @@
-1) lets make the extention so it is user configurable in the ide
-2) lets also lets let the user set up git and the upstream from the pop up if there is no git
-3) lets clean up the scripts we don't need and build detailed docs
-4) lets pick a more generic name and publish it to the vscode extention store
-
-
