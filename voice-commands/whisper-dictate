@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""
+Simple Whisper-based dictation tool
+Records audio, transcribes with Whisper, types the result
+"""
+import sys
+import os
+import tempfile
+import subprocess
+import signal
+
+# Add Whisper venv to path
+WHISPER_VENV = os.path.expanduser("~/.local/share/voice-commands-whisper-venv")
+sys.path.insert(0, os.path.join(WHISPER_VENV, "lib/python3.12/site-packages"))
+
+try:
+    import whisper
+except ImportError:
+    print("Error: Whisper not found. Run install script again.")
+    sys.exit(1)
+
+def record_audio(output_file, sample_rate=16000):
+    """Record audio until Ctrl+C"""
+    print("🎤 Recording... Press Ctrl+C when done speaking.")
+    print("")
+    
+    # Use sox to record
+    cmd = [
+        'rec',
+        '-r', str(sample_rate),
+        '-c', '1',
+        '-b', '16',
+        output_file
+    ]
+    
+    try:
+        subprocess.run(cmd, check=True)
+    except KeyboardInterrupt:
+        print("\n✓ Recording stopped")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error recording: {e}")
+        return False
+    
+    return True
+
+def transcribe_audio(audio_file, model_name="small"):
+    """Transcribe audio with Whisper"""
+    print("🧠 Transcribing with Whisper (CPU mode)...")
+    
+    # Force CPU to avoid CUDA issues
+    model = whisper.load_model(model_name, device="cpu")
+    result = model.transcribe(audio_file, fp16=False)  # fp16=False for CPU
+    
+    return result["text"].strip()
+
+def type_text(text):
+    """Type text using xdotool"""
+    print(f"⌨️  Typing: {text}")
+    print("")
+    
+    # Get current window info for debugging
+    try:
+        result = subprocess.run(['xdotool', 'getactivewindow', 'getwindowname'], 
+                              capture_output=True, text=True, check=True)
+        print(f"🎯 Target window: {result.stdout.strip()}")
+    except:
+        print("⚠️  Could not get active window info")
+    
+    try:
+        result = subprocess.run(['xdotool', 'type', '--delay', '12', '--', text], 
+                              capture_output=True, text=True, check=True)
+        if result.returncode == 0:
+            print("✓ Text typed successfully")
+            return True
+        else:
+            print(f"xdotool returned: {result.returncode}")
+            if result.stderr:
+                print(f"Error: {result.stderr}")
+            return False
+    except subprocess.CalledProcessError as e:
+        print(f"Error typing text: {e}")
+        if e.stderr:
+            print(f"stderr: {e.stderr}")
+        return False
+    
+    return True
+
+def main():
+    print("=" * 60)
+    print("  Whisper Dictation")
+    print("=" * 60)
+    print("")
+    
+    # Create temporary file for audio
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+        audio_file = f.name
+    
+    try:
+        # Record audio
+        if not record_audio(audio_file):
+            return 1
+        
+        # Check if file has content
+        if os.path.getsize(audio_file) < 1000:
+            print("Warning: Recording too short, no audio detected")
+            return 1
+        
+        # Transcribe
+        text = transcribe_audio(audio_file)
+        
+        if not text:
+            print("No speech detected")
+            return 1
+        
+        print(f"Transcribed: \"{text}\"")
+        print("")
+        
+        # Give user time to focus target window
+        print("=" * 60)
+        print("🎯 CLICK ON CURSOR/KATE NOW - Text will type in 3 seconds!")
+        print("=" * 60)
+        import time
+        for i in range(3, 0, -1):
+            print(f"   Typing in {i}...")
+            time.sleep(1)
+        print("")
+        
+        # Type it
+        success = type_text(text)
+        
+        if not success:
+            print("")
+            print("❌ Failed to type text. Text was:")
+            print(f"   \"{text}\"")
+            print("")
+            print("You can copy it from above and paste manually.")
+            return 1
+        
+        print("")
+        print("✅ Done!")
+        
+    finally:
+        # Clean up
+        if os.path.exists(audio_file):
+            os.unlink(audio_file)
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

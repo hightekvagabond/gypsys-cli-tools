@@ -1,0 +1,21 @@
+#!/bin/bash
+# Vosk Dictation (fast, real-time)
+
+VOSK_MODEL="$HOME/.local/share/vosk-models/vosk-model-en-us-0.22"
+
+if [[ ! -d "$VOSK_MODEL" ]]; then
+    echo "Error: Vosk model not found at: $VOSK_MODEL"
+    echo "Run the install script again."
+    exit 1
+fi
+
+echo "🎤 Starting Vosk Dictation (real-time)"
+echo "Speak now. Press Ctrl+C to stop."
+echo ""
+
+nerd-dictation begin \
+    --vosk-model-dir="$VOSK_MODEL" \
+    --simulate-input-tool=XDOTOOL \
+    --pulse-device-name=default \
+    --full-sentence \
+    --numbers-as-digits

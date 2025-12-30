@@ -2,3 +2,5 @@
 ai-best-practices
 .devcontainer/devcontainer.json
 .devcontainer/Dockerfile
+diskrecover/tmp
+diskrecover/mounted

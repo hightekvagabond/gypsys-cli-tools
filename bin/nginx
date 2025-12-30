@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# nginx: Serve the current directory using nginx in Docker
+# Usage: nginx [port]
+# Default port: 8080
+
+set -euo pipefail
+
+# Configuration
+IMAGE_NAME="local-nginx"
+NGINX_DIR="/home/gypsy/dev/stable-dev/gypsys-cli-tools/nginx"
+DEFAULT_PORT=8080
+
+# Parse arguments
+PORT="${1:-$DEFAULT_PORT}"
+
+# Validate port is a number
+if ! [[ "$PORT" =~ ^[0-9]+$ ]]; then
+    echo "Error: Port must be a number" >&2
+    echo "Usage: nginx [port]" >&2
+    exit 1
+fi
+
+# Use a predictable container name based on port
+CONTAINER_NAME="local-nginx-$PORT"
+
+# Get the directory where script was called from
+SERVE_DIR="$(pwd)"
+
+echo "🌐 Starting nginx server for: $SERVE_DIR"
+echo "📡 Server will be available at: http://localhost:$PORT"
+echo ""
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Error: Docker is not running" >&2
+    exit 1
+fi
+
+# Build the image if it doesn't exist
+if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
+    echo "🔨 Building nginx Docker image..."
+    if ! docker build -t "$IMAGE_NAME" "$NGINX_DIR"; then
+        echo "❌ Error: Failed to build Docker image" >&2
+        exit 1
+    fi
+    echo "✅ Image built successfully"
+    echo ""
+fi
+
+# Check if there's already a container using this port (running or stopped)
+# First check for our named container
+EXISTING_CONTAINER=$(docker ps -a -q -f name="^${CONTAINER_NAME}$" 2>/dev/null || true)
+
+# Also check for any container bound to this port
+CONTAINERS_ON_PORT=$(docker ps -a --format '{{.ID}} {{.Names}} {{.Ports}}' | grep "0.0.0.0:${PORT}->" | awk '{print $1}' || true)
+
+# Combine both lists and remove duplicates
+ALL_CONTAINERS=$(echo -e "$EXISTING_CONTAINER\n$CONTAINERS_ON_PORT" | grep -v '^$' | sort -u || true)
+
+if [ -n "$ALL_CONTAINERS" ]; then
+    echo "🔄 Found existing container(s) on port $PORT"
+    
+    # Stop and remove each container
+    while IFS= read -r container_id; do
+        if [ -n "$container_id" ]; then
+            # Try to get container name and served directory
+            CONTAINER_INFO=$(docker inspect -f '{{.Name}} {{ range .Mounts }}{{ if eq .Destination "/usr/share/nginx/html" }}{{ .Source }}{{ end }}{{ end }}' "$container_id" 2>/dev/null || echo "unknown")
+            echo "   Stopping container: $CONTAINER_INFO"
+            docker stop "$container_id" > /dev/null 2>&1 || true
+            docker rm "$container_id" > /dev/null 2>&1 || true
+        fi
+    done <<< "$ALL_CONTAINERS"
+    
+    echo "✅ Old server(s) stopped"
+    echo ""
+fi
+
+# Check if there's a custom nginx.conf in the current directory
+CUSTOM_CONFIG=""
+if [ -f "$SERVE_DIR/nginx.conf" ]; then
+    echo "📝 Found custom nginx.conf - will use it"
+    CUSTOM_CONFIG="-v $SERVE_DIR/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
+fi
+
+# Run the container in detached mode
+echo "🚀 Starting server in background..."
+
+# shellcheck disable=SC2086
+if docker run -d \
+    --name "$CONTAINER_NAME" \
+    -p "$PORT:8080" \
+    -v "$SERVE_DIR:/usr/share/nginx/html:ro" \
+    $CUSTOM_CONFIG \
+    "$IMAGE_NAME" > /dev/null; then
+    
+    echo "✅ Server running at: http://localhost:$PORT"
+    echo "   Serving: $SERVE_DIR"
+    echo ""
+    echo "💡 To stop: docker stop $CONTAINER_NAME"
+    echo "   Or just run 'nginx' again to replace it"
+else
+    echo "❌ Failed to start server" >&2
+    exit 1
+fi
+

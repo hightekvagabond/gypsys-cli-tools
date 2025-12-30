@@ -132,3 +132,5 @@ echo "- Reinstall firmware: sudo apt update && sudo apt install --reinstall linu
 echo "- Check power management: cat /sys/module/btusb/parameters/enable_autosuspend"
 
 
+
+
